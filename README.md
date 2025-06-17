@@ -35,6 +35,15 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+## Environment Variables
+
+Create a `.env.local` file with your Stripe keys:
+
+```text
+STRIPE_SECRET_KEY=sk_test_your_key
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_key
+```
+
 ## Dashboard Roles
 
 The dashboard renders different metrics depending on the active user role. You

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,6 +12,41 @@ export default function OnboardingFlow() {
   const [avatar, setAvatar] = useState<File | null>(null)
   const [banner, setBanner] = useState<File | null>(null)
   const [accepted, setAccepted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [accountId, setAccountId] = useState<string | null>(null)
+
+  useEffect(() => {
+    const storedId = window.localStorage.getItem("stripe_account_id")
+    if (storedId) {
+      setAccountId(storedId)
+    }
+    const stepParam = new URLSearchParams(window.location.search).get("step")
+    if (stepParam) {
+      const num = parseInt(stepParam)
+      if (!isNaN(num)) setStep(num)
+    }
+  }, [])
+
+  async function startStripeConnect() {
+    try {
+      setLoading(true)
+      const res = await fetch("/api/stripe/onboard", { method: "POST" })
+      const data = await res.json()
+      if (data?.url) {
+        if (data.accountId) {
+          setAccountId(data.accountId)
+          window.localStorage.setItem("stripe_account_id", data.accountId)
+        }
+        window.location.href = data.url as string
+      } else {
+        console.error("No url returned from Stripe")
+        setLoading(false)
+      }
+    } catch (err) {
+      console.error(err)
+      setLoading(false)
+    }
+  }
 
   if (step === 1) {
     return (
@@ -20,7 +55,9 @@ export default function OnboardingFlow() {
         <p className="text-sm text-muted-foreground text-center">
           Connect your Stripe account to start selling.
         </p>
-        <Button onClick={() => setStep(2)}>Connect with Stripe</Button>
+        <Button onClick={startStripeConnect} disabled={loading}>
+          {loading ? "Redirecting..." : "Connect with Stripe"}
+        </Button>
       </div>
     )
   }
@@ -94,7 +131,32 @@ export default function OnboardingFlow() {
         <p className="text-sm text-muted-foreground">
           Stripe requires identity verification before you can receive payouts.
         </p>
-        <Button type="button" onClick={() => alert("Redirect to Stripe")}>Start verification</Button>
+        <Button
+          type="button"
+          onClick={async () => {
+            if (!accountId) return
+            setLoading(true)
+            try {
+              const res = await fetch("/api/stripe/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ accountId }),
+              })
+              const data = await res.json()
+              if (data?.url) {
+                window.location.href = data.url as string
+              } else {
+                setLoading(false)
+              }
+            } catch (err) {
+              console.error(err)
+              setLoading(false)
+            }
+          }}
+          disabled={loading}
+        >
+          {loading ? "Redirecting..." : "Start verification"}
+        </Button>
         <Label className="gap-2">
           <input
             type="checkbox"
