@@ -34,3 +34,16 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Dashboard Roles
+
+The dashboard renders different metrics depending on the active user role. You
+can switch between buyer and seller views by passing the `role` query parameter
+in the URL:
+
+```text
+http://localhost:3000/dashboard?role=seller
+```
+
+The selected role is stored in the browser so it persists as you navigate around
+the app.
