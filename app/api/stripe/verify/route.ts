@@ -20,7 +20,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing accountId" }, { status: 400 })
     }
     const { origin } = new URL(request.url)
-    const stripe = getStripe()
+    let stripe: Stripe
+    try {
+      stripe = getStripe()
+    } catch (err) {
+      console.error(err)
+      return NextResponse.json(
+        { error: "Stripe is not configured" },
+        { status: 500 }
+      )
+    }
     const accountLink = await stripe.accountLinks.create({
       account: accountId,
       refresh_url: `${origin}/onboarding?step=3`,

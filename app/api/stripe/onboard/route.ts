@@ -16,7 +16,16 @@ function getStripe(): Stripe {
 export async function POST(request: Request) {
   try {
     const { origin } = new URL(request.url)
-    const stripe = getStripe()
+    let stripe: Stripe
+    try {
+      stripe = getStripe()
+    } catch (err) {
+      console.error(err)
+      return NextResponse.json(
+        { error: "Stripe is not configured" },
+        { status: 500 }
+      )
+    }
     const account = await stripe.accounts.create({ type: "express" })
     const accountLink = await stripe.accountLinks.create({
       account: account.id,

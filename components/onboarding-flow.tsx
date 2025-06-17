@@ -14,6 +14,7 @@ export default function OnboardingFlow() {
   const [accepted, setAccepted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [accountId, setAccountId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const storedId = window.localStorage.getItem("stripe_account_id")
@@ -30,9 +31,11 @@ export default function OnboardingFlow() {
   async function startStripeConnect() {
     try {
       setLoading(true)
+      setError(null)
       const res = await fetch("/api/stripe/onboard", { method: "POST" })
       if (!res.ok) {
-        throw new Error(`Request failed: ${res.status}`)
+        const msg = await res.text()
+        throw new Error(msg || `Request failed: ${res.status}`)
       }
       const data = await res.json()
       if (data?.url) {
@@ -42,11 +45,11 @@ export default function OnboardingFlow() {
         }
         window.location.href = data.url as string
       } else {
-        console.error("No url returned from Stripe")
+        setError("No url returned from Stripe")
         setLoading(false)
       }
     } catch (err) {
-      console.error(err)
+      setError((err as Error).message)
       setLoading(false)
     }
   }
@@ -58,6 +61,7 @@ export default function OnboardingFlow() {
         <p className="text-sm text-muted-foreground text-center">
           Connect your Stripe account to start selling.
         </p>
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
         <Button onClick={startStripeConnect} disabled={loading}>
           {loading ? "Redirecting..." : "Connect with Stripe"}
         </Button>
@@ -134,28 +138,32 @@ export default function OnboardingFlow() {
         <p className="text-sm text-muted-foreground">
           Stripe requires identity verification before you can receive payouts.
         </p>
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
         <Button
           type="button"
           onClick={async () => {
             if (!accountId) return
             setLoading(true)
             try {
+              setError(null)
               const res = await fetch("/api/stripe/verify", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ accountId }),
               })
               if (!res.ok) {
-                throw new Error(`Request failed: ${res.status}`)
+                const msg = await res.text()
+                throw new Error(msg || `Request failed: ${res.status}`)
               }
               const data = await res.json()
               if (data?.url) {
                 window.location.href = data.url as string
               } else {
+                setError("No url returned from Stripe")
                 setLoading(false)
               }
             } catch (err) {
-              console.error(err)
+              setError((err as Error).message)
               setLoading(false)
             }
           }}
