@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2022-11-15",
-})
+let stripe: Stripe | null = null
+
+function getStripe(): Stripe {
+  if (stripe) return stripe
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  if (!secretKey) {
+    throw new Error("STRIPE_SECRET_KEY is not defined")
+  }
+  stripe = new Stripe(secretKey, { apiVersion: "2022-11-15" })
+  return stripe
+}
 
 export async function POST(request: Request) {
   try {
     const { origin } = new URL(request.url)
+    const stripe = getStripe()
     const account = await stripe.accounts.create({ type: "express" })
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
@@ -18,6 +27,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: accountLink.url, accountId: account.id })
   } catch (err) {
     console.error(err)
-    return new NextResponse("Internal Server Error", { status: 500 })
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    )
   }
 }

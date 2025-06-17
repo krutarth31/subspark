@@ -31,6 +31,9 @@ export default function OnboardingFlow() {
     try {
       setLoading(true)
       const res = await fetch("/api/stripe/onboard", { method: "POST" })
+      if (!res.ok) {
+        throw new Error(`Request failed: ${res.status}`)
+      }
       const data = await res.json()
       if (data?.url) {
         if (data.accountId) {
@@ -142,6 +145,9 @@ export default function OnboardingFlow() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ accountId }),
               })
+              if (!res.ok) {
+                throw new Error(`Request failed: ${res.status}`)
+              }
               const data = await res.json()
               if (data?.url) {
                 window.location.href = data.url as string
