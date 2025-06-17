@@ -14,7 +14,10 @@ pnpm dev
 bun dev
 ```
 
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+After the app starts you can visit `/dashboard` to view a simple seller dashboard interface. It demonstrates a side navigation menu and a few statistics cards styled with Tailwind CSS.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
