@@ -30,7 +30,7 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group"
 
-export const description = "An interactive area chart"
+export const description = "Buyer and seller activity over time"
 
 const chartData = [
   { date: "2024-04-01", desktop: 222, mobile: 150 },
@@ -126,21 +126,35 @@ const chartData = [
   { date: "2024-06-30", desktop: 446, mobile: 400 },
 ]
 
-const chartConfig = {
+const sellerConfig = {
   visitors: {
-    label: "Visitors",
+    label: "Transactions",
   },
   desktop: {
-    label: "Desktop",
+    label: "Buyers",
     color: "var(--primary)",
   },
   mobile: {
-    label: "Mobile",
+    label: "Sellers",
     color: "var(--primary)",
   },
 } satisfies ChartConfig
 
-export function ChartAreaInteractive() {
+const buyerConfig = {
+  visitors: {
+    label: "Orders",
+  },
+  desktop: {
+    label: "Placed",
+    color: "var(--primary)",
+  },
+  mobile: {
+    label: "Delivered",
+    color: "var(--primary)",
+  },
+} satisfies ChartConfig
+
+export function ChartAreaInteractive({ role }: { role: "buyer" | "seller" }) {
   const isMobile = useIsMobile()
   const [timeRange, setTimeRange] = React.useState("90d")
 
@@ -149,6 +163,8 @@ export function ChartAreaInteractive() {
       setTimeRange("7d")
     }
   }, [isMobile])
+
+  const config = role === "seller" ? sellerConfig : buyerConfig
 
   const filteredData = chartData.filter((item) => {
     const date = new Date(item.date)
@@ -167,7 +183,9 @@ export function ChartAreaInteractive() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Total Visitors</CardTitle>
+        <CardTitle>
+          {role === "seller" ? "Marketplace Activity" : "Order Activity"}
+        </CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
             Total for the last 3 months
@@ -210,7 +228,7 @@ export function ChartAreaInteractive() {
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer
-          config={chartConfig}
+          config={config}
           className="aspect-auto h-[250px] w-full"
         >
           <AreaChart data={filteredData}>
