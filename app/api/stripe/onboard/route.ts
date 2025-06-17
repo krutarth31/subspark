@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
+import { getDb } from "@/lib/mongo"
 
 let stripe: Stripe | null = null
 
@@ -27,6 +28,12 @@ export async function POST(request: Request) {
       )
     }
     const account = await stripe.accounts.create({ type: "express" })
+    const db = await getDb().catch(() => null)
+    if (db) {
+      await db
+        .collection<{ _id: string; active: boolean }>("sellers")
+        .updateOne({ _id: account.id }, { $setOnInsert: { active: false } }, { upsert: true })
+    }
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
       refresh_url: `${origin}/onboarding`,

@@ -20,6 +20,12 @@ export default function OnboardingFlow() {
     const storedId = window.localStorage.getItem("stripe_account_id")
     if (storedId) {
       setAccountId(storedId)
+      fetch(`/api/seller/status?accountId=${storedId}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.active) setStep(4)
+        })
+        .catch(() => {})
     }
     const stepParam = new URLSearchParams(window.location.search).get("step")
     if (stepParam) {
