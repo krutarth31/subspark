@@ -2,26 +2,19 @@
 
 import * as React from "react"
 import {
-  IconCamera,
   IconChartBar,
   IconDashboard,
   IconDatabase,
   IconFileAi,
   IconFileDescription,
-  IconFileWord,
   IconFolder,
-  IconHelp,
   IconInnerShadowTop,
-  IconListDetails,
   IconReport,
-  IconSearch,
   IconSettings,
   IconUsers,
 } from "@tabler/icons-react"
 
-import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -33,117 +26,61 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const data = {
-  navMain: [
-    {
-      title: "Dashboard",
-      url: "#",
-      icon: IconDashboard,
-    },
-    {
-      title: "Lifecycle",
-      url: "#",
-      icon: IconListDetails,
-    },
-    {
-      title: "Analytics",
-      url: "#",
-      icon: IconChartBar,
-    },
-    {
-      title: "Projects",
-      url: "#",
-      icon: IconFolder,
-    },
-    {
-      title: "Team",
-      url: "#",
-      icon: IconUsers,
-    },
-  ],
-  navClouds: [
-    {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
-      icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
-    {
-      title: "Get Help",
-      url: "#",
-      icon: IconHelp,
-    },
-    {
-      title: "Search",
-      url: "#",
-      icon: IconSearch,
-    },
-  ],
-  documents: [
-    {
-      name: "Data Library",
-      url: "#",
-      icon: IconDatabase,
-    },
-    {
-      name: "Reports",
-      url: "#",
-      icon: IconReport,
-    },
-    {
-      name: "Word Assistant",
-      url: "#",
-      icon: IconFileWord,
-    },
-  ],
-}
+const defaultNav = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: IconDashboard,
+  },
+]
+
+const sellerNav = [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: IconDashboard,
+  },
+  {
+    title: "Products",
+    url: "/products",
+    icon: IconDatabase,
+  },
+  {
+    title: "Buyers",
+    url: "/buyers",
+    icon: IconUsers,
+  },
+  {
+    title: "Analytics",
+    url: "/analytics",
+    icon: IconChartBar,
+  },
+  {
+    title: "Payouts",
+    url: "/payouts",
+    icon: IconReport,
+  },
+  {
+    title: "Documents",
+    url: "/documents",
+    icon: IconFileDescription,
+  },
+  {
+    title: "Integrations",
+    url: "/integrations",
+    icon: IconFileAi,
+  },
+  {
+    title: "Subscription",
+    url: "/subscription",
+    icon: IconFolder,
+  },
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: IconSettings,
+  },
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [user, setUser] = React.useState({
@@ -151,6 +88,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     email: "user@example.com",
     avatar: "/avatars/shadcn.jpg",
   })
+  const [isSeller, setIsSeller] = React.useState(false)
 
   React.useEffect(() => {
     fetch('/api/auth/user')
@@ -159,6 +97,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         if (data.user) {
           setUser((prev) => ({ ...prev, ...data.user }))
         }
+      })
+      .catch(() => {})
+  }, [])
+
+  React.useEffect(() => {
+    const id = window.localStorage.getItem('stripe_account_id')
+    if (!id) return
+    fetch(`/api/seller/status?accountId=${id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.active) setIsSeller(true)
       })
       .catch(() => {})
   }, [])
@@ -181,9 +130,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavMain items={isSeller ? sellerNav : defaultNav} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />
