@@ -16,6 +16,7 @@ import {
 
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
+import { useUserRole } from "@/hooks/use-user-role"
 import {
   Sidebar,
   SidebarContent,
@@ -94,6 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     avatar: "/avatars/shadcn.jpg",
   })
   const [isSeller, setIsSeller] = React.useState(false)
+  const { setRole } = useUserRole()
 
   React.useEffect(() => {
     fetch('/api/auth/user')
@@ -101,15 +103,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       .then((data) => {
         if (data.user) {
           setUser((prev) => ({ ...prev, ...data.user }))
+          if (data.user.role === 'seller') {
+            setIsSeller(true)
+            setRole('seller')
+          }
         }
       })
       .catch(() => {})
-  }, [])
+  }, [setRole])
 
   React.useEffect(() => {
-    const id = window.localStorage.getItem('stripe_account_id')
-    if (!id) return
-    fetch(`/api/seller/status?accountId=${id}`)
+    fetch('/api/seller/status')
       .then((res) => res.json())
       .then((data) => {
         if (data.active) setIsSeller(true)

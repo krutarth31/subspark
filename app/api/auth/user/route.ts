@@ -15,5 +15,16 @@ export async function GET() {
     .collection<{ _id: ObjectId; name: string; email: string; avatar?: string }>('users')
     .findOne({ _id: session.userId }, { projection: { password: 0 } })
   if (!user) return NextResponse.json({ user: null })
-  return NextResponse.json({ user })
+  const seller = await db
+    .collection<{ _id: string; active: boolean; userId?: ObjectId }>('sellers')
+    .findOne({ userId: session.userId })
+  const role = seller?.active ? 'seller' : 'buyer'
+  return NextResponse.json({
+    user: {
+      ...user,
+      role,
+      sellerAccountId: seller?._id || null,
+      sellerActive: !!seller?.active,
+    },
+  })
 }

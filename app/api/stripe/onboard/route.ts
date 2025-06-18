@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import Stripe from "stripe"
 import { getDb } from "@/lib/mongo"
+import { cookies } from "next/headers"
+import { ObjectId } from "mongodb"
 
 let stripe: Stripe | null = null
 
@@ -30,9 +32,28 @@ export async function POST(request: Request) {
     const account = await stripe.accounts.create({ type: "express" })
     const db = await getDb().catch(() => null)
     if (db) {
+      let userId: ObjectId | null = null
+      try {
+        const cookieStore = cookies()
+        const token = cookieStore.get("session")?.value
+        if (token) {
+          const session = await db
+            .collection<{ token: string; userId: ObjectId }>("sessions")
+            .findOne({ token })
+          if (session) userId = session.userId
+        }
+      } catch {
+        // ignore cookie errors
+      }
       await db
-        .collection<{ _id: string; active: boolean }>("sellers")
-        .updateOne({ _id: account.id }, { $setOnInsert: { active: false } }, { upsert: true })
+        .collection<{ _id: string; active: boolean; userId?: ObjectId }>(
+          "sellers"
+        )
+        .updateOne(
+          { _id: account.id },
+          { $setOnInsert: { active: false }, $set: { userId } },
+          { upsert: true }
+        )
     }
     const accountLink = await stripe.accountLinks.create({
       account: account.id,
