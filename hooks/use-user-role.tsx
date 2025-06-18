@@ -17,18 +17,21 @@ export function UserRoleProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (typeof window === "undefined") return
     const paramsRole = new URLSearchParams(window.location.search).get("role")
-    const stored = window.localStorage.getItem("role")
-    const initial = (paramsRole || stored) as UserRole | null
-    if (initial === "buyer" || initial === "seller") {
-      setRoleState(initial)
-      window.localStorage.setItem("role", initial)
+    if (paramsRole === "buyer" || paramsRole === "seller") {
+      setRoleState(paramsRole)
+      return
     }
+    fetch("/api/auth/user")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user?.role === "seller") {
+          setRoleState("seller")
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const setRole = React.useCallback((newRole: UserRole) => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("role", newRole)
-    }
     setRoleState(newRole)
   }, [])
 

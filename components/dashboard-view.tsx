@@ -19,10 +19,7 @@ export default function DashboardView() {
 
   useEffect(() => {
     if (role !== "seller") return
-    const storedId = window.localStorage.getItem("stripe_account_id")
-    if (storedId) {
-      setAccountId(storedId)
-      fetch(`/api/seller/status?accountId=${storedId}`)
+    fetch("/api/seller/status")
         .then(async (res) => {
           if (!res.ok) {
             const msg = await res.text()
@@ -31,6 +28,9 @@ export default function DashboardView() {
           return res.json()
         })
         .then((data) => {
+          if (data.accountId) {
+            setAccountId(data.accountId)
+          }
           setActive(data.active)
           setStatusError(null)
         })
@@ -38,7 +38,6 @@ export default function DashboardView() {
           console.error(err)
           setStatusError("Unable to verify Stripe account status")
         })
-    }
   }, [role])
 
   async function startStripe() {
@@ -49,7 +48,7 @@ export default function DashboardView() {
     }
     const data = await res.json()
     if (data.accountId) {
-      window.localStorage.setItem("stripe_account_id", data.accountId)
+      setAccountId(data.accountId)
     }
     if (data.url) {
       window.location.href = data.url

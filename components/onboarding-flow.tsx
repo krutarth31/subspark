@@ -31,28 +31,25 @@ export default function OnboardingFlow() {
   const { setRole } = useUserRole()
 
   useEffect(() => {
-    const storedId = window.localStorage.getItem("stripe_account_id")
-    if (storedId) {
-      setAccountId(storedId)
-      fetch(`/api/seller/status?accountId=${storedId}`)
-        .then(async (res) => {
-          if (!res.ok) {
-            const msg = await res.text()
-            throw new Error(msg || `Request failed: ${res.status}`)
-          }
-          return res.json()
-        })
-        .then((data) => {
-          if (data?.active) {
-            setActive(true)
-            setStep(5)
-            setRole('seller')
-          }
-        })
-        .catch((err) => {
-          console.error(err)
-        })
-    }
+    fetch('/api/seller/status')
+      .then(async (res) => {
+        if (!res.ok) {
+          const msg = await res.text()
+          throw new Error(msg || `Request failed: ${res.status}`)
+        }
+        return res.json()
+      })
+      .then((data) => {
+        if (data.accountId) setAccountId(data.accountId)
+        if (data.active) {
+          setActive(true)
+          setStep(5)
+          setRole('seller')
+        }
+      })
+      .catch((err) => {
+        console.error(err)
+      })
     const stepParam = new URLSearchParams(window.location.search).get("step")
     if (stepParam) {
       const num = parseInt(stepParam)
@@ -91,7 +88,6 @@ export default function OnboardingFlow() {
       if (data?.url) {
         if (data.accountId) {
           setAccountId(data.accountId)
-          window.localStorage.setItem("stripe_account_id", data.accountId)
         }
         window.location.href = data.url as string
       } else {
