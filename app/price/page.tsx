@@ -15,18 +15,21 @@ export default function Page() {
       setLoading(false)
       return
     }
-    const res = await fetch('/api/seller/activate', {
+    const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ accountId }),
     })
     if (res.ok) {
-      window.location.href = '/dashboard'
-    } else {
-      const msg = await res.text()
-      alert(msg || 'Failed to activate account')
-      setLoading(false)
+      const data = await res.json()
+      if (data.url) {
+        window.location.href = data.url as string
+        return
+      }
     }
+    const msg = await res.text()
+    alert(msg || 'Failed to create checkout')
+    setLoading(false)
   }
 
   return (

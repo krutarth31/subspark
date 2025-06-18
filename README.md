@@ -44,6 +44,7 @@ STRIPE_SECRET_KEY=sk_test_your_key
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_key
 STRIPE_WEBHOOK_SECRET=whsec_your_secret
 MONGODB_URI=mongodb://localhost:27017/yourdb
+STRIPE_PRICE_ID=price_12345
 
 # Webhooks are required so seller accounts become active.
 # For local development you can forward events with:
@@ -66,5 +67,7 @@ the app.
 ## Seller Subscription
 
 After completing the Stripe onboarding flow sellers are sent to `/price` to pay
-the platform fee. This page calls `/api/seller/activate` to mark the account
-active and then redirects to the dashboard.
+the platform fee. Clicking **Pay Subscription** creates a Stripe Checkout
+session via `/api/stripe/checkout` and redirects the seller to pay. When the
+checkout is completed the webhook marks the seller account active and the user
+is returned to the dashboard.

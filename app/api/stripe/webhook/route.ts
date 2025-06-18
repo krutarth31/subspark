@@ -39,5 +39,20 @@ export async function POST(request: Request) {
     }
   }
 
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session
+    const accountId = session.metadata?.accountId
+    if (accountId) {
+      try {
+        const db = await getDb()
+        await db
+          .collection<{ _id: string; active: boolean }>('sellers')
+          .updateOne({ _id: accountId }, { $set: { active: true } }, { upsert: true })
+      } catch (err) {
+        console.error('DB update failed', err)
+      }
+    }
+  }
+
   return NextResponse.json({ received: true })
 }
