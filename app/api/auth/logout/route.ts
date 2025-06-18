@@ -3,7 +3,8 @@ import { getDb } from '@/lib/mongo'
 import { cookies } from 'next/headers'
 
 export async function POST() {
-  const session = cookies().get('session')?.value
+  const cookieStore = await cookies()
+  const session = cookieStore.get('session')?.value
   if (session) {
     const db = await getDb().catch(() => null)
     if (db) {
