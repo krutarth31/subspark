@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const db = await getDb().catch(() => null)
     if (db) {
       let userId: ObjectId | null = null
-      let userInfo: { name: string; email: string } | null = null
+      let userInfo: { name: string; email: string; accountId?: string } | null = null
       try {
         const cookieStore = cookies()
         const token = cookieStore.get("session")?.value
@@ -44,16 +44,16 @@ export async function POST(request: Request) {
           if (session) {
             userId = session.userId
             const u = await db
-              .collection<{ _id: ObjectId; name: string; email: string }>("users")
-              .findOne({ _id: session.userId }, { projection: { name: 1, email: 1 } })
-            if (u) userInfo = { name: u.name, email: u.email }
+              .collection<{ _id: ObjectId; name: string; email: string; accountId?: string }>("users")
+              .findOne({ _id: session.userId }, { projection: { name: 1, email: 1, accountId: 1 } })
+            if (u) userInfo = { name: u.name, email: u.email, accountId: u.accountId }
           }
         }
       } catch {
         // ignore cookie errors
       }
       await db
-        .collection<{ _id: string; active: boolean; userId?: ObjectId; name?: string; email?: string }>(
+        .collection<{ _id: string; active: boolean; userId?: ObjectId; name?: string; email?: string; accountId?: string }>(
           "sellers"
         )
         .updateOne(
