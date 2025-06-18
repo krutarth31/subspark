@@ -1,3 +1,4 @@
+"use client"  
 import DashboardLayout from "@/components/dashboard-layout"
 import OnboardingFlow from "@/components/onboarding-flow"
 

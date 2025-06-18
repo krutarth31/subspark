@@ -45,7 +45,7 @@ export default function OnboardingFlow() {
         .then((data) => {
           if (data?.active) {
             setActive(true)
-            setStep(4)
+            setStep(5)
             setRole('seller')
           }
         })
@@ -107,6 +107,7 @@ export default function OnboardingFlow() {
     "Connect Stripe",
     "Set up profile",
     "Verify & accept",
+    "Pay subscription",
     "Finish",
   ]
 
@@ -270,65 +271,136 @@ export default function OnboardingFlow() {
         </form>
       </Card>
     )
+  } else if (step === 4) {
+    content = (
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle>Pay subscription</CardTitle>
+          <CardDescription>
+            Pay the platform fee to activate your seller account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-4">
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <Button
+            onClick={async () => {
+              if (!accountId) return
+              setLoading(true)
+              try {
+                const res = await fetch('/api/stripe/checkout', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ accountId }),
+                })
+                if (!res.ok) {
+                  const msg = await res.text()
+                  throw new Error(msg || `Request failed: ${res.status}`)
+                }
+                const data = await res.json()
+                if (data.url) {
+                  window.location.href = data.url as string
+                  return
+                }
+                throw new Error('No url returned from Stripe')
+              } catch (err) {
+                setError((err as Error).message)
+                setLoading(false)
+              }
+            }}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? 'Processing...' : 'Pay Subscription'}
+          </Button>
+        </CardContent>
+      </Card>
+    )
   } else {
     content = (
       <Card>
         <CardHeader className="text-center">
           <CardTitle>
-            {active ? "Onboarding complete!" : "Stripe verification complete"}
+            {active ? "Onboarding complete!" : "Payment pending"}
           </CardTitle>
           <CardDescription>
             {active
               ? "You're all set. Start selling from your dashboard."
-              : "Choose a plan to activate your account."}
+              : "Complete payment to activate your account."}
           </CardDescription>
         </CardHeader>
-        <CardFooter className="flex justify-center">
-          <Button
-            onClick={() => {
-              if (active) {
+        <CardFooter className="flex justify-center gap-2">
+          {active ? (
+            <Button
+              onClick={() => {
                 setRole("seller")
                 window.location.href = "/dashboard"
-              } else {
-                window.location.href = "/price"
-              }
-            }}
-          >
-            {active ? "Go to Dashboard" : "Continue to Pricing"}
-          </Button>
+              }}
+            >
+              Go to Dashboard
+            </Button>
+          ) : (
+            <Button onClick={() => setStep(4)}>Back to Payment</Button>
+          )}
         </CardFooter>
       </Card>
     )
   }
 
   return (
-    <div className="mx-auto w-full max-w-xl space-y-6">
-      <ol className="flex items-center gap-2">
+    <div className="mx-auto grid w-full max-w-5xl gap-10 md:grid-cols-[240px_1fr]">
+      <ol className="relative hidden flex-col space-y-6 md:flex">
         {stepsList.map((label, idx) => (
-          <li key={label} className="flex flex-1 flex-col items-center">
-            <div className="flex w-full items-center">
+          <li key={label} className="flex items-start gap-3">
+            <div className="flex flex-col items-center">
               <div
-                className={`relative z-10 size-8 rounded-full border flex items-center justify-center font-medium ${
+                className={`size-8 rounded-full border flex items-center justify-center font-medium ${
                   step >= idx + 1
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground"
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {step > idx + 1 ? <CheckIcon className="size-4" /> : idx + 1}
               </div>
               {idx < stepsList.length - 1 && (
                 <div
-                  className={`h-px flex-1 ${
-                    step > idx + 1 ? "bg-primary" : "bg-border"
+                  className={`w-px flex-1 ${
+                    step > idx + 1 ? 'bg-primary' : 'bg-border'
                   }`}
                 />
               )}
             </div>
-            <span className="mt-2 text-xs text-center">{label}</span>
+            <span className="mt-1 font-medium">{label}</span>
           </li>
         ))}
       </ol>
-      {content}
+      <div className="space-y-6">
+        <ol className="flex items-center gap-2 md:hidden">
+          {stepsList.map((label, idx) => (
+            <li key={label} className="flex flex-1 flex-col items-center">
+              <div className="flex w-full items-center">
+                <div
+                  className={`size-7 rounded-full border flex items-center justify-center font-medium ${
+                    step >= idx + 1
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {step > idx + 1 ? <CheckIcon className="size-4" /> : idx + 1}
+                </div>
+                {idx < stepsList.length - 1 && (
+                  <div
+                    className={`h-px flex-1 ${
+                      step > idx + 1 ? 'bg-primary' : 'bg-border'
+                    }`}
+                  />
+                )}
+              </div>
+              <span className="mt-2 text-xs text-center">{label}</span>
+            </li>
+          ))}
+        </ol>
+        {content}
+      </div>
     </div>
   )
 }
