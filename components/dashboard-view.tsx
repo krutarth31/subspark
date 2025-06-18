@@ -1,41 +1,104 @@
 "use client"
 
-import { AppSidebar } from "@/components/app-sidebar"
+import DashboardLayout from "@/components/dashboard-layout"
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
-import { SiteHeader } from "@/components/site-header"
 import { useUserRole } from "@/hooks/use-user-role"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
 
 import data from "@/app/dashboard/data.json"
 
 export default function DashboardView() {
   const { role } = useUserRole()
   const title = role === "seller" ? "Seller Dashboard" : "Buyer Dashboard"
+  const [active, setActive] = useState<boolean | null>(null)
+  const [accountId, setAccountId] = useState<string | null>(null)
+  const [statusError, setStatusError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (role !== "seller") return
+    const storedId = window.localStorage.getItem("stripe_account_id")
+    if (storedId) {
+      setAccountId(storedId)
+      fetch(`/api/seller/status?accountId=${storedId}`)
+        .then(async (res) => {
+          if (!res.ok) {
+            const msg = await res.text()
+            throw new Error(msg || `Request failed: ${res.status}`)
+          }
+          return res.json()
+        })
+        .then((data) => {
+          setActive(data.active)
+          setStatusError(null)
+        })
+        .catch((err) => {
+          console.error(err)
+          setStatusError("Unable to verify Stripe account status")
+        })
+    }
+  }, [role])
+
+  async function startStripe() {
+    const res = await fetch("/api/stripe/onboard", { method: "POST" })
+    if (!res.ok) {
+      alert("Failed to start onboarding")
+      return
+    }
+    const data = await res.json()
+    if (data.accountId) {
+      window.localStorage.setItem("stripe_account_id", data.accountId)
+    }
+    if (data.url) {
+      window.location.href = data.url
+    }
+  }
+
+  async function resumeStripe() {
+    if (!accountId) return
+    const res = await fetch("/api/stripe/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accountId }),
+    })
+    if (!res.ok) {
+      alert("Failed to resume onboarding")
+      return
+    }
+    const data = await res.json()
+    if (data.url) window.location.href = data.url
+  }
 
   return (
-    <SidebarProvider
-      style={{
-        "--sidebar-width": "calc(var(--spacing) * 72)",
-        "--header-height": "calc(var(--spacing) * 12)",
-      } as React.CSSProperties}
-    >
-      <AppSidebar variant="inset" />
-      <SidebarInset>
-        <SiteHeader title={title} />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards role={role} />
-              <div className="px-4 lg:px-6">
-                <ChartAreaInteractive role={role} />
-              </div>
-              <DataTable data={data} />
+    <DashboardLayout title={title}>
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+          {role === "seller" && (
+            <div className="px-4 lg:px-6 space-y-2">
+              {statusError && (
+                <p className="text-sm text-red-500">{statusError}</p>
+              )}
+              {active === false && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="text-red-500">Stripe setup incomplete.</span>
+                  <Button size="sm" onClick={resumeStripe}>Resume Stripe Setup</Button>
+                </div>
+              )}
+              {active === null && !accountId && (
+                <Button size="sm" onClick={startStripe}>Connect Stripe</Button>
+              )}
+              {active && <span className="text-green-600 text-sm">Stripe connected</span>}
             </div>
+          )}
+          <SectionCards role={role} />
+          <div className="px-4 lg:px-6">
+            <ChartAreaInteractive role={role} />
           </div>
+          <DataTable data={data} />
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </DashboardLayout>
   )
 }
