@@ -16,3 +16,7 @@ export function verifyPassword(password: string, stored: string): boolean {
 export function generateToken(): string {
   return randomBytes(48).toString('hex')
 }
+
+export function generateAccountId(): string {
+  return randomBytes(12).toString('hex')
+}
