@@ -15,6 +15,7 @@ export default function OnboardingFlow() {
   const [loading, setLoading] = useState(false)
   const [accountId, setAccountId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [active, setActive] = useState(false)
 
   useEffect(() => {
     const storedId = window.localStorage.getItem("stripe_account_id")
@@ -29,7 +30,10 @@ export default function OnboardingFlow() {
           return res.json()
         })
         .then((data) => {
-          if (data?.active) setStep(4)
+          if (data?.active) {
+            setActive(true)
+            setStep(4)
+          }
         })
         .catch((err) => {
           console.error(err)
@@ -203,11 +207,21 @@ export default function OnboardingFlow() {
 
   return (
     <div className="flex flex-col items-center gap-4 p-6 text-center">
-      <h2 className="text-xl font-semibold">Onboarding complete!</h2>
+      <h2 className="text-xl font-semibold">
+        {active ? "Onboarding complete!" : "Stripe verification complete"}
+      </h2>
       <p className="text-sm text-muted-foreground">
-        You&apos;re all set. Start selling from your dashboard.
+        {active
+          ? "You're all set. Start selling from your dashboard."
+          : "Choose a plan to activate your account."}
       </p>
-      <Button onClick={() => (window.location.href = "/dashboard")}>Go to Dashboard</Button>
+      <Button
+        onClick={() =>
+          (window.location.href = active ? "/dashboard" : "/price")
+        }
+      >
+        {active ? "Go to Dashboard" : "Continue to Pricing"}
+      </Button>
     </div>
   )
 }

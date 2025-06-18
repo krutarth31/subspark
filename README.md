@@ -62,3 +62,9 @@ http://localhost:3000/dashboard?role=seller
 
 The selected role is stored in the browser so it persists as you navigate around
 the app.
+
+## Seller Subscription
+
+After completing the Stripe onboarding flow sellers are sent to `/price` to pay
+the platform fee. This page calls `/api/seller/activate` to mark the account
+active and then redirects to the dashboard.
