@@ -1,0 +1,44 @@
+"use client"
+import { useEffect, useState } from "react"
+import DashboardLayout from "@/components/dashboard-layout"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
+interface User {
+  name: string
+  email: string
+  avatar?: string
+}
+
+export default function Page() {
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    fetch("/api/auth/user")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.user) setUser(data.user)
+      })
+      .catch(() => {})
+  }, [])
+
+  return (
+    <DashboardLayout title="Account">
+      <div className="flex flex-1 flex-col items-center justify-center p-6">
+        {user ? (
+          <div className="space-y-4 text-center">
+            <Avatar className="mx-auto h-16 w-16">
+              <AvatarImage src={user.avatar} alt={user.name} />
+              <AvatarFallback>{user.name.slice(0, 2)}</AvatarFallback>
+            </Avatar>
+            <div className="space-y-1">
+              <p className="text-lg font-semibold">{user.name}</p>
+              <p className="text-muted-foreground text-sm">{user.email}</p>
+            </div>
+          </div>
+        ) : (
+          <p>Loading...</p>
+        )}
+      </div>
+    </DashboardLayout>
+  )
+}

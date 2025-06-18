@@ -25,8 +25,8 @@ export async function POST(request: Request) {
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price, quantity: 1 }],
-      success_url: `${origin}/dashboard`,
-      cancel_url: `${origin}/price`,
+      success_url: `${origin}/onboarding?step=5`,
+      cancel_url: `${origin}/onboarding?step=4`,
       metadata: { accountId },
     })
     return NextResponse.json({ url: session.url })
