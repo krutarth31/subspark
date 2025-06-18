@@ -28,14 +28,20 @@ export async function POST(request: Request) {
 
   if (event.type === 'account.updated') {
     const account = event.data.object as Stripe.Account
-    const active = account.charges_enabled && account.details_submitted
-    try {
-      const db = await getDb()
-      await db
-        .collection<{ _id: string; active: boolean }>('sellers')
-        .updateOne({ _id: account.id }, { $set: { active } }, { upsert: true })
-    } catch (err) {
-      console.error('DB update failed', err)
+    const ready = account.charges_enabled && account.details_submitted
+    if (!ready) {
+      try {
+        const db = await getDb()
+        await db
+          .collection<{ _id: string; active: boolean }>('sellers')
+          .updateOne(
+            { _id: account.id },
+            { $set: { active: false } },
+            { upsert: true }
+          )
+      } catch (err) {
+        console.error('DB update failed', err)
+      }
     }
   }
 
