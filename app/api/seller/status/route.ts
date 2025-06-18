@@ -27,15 +27,15 @@ export async function GET(request: Request) {
         // ignore
       }
     }
-    if (!accountId) {
-      return NextResponse.json({ error: 'Missing accountId' }, { status: 400 })
+    if (accountId) {
+      if (!seller) {
+        seller = await db
+          .collection<{ _id: string; active: boolean; userId?: ObjectId }>('sellers')
+          .findOne({ _id: accountId })
+      }
+      return NextResponse.json({ active: !!seller?.active, accountId })
     }
-    if (!seller) {
-      seller = await db
-        .collection<{ _id: string; active: boolean; userId?: ObjectId }>('sellers')
-        .findOne({ _id: accountId })
-    }
-    return NextResponse.json({ active: !!seller?.active, accountId })
+    return NextResponse.json({ active: false, accountId: null })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 })
