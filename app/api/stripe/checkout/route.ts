@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     }
     const { origin } = new URL(request.url)
     const session = await getStripe().checkout.sessions.create({
-      mode: 'payment',
+      mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [{ price, quantity: 1 }],
       success_url: `${origin}/dashboard`,
