@@ -30,7 +30,7 @@ export default function OnboardingFlow() {
   const [active, setActive] = useState(false)
   const { setRole } = useUserRole()
   const cardClass =
-    "bg-white/5 backdrop-blur-md border-white/20 text-white shadow-lg"
+    "backdrop-blur-md shadow-lg border border-zinc-200/60 bg-white/70 text-zinc-900 dark:border-white/20 dark:bg-white/5 dark:text-white"
 
   useEffect(() => {
     fetch('/api/seller/status')
