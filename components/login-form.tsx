@@ -43,6 +43,10 @@ export function LoginForm({
       setError(data.error || "Something went wrong")
       return
     }
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("stripe_account_id")
+      window.localStorage.removeItem("role")
+    }
     router.push("/dashboard")
   }
 

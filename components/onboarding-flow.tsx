@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useUserRole } from "@/hooks/use-user-role"
 
 export default function OnboardingFlow() {
   const [step, setStep] = useState(1)
@@ -16,6 +17,7 @@ export default function OnboardingFlow() {
   const [accountId, setAccountId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState(false)
+  const { setRole } = useUserRole()
 
   useEffect(() => {
     const storedId = window.localStorage.getItem("stripe_account_id")
@@ -33,6 +35,7 @@ export default function OnboardingFlow() {
           if (data?.active) {
             setActive(true)
             setStep(4)
+            setRole('seller')
           }
         })
         .catch((err) => {
@@ -44,7 +47,7 @@ export default function OnboardingFlow() {
       const num = parseInt(stepParam)
       if (!isNaN(num)) setStep(num)
     }
-  }, [])
+  }, [setRole])
 
   async function startStripeConnect() {
     try {
@@ -216,9 +219,14 @@ export default function OnboardingFlow() {
           : "Choose a plan to activate your account."}
       </p>
       <Button
-        onClick={() =>
-          (window.location.href = active ? "/dashboard" : "/price")
-        }
+        onClick={() => {
+          if (active) {
+            setRole('seller')
+            window.location.href = '/dashboard'
+          } else {
+            window.location.href = '/price'
+          }
+        }}
       >
         {active ? "Go to Dashboard" : "Continue to Pricing"}
       </Button>

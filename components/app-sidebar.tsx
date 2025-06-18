@@ -32,6 +32,11 @@ const defaultNav = [
     url: "/dashboard",
     icon: IconDashboard,
   },
+  {
+    title: "Create your subspark",
+    url: "/onboarding",
+    icon: IconInnerShadowTop,
+  },
 ]
 
 const sellerNav = [
