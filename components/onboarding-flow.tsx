@@ -29,6 +29,8 @@ export default function OnboardingFlow() {
   const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState(false)
   const { setRole } = useUserRole()
+  const cardClass =
+    "bg-white/5 backdrop-blur-md border-white/20 text-white shadow-lg"
 
   useEffect(() => {
     fetch('/api/seller/status')
@@ -111,7 +113,7 @@ export default function OnboardingFlow() {
 
   if (step === 1) {
     content = (
-      <Card>
+      <Card className={cardClass}>
         <CardHeader className="text-center">
           <CardTitle>Connect Stripe</CardTitle>
           <CardDescription>
@@ -128,7 +130,7 @@ export default function OnboardingFlow() {
     )
   } else if (step === 2) {
     content = (
-      <Card asChild>
+      <Card className={cardClass} asChild>
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -200,7 +202,7 @@ export default function OnboardingFlow() {
     )
   } else if (step === 3) {
     content = (
-      <Card asChild>
+      <Card className={cardClass} asChild>
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -269,7 +271,7 @@ export default function OnboardingFlow() {
     )
   } else if (step === 4) {
     content = (
-      <Card>
+      <Card className={cardClass}>
         <CardHeader className="text-center">
           <CardTitle>Pay subscription</CardTitle>
           <CardDescription>
@@ -313,7 +315,7 @@ export default function OnboardingFlow() {
     )
   } else {
     content = (
-      <Card>
+      <Card className={cardClass}>
         <CardHeader className="text-center">
           <CardTitle>
             {active ? "Onboarding complete!" : "Payment pending"}
@@ -343,7 +345,7 @@ export default function OnboardingFlow() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-5xl gap-10 md:grid-cols-[240px_1fr]">
+    <div className="mx-auto grid w-full max-w-5xl gap-10 rounded-2xl bg-white/5 p-8 backdrop-blur-lg ring-1 ring-white/10 md:grid-cols-[240px_1fr]">
       <ol className="relative hidden flex-col space-y-6 md:flex">
         {stepsList.map((label, idx) => (
           <li key={label} className="flex items-start gap-3">
@@ -351,8 +353,8 @@ export default function OnboardingFlow() {
               <div
                 className={`size-8 rounded-full border flex items-center justify-center font-medium ${
                   step >= idx + 1
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
+                    ? 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white border-none shadow'
+                    : 'bg-zinc-800 border-zinc-700 text-muted-foreground'
                 }`}
               >
                 {step > idx + 1 ? <CheckIcon className="size-4" /> : idx + 1}
@@ -360,7 +362,7 @@ export default function OnboardingFlow() {
               {idx < stepsList.length - 1 && (
                 <div
                   className={`w-px flex-1 ${
-                    step > idx + 1 ? 'bg-primary' : 'bg-border'
+                    step > idx + 1 ? 'bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500' : 'bg-border'
                   }`}
                 />
               )}
@@ -377,8 +379,8 @@ export default function OnboardingFlow() {
                 <div
                   className={`size-7 rounded-full border flex items-center justify-center font-medium ${
                     step >= idx + 1
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
+                      ? 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white border-none shadow'
+                      : 'bg-zinc-800 border-zinc-700 text-muted-foreground'
                   }`}
                 >
                   {step > idx + 1 ? <CheckIcon className="size-4" /> : idx + 1}
@@ -386,7 +388,7 @@ export default function OnboardingFlow() {
                 {idx < stepsList.length - 1 && (
                   <div
                     className={`h-px flex-1 ${
-                      step > idx + 1 ? 'bg-primary' : 'bg-border'
+                      step > idx + 1 ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500' : 'bg-border'
                     }`}
                   />
                 )}
