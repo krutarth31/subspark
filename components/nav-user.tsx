@@ -84,13 +84,17 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
-                Account
+              <DropdownMenuItem asChild>
+                <a href="/account" className="flex items-center gap-2">
+                  <IconUserCircle />
+                  Account
+                </a>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconCreditCard />
-                Billing
+              <DropdownMenuItem asChild>
+                <a href="/billing" className="flex items-center gap-2">
+                  <IconCreditCard />
+                  Billing
+                </a>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <IconNotification />
@@ -98,7 +102,12 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                await fetch('/api/auth/logout', { method: 'POST' })
+                window.location.href = '/'
+              }}
+            >
               <IconLogout />
               Log out
             </DropdownMenuItem>

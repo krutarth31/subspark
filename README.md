@@ -64,10 +64,16 @@ http://localhost:3000/dashboard?role=seller
 The selected role is stored in the browser so it persists as you navigate around
 the app.
 
+## Onboarding Flow
+
+The seller onboarding uses a modern vertical stepper inspired by popular store
+builders. Each step presents a full-width card guiding the user from connecting
+Stripe to paying the platform fee.
+
 ## Seller Subscription
 
-After completing the Stripe onboarding flow sellers are sent to `/price` to pay
-the platform fee. Clicking **Pay Subscription** creates a Stripe Checkout
-session via `/api/stripe/checkout` and redirects the seller to pay. When the
-checkout is completed the webhook marks the seller account active and the user
-is returned to the dashboard.
+After completing the verification step the onboarding flow presents a
+subscription screen where sellers pay the platform fee. Clicking **Pay
+Subscription** creates a Stripe Checkout session via `/api/stripe/checkout` and
+redirects the seller to Stripe. When the checkout completes the webhook marks
+the seller account active and the user can continue to the dashboard.
