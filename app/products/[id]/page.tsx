@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 
 interface Product {
   _id: string
@@ -40,7 +41,14 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
       .catch(() => setLoading(false))
   }, [params.id])
 
-  if (loading) return <DashboardLayout title="Product">Loading...</DashboardLayout>
+  if (loading)
+    return (
+      <DashboardLayout title="Product">
+        <div className="flex flex-1 items-center justify-center p-6">
+          <Spinner className="size-6" />
+        </div>
+      </DashboardLayout>
+    )
   if (!product) return <DashboardLayout title="Product">Not found</DashboardLayout>
 
   return (

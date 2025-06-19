@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Spinner } from "@/components/ui/spinner"
 
 interface User {
   name: string
@@ -36,7 +37,7 @@ export default function Page() {
             </div>
           </div>
         ) : (
-          <p>Loading...</p>
+          <Spinner className="size-6" />
         )}
       </div>
     </DashboardLayout>
