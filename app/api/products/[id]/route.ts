@@ -8,6 +8,8 @@ const productSchema = z.object({
   name: z.string().min(1),
   price: z.number().nonnegative(),
   description: z.string().optional(),
+  type: z.enum(['discord', 'file', 'key']).optional(),
+  status: z.enum(['draft', 'published']).optional(),
 })
 
 export async function GET(
@@ -18,7 +20,17 @@ export async function GET(
     const db = await getDb()
     const id = params.id
     const product = await db
-      .collection<{ _id: ObjectId; userId: ObjectId; name: string; price: number; description?: string }>('products')
+      .collection<{
+        _id: ObjectId
+        userId: ObjectId
+        name: string
+        price: number
+        description?: string
+        type: string
+        status: string
+        createdAt: Date
+        archived?: boolean
+      }>('products')
       .findOne({ _id: new ObjectId(id) })
     if (!product) return NextResponse.json({ product: null }, { status: 404 })
     return NextResponse.json({ product })
@@ -56,5 +68,29 @@ export async function PUT(
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Failed to update product' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const db = await getDb()
+    const token = cookies().get('session')?.value
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const session = await db
+      .collection<{ token: string; userId: ObjectId }>('sessions')
+      .findOne({ token })
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const id = params.id
+    await db.collection('products').updateOne(
+      { _id: new ObjectId(id), userId: session.userId },
+      { $set: { archived: true } }
+    )
+    return NextResponse.json({ ok: true })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Failed to archive product' }, { status: 500 })
   }
 }

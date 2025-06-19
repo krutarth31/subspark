@@ -8,6 +8,8 @@ const productSchema = z.object({
   name: z.string().min(1),
   price: z.number().nonnegative(),
   description: z.string().optional(),
+  type: z.enum(['discord', 'file', 'key']),
+  status: z.enum(['draft', 'published']).default('draft'),
 })
 
 export async function GET() {
@@ -20,8 +22,18 @@ export async function GET() {
       .findOne({ token })
     if (!session) return NextResponse.json({ products: [] })
     const products = await db
-      .collection<{ _id: ObjectId; userId: ObjectId; name: string; price: number; description?: string }>('products')
-      .find({ userId: session.userId })
+      .collection<{
+        _id: ObjectId
+        userId: ObjectId
+        name: string
+        price: number
+        description?: string
+        type: string
+        status: string
+        createdAt: Date
+        archived?: boolean
+      }>('products')
+      .find({ userId: session.userId, archived: { $ne: true } })
       .toArray()
     return NextResponse.json({ products })
   } catch (err) {
@@ -47,6 +59,8 @@ export async function POST(request: Request) {
     const product = {
       ...parsed.data,
       userId: session.userId,
+      archived: false,
+      createdAt: new Date(),
     }
     const result = await db.collection('products').insertOne(product)
     return NextResponse.json({ id: result.insertedId })

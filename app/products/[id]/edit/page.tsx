@@ -11,6 +11,8 @@ interface Product {
   name: string
   price: number
   description?: string
+  type: 'discord' | 'file' | 'key'
+  status: 'draft' | 'published'
 }
 
 export default function EditProductPage({ params }: { params: { id: string } }) {
@@ -19,6 +21,8 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [description, setDescription] = useState('')
+  const [type, setType] = useState<'discord' | 'file' | 'key'>('discord')
+  const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -30,6 +34,8 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           setName(data.product.name)
           setPrice(String(data.product.price))
           setDescription(data.product.description || '')
+          setType(data.product.type)
+          setStatus(data.product.status)
         }
       })
   }, [params.id])
@@ -44,7 +50,13 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     const res = await fetch(`/api/products/${params.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, price: priceNumber, description }),
+      body: JSON.stringify({
+        name,
+        price: priceNumber,
+        description,
+        type,
+        status,
+      }),
     })
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
@@ -70,6 +82,31 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
           <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="type">Type</Label>
+          <select
+            id="type"
+            className="w-full rounded border px-2 py-1 text-sm"
+            value={type}
+            onChange={(e) => setType(e.target.value as 'discord' | 'file' | 'key')}
+          >
+            <option value="discord">Discord</option>
+            <option value="file">File</option>
+            <option value="key">Key</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="status">Status</Label>
+          <select
+            id="status"
+            className="w-full rounded border px-2 py-1 text-sm"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as 'draft' | 'published')}
+          >
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+          </select>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit">Save</Button>

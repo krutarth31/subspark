@@ -22,6 +22,8 @@ export default function OnboardingFlow() {
   const [productName, setProductName] = useState("")
   const [productPrice, setProductPrice] = useState("")
   const [productDesc, setProductDesc] = useState("")
+  const [productType, setProductType] = useState<'discord' | 'file' | 'key'>('discord')
+  const [productStatus, setProductStatus] = useState<'draft' | 'published'>('draft')
   const [avatar, setAvatar] = useState<File | null>(null)
   const [banner, setBanner] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -220,7 +222,13 @@ export default function OnboardingFlow() {
             const res = await fetch('/api/products', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ name: productName, price, description: productDesc }),
+              body: JSON.stringify({
+                name: productName,
+                price,
+                description: productDesc,
+                type: productType,
+                status: productStatus,
+              }),
             })
             if (!res.ok) {
               const data = await res.json().catch(() => ({}))
@@ -248,6 +256,31 @@ export default function OnboardingFlow() {
             <div className="space-y-2">
               <Label htmlFor="pdesc">Description</Label>
               <Input id="pdesc" value={productDesc} onChange={(e) => setProductDesc(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ptype">Type</Label>
+              <select
+                id="ptype"
+                className="w-full rounded border px-2 py-1 text-sm"
+                value={productType}
+                onChange={(e) => setProductType(e.target.value as 'discord' | 'file' | 'key')}
+              >
+                <option value="discord">Discord</option>
+                <option value="file">File</option>
+                <option value="key">Key</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pstatus">Status</Label>
+              <select
+                id="pstatus"
+                className="w-full rounded border px-2 py-1 text-sm"
+                value={productStatus}
+                onChange={(e) => setProductStatus(e.target.value as 'draft' | 'published')}
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </CardContent>
