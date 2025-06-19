@@ -43,6 +43,7 @@ export default function NewProductPage() {
   const [availableUnits, setAvailableUnits] = useState("")
   const [unlimited, setUnlimited] = useState(false)
   const [planDescription, setPlanDescription] = useState("")
+  const [autoExpire, setAutoExpire] = useState(false)
   const [expireDays, setExpireDays] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
@@ -74,6 +75,7 @@ export default function NewProductPage() {
         setAvailableUnits(data.availableUnits || "")
         setUnlimited(Boolean(data.unlimited))
         setPlanDescription(data.planDescription || "")
+        setAutoExpire(Boolean(data.autoExpire))
         setExpireDays(data.expireDays || "")
       } catch {
         /* ignore */
@@ -106,6 +108,7 @@ export default function NewProductPage() {
       availableUnits,
       unlimited,
       planDescription,
+      autoExpire,
       expireDays,
     }
     localStorage.setItem("newProduct", JSON.stringify(data))
@@ -122,6 +125,7 @@ export default function NewProductPage() {
     availableUnits,
     unlimited,
     planDescription,
+    autoExpire,
     expireDays,
     currency,
     period,
@@ -187,7 +191,7 @@ export default function NewProductPage() {
           planDescription,
           availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
           unlimited,
-          expireDays: expireDays ? parseInt(expireDays) : null,
+          expireDays: autoExpire && expireDays ? parseInt(expireDays) : null,
           deliveryFile: contentFile ? contentFile.name : undefined,
           serverId,
           roleId,
@@ -391,12 +395,21 @@ export default function NewProductPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="expire">Auto expire access (days)</Label>
-                        <Input
-                          id="expire"
-                          value={expireDays}
-                          onChange={(e) => setExpireDays(e.target.value)}
-                        />
+                        <label className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={autoExpire}
+                            onCheckedChange={(v) => setAutoExpire(!!v)}
+                          />
+                          Auto expire access
+                        </label>
+                        {autoExpire && (
+                          <Input
+                            id="expire"
+                            value={expireDays}
+                            onChange={(e) => setExpireDays(e.target.value)}
+                            placeholder="Days"
+                          />
+                        )}
                       </div>
                     </>
                   )}
@@ -544,7 +557,7 @@ export default function NewProductPage() {
                       <strong>Plan:</strong> {planDescription}
                     </p>
                   )}
-                  {expireDays && (
+                  {autoExpire && expireDays && (
                     <p>
                       <strong>Expires in:</strong> {expireDays} days
                     </p>

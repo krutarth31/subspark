@@ -43,6 +43,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [billing, setBilling] = useState<'free' | 'one' | 'recurring'>('one')
   const [description, setDescription] = useState('')
   const [planDescription, setPlanDescription] = useState('')
+  const [autoExpire, setAutoExpire] = useState(false)
   const [availableUnits, setAvailableUnits] = useState('')
   const [unlimited, setUnlimited] = useState(false)
   const [expireDays, setExpireDays] = useState('')
@@ -69,6 +70,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           setPlanDescription(data.product.planDescription || '')
           setAvailableUnits(data.product.availableUnits ? String(data.product.availableUnits) : '')
           setUnlimited(Boolean(data.product.unlimited))
+          setAutoExpire(!!data.product.expireDays)
           setExpireDays(data.product.expireDays ? String(data.product.expireDays) : '')
           setDeliveryFile(data.product.deliveryFile || '')
           setServerId(data.product.serverId || '')
@@ -103,7 +105,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           planDescription,
           availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
           unlimited,
-          expireDays: expireDays ? parseInt(expireDays) : null,
+          expireDays: autoExpire && expireDays ? parseInt(expireDays) : null,
           deliveryFile,
           serverId,
           roleId,
@@ -189,12 +191,21 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="expire">Auto expire access (days)</Label>
-              <Input
-                id="expire"
-                value={expireDays}
-                onChange={(e) => setExpireDays(e.target.value)}
-              />
+              <label className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={autoExpire}
+                  onCheckedChange={(v) => setAutoExpire(!!v)}
+                />
+                Auto expire access
+              </label>
+              {autoExpire && (
+                <Input
+                  id="expire"
+                  value={expireDays}
+                  onChange={(e) => setExpireDays(e.target.value)}
+                  placeholder="Days"
+                />
+              )}
             </div>
           </>
         )}
