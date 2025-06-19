@@ -29,6 +29,8 @@ export async function GET(
         type: string
         status: string
         createdAt: Date
+        updatedAt?: Date
+        sales?: number
         archived?: boolean
       }>('products')
       .findOne({ _id: new ObjectId(id) })
@@ -62,7 +64,7 @@ export async function PUT(
       .collection('products')
       .updateOne(
         { _id: new ObjectId(id), userId: session.userId },
-        { $set: parsed.data }
+        { $set: { ...parsed.data, updatedAt: new Date() } }
       )
     return NextResponse.json({ ok: true })
   } catch (err) {

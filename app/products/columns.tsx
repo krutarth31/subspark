@@ -20,6 +20,8 @@ export type Product = {
   type: "discord" | "file" | "key"
   status: "draft" | "published"
   createdAt: string
+  updatedAt?: string
+  sales?: number
 }
 
 export function getColumns(onArchive: (id: string) => void): ColumnDef<Product>[] {
@@ -34,6 +36,14 @@ export function getColumns(onArchive: (id: string) => void): ColumnDef<Product>[
     cell: ({ row }) => {
       const price = parseFloat(row.getValue("price"))
       return <div className="text-right font-medium">${price.toFixed(2)}</div>
+    },
+  },
+  {
+    accessorKey: "sales",
+    header: () => <div className="text-right">Sales</div>,
+    cell: ({ row }) => {
+      const count = row.getValue<number>("sales") || 0
+      return <div className="text-right">{count}</div>
     },
   },
   {
@@ -53,6 +63,14 @@ export function getColumns(onArchive: (id: string) => void): ColumnDef<Product>[
     },
   },
   {
+    accessorKey: "updatedAt",
+    header: "Updated",
+    cell: ({ row }) => {
+      const val = row.getValue<string>("updatedAt")
+      return val ? new Date(val).toLocaleDateString() : "-"
+    },
+  },
+  {
     id: "actions",
     cell: ({ row }) => {
       const product = row.original
@@ -67,7 +85,19 @@ export function getColumns(onArchive: (id: string) => void): ColumnDef<Product>[
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem asChild>
+              <a href={`/products/${product._id}`}>View</a>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
               <a href={`/products/${product._id}/edit`}>Edit</a>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                navigator.clipboard.writeText(
+                  `${window.location.origin}/buy/${product._id}`
+                )
+              }
+            >
+              Copy Link
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onArchive(product._id)}>

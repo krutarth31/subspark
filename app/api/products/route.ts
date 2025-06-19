@@ -31,6 +31,8 @@ export async function GET() {
         type: string
         status: string
         createdAt: Date
+        updatedAt?: Date
+        sales?: number
         archived?: boolean
       }>('products')
       .find({ userId: session.userId, archived: { $ne: true } })
@@ -61,6 +63,8 @@ export async function POST(request: Request) {
       userId: session.userId,
       archived: false,
       createdAt: new Date(),
+      updatedAt: new Date(),
+      sales: 0,
     }
     const result = await db.collection('products').insertOne(product)
     return NextResponse.json({ id: result.insertedId })
