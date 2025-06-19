@@ -6,6 +6,14 @@ import DashboardLayout from '@/components/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface Product {
   name: string
@@ -105,16 +113,16 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         </div>
         <div className="space-y-2">
           <Label htmlFor="billing">Billing</Label>
-          <select
-            id="billing"
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={billing}
-            onChange={(e) => setBilling(e.target.value as 'free' | 'one' | 'recurring')}
-          >
-            <option value="free">Free</option>
-            <option value="one">One time</option>
-            <option value="recurring">Recurring</option>
-          </select>
+          <Select value={billing} onValueChange={(v) => setBilling(v as 'free' | 'one' | 'recurring')}>
+            <SelectTrigger id="billing" className="w-full">
+              <SelectValue placeholder="Select billing" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="free">Free</SelectItem>
+              <SelectItem value="one">One time</SelectItem>
+              <SelectItem value="recurring">Recurring</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         {billing !== 'free' && (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -138,10 +146,9 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
               disabled={unlimited}
             />
             <label className="flex items-center gap-1 text-sm">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={unlimited}
-                onChange={(e) => setUnlimited(e.target.checked)}
+                onCheckedChange={(v) => setUnlimited(!!v)}
               />
               Unlimited
             </label>
@@ -171,15 +178,15 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         {billing === 'recurring' && (
           <div className="space-y-2">
             <Label htmlFor="period">Subscription period</Label>
-            <select
-              id="period"
-              className="w-full rounded border px-2 py-1 text-sm"
-              value={period}
-              onChange={(e) => setPeriod(e.target.value)}
-            >
-              <option value="month">Monthly</option>
-              <option value="year">Yearly</option>
-            </select>
+            <Select value={period} onValueChange={setPeriod}>
+              <SelectTrigger id="period" className="w-full">
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Monthly</SelectItem>
+                <SelectItem value="year">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         )}
         <div className="space-y-2">
@@ -188,28 +195,28 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         </div>
         <div className="space-y-2">
           <Label htmlFor="type">Type</Label>
-          <select
-            id="type"
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={type}
-            onChange={(e) => setType(e.target.value as 'discord' | 'file' | 'key')}
-          >
-            <option value="discord">Discord</option>
-            <option value="file">File</option>
-            <option value="key">Key</option>
-          </select>
+          <Select value={type} onValueChange={(v) => setType(v as 'discord' | 'file' | 'key')}>
+            <SelectTrigger id="type" className="w-full">
+              <SelectValue placeholder="Select type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="discord">Discord</SelectItem>
+              <SelectItem value="file">File</SelectItem>
+              <SelectItem value="key">Key</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="status">Status</Label>
-          <select
-            id="status"
-            className="w-full rounded border px-2 py-1 text-sm"
-            value={status}
-            onChange={(e) => setStatus(e.target.value as 'draft' | 'published')}
-          >
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
+          <Select value={status} onValueChange={(v) => setStatus(v as 'draft' | 'published')}>
+            <SelectTrigger id="status" className="w-full">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="draft">Draft</SelectItem>
+              <SelectItem value="published">Published</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
         <Button type="submit">Save</Button>

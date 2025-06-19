@@ -12,6 +12,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CheckIcon, FileIcon, KeyIcon, ServerIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -353,15 +361,14 @@ export default function NewProductPage() {
                         disabled={unlimited}
                       />
                       <label className="flex items-center gap-1 text-sm">
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={unlimited}
-                          onChange={(e) => setUnlimited(e.target.checked)}
+                          onCheckedChange={(v) => setUnlimited(!!v)}
                         />
                         Unlimited
                       </label>
-                    </div>
                   </div>
+                </div>
                   {billing !== 'recurring' && (
                     <>
                       <div className="space-y-2">
@@ -386,15 +393,15 @@ export default function NewProductPage() {
                   {billing === 'recurring' && (
                     <div className="space-y-2">
                       <Label htmlFor="period">Subscription period</Label>
-                      <select
-                        id="period"
-                        className="w-full rounded-md border px-3 py-1"
-                        value={period}
-                        onChange={(e) => setPeriod(e.target.value)}
-                      >
-                        <option value="month">Monthly</option>
-                        <option value="year">Yearly</option>
-                      </select>
+                      <Select value={period} onValueChange={setPeriod}>
+                        <SelectTrigger id="period" className="w-full">
+                          <SelectValue placeholder="Select period" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="month">Monthly</SelectItem>
+                          <SelectItem value="year">Yearly</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                 </div>
@@ -529,10 +536,9 @@ export default function NewProductPage() {
               </Button>
               <div className="flex items-center gap-2">
                 <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={status === "published"}
-                    onChange={(e) => setStatus(e.target.checked ? "published" : "draft")}
+                    onCheckedChange={(v) => setStatus(v ? "published" : "draft")}
                   />
                   Publish now
                 </label>

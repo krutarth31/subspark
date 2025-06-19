@@ -13,6 +13,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useUserRole } from "@/hooks/use-user-role"
 
 export default function OnboardingFlow() {
@@ -259,28 +267,28 @@ export default function OnboardingFlow() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="ptype">Type</Label>
-              <select
-                id="ptype"
-                className="w-full rounded border px-2 py-1 text-sm"
-                value={productType}
-                onChange={(e) => setProductType(e.target.value as 'discord' | 'file' | 'key')}
-              >
-                <option value="discord">Discord</option>
-                <option value="file">File</option>
-                <option value="key">Key</option>
-              </select>
+              <Select value={productType} onValueChange={(v) => setProductType(v as 'discord' | 'file' | 'key')}>
+                <SelectTrigger id="ptype" className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="discord">Discord</SelectItem>
+                  <SelectItem value="file">File</SelectItem>
+                  <SelectItem value="key">Key</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="pstatus">Status</Label>
-              <select
-                id="pstatus"
-                className="w-full rounded border px-2 py-1 text-sm"
-                value={productStatus}
-                onChange={(e) => setProductStatus(e.target.value as 'draft' | 'published')}
-              >
-                <option value="draft">Draft</option>
-                <option value="published">Published</option>
-              </select>
+              <Select value={productStatus} onValueChange={(v) => setProductStatus(v as 'draft' | 'published')}>
+                <SelectTrigger id="pstatus" className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             {error ? <p className="text-sm text-destructive">{error}</p> : null}
           </CardContent>
@@ -344,10 +352,9 @@ export default function OnboardingFlow() {
               {loading ? "Redirecting..." : "Start verification"}
             </Button>
             <Label className="gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={accepted}
-                onChange={(e) => setAccepted(e.target.checked)}
+                onCheckedChange={(v) => setAccepted(!!v)}
                 required
               />
               I agree to the terms and conditions
