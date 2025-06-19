@@ -11,9 +11,13 @@ const productSchema = z.object({
   billing: z.enum(['free', 'one', 'recurring']).optional(),
   description: z.string().optional(),
   planDescription: z.string().optional(),
-  availableUnits: z.number().int().positive().optional(),
+  availableUnits: z
+    .number()
+    .int()
+    .positive()
+    .nullish(),
   unlimited: z.boolean().optional(),
-  expireDays: z.number().int().positive().optional(),
+  expireDays: z.number().int().positive().nullish(),
   period: z.enum(['day', 'week', 'month', 'year']).optional(),
   type: z.enum(['discord', 'file', 'key']).optional(),
   status: z.enum(['draft', 'published']).optional(),
