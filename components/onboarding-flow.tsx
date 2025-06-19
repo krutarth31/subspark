@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 import {
   Select,
   SelectContent,
@@ -137,6 +138,7 @@ export default function OnboardingFlow() {
         <CardContent className="flex flex-col items-center gap-4">
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button className="w-full" onClick={startStripeConnect} disabled={loading}>
+            {loading && <Spinner className="mr-2" />}
             {loading ? "Redirecting..." : "Connect with Stripe"}
           </Button>
         </CardContent>
@@ -294,6 +296,7 @@ export default function OnboardingFlow() {
           </CardContent>
           <CardFooter>
             <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Spinner className="mr-2" />}
               {loading ? 'Saving...' : 'Save and Continue'}
             </Button>
           </CardFooter>
@@ -349,6 +352,7 @@ export default function OnboardingFlow() {
               }}
               disabled={loading}
             >
+              {loading && <Spinner className="mr-2" />}
               {loading ? "Redirecting..." : "Start verification"}
             </Button>
             <Label className="gap-2">
@@ -407,6 +411,7 @@ export default function OnboardingFlow() {
             disabled={loading}
             className="w-full"
           >
+            {loading && <Spinner className="mr-2" />}
             {loading ? 'Processing...' : 'Pay Subscription'}
           </Button>
         </CardContent>

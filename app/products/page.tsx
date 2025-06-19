@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/dashboard-layout'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
+import { Spinner } from '@/components/ui/spinner'
 import Link from 'next/link'
 import { getColumns, Product } from './columns'
 
@@ -33,7 +34,14 @@ export default function ProductsPage() {
     )
   }
 
-  if (loading) return <DashboardLayout title="Products">Loading...</DashboardLayout>
+  if (loading)
+    return (
+      <DashboardLayout title="Products">
+        <div className="flex flex-1 items-center justify-center p-6">
+          <Spinner className="size-6" />
+        </div>
+      </DashboardLayout>
+    )
 
   return (
     <DashboardLayout title="Products">

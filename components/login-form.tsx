@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Spinner } from "@/components/ui/spinner"
 
 export function LoginForm({
   className,
@@ -19,11 +20,13 @@ export function LoginForm({
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
   const router = useRouter()
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError("")
+    setLoading(true)
     const url = mode === "login" ? "/api/auth/login" : "/api/auth/register"
     const body: Record<string, string> = { email, password }
     if (mode === "register") {
@@ -41,10 +44,12 @@ export function LoginForm({
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       setError(data.error || "Something went wrong")
+      setLoading(false)
       return
     }
     // Clear any stale client-side data
     router.push("/dashboard")
+    setLoading(false)
   }
 
   return (
@@ -128,7 +133,8 @@ export function LoginForm({
           </div>
         )}
         {error && <p className="text-sm text-red-500">{error}</p>}
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading && <Spinner className="mr-2" />} 
           {mode === "login" ? "Login" : "Register"}
         </Button>
         <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-t">

@@ -23,6 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { CheckIcon, FileIcon, KeyIcon, ServerIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Spinner } from "@/components/ui/spinner"
 
 const types = [
   { id: "file", label: "File", icon: FileIcon },
@@ -54,6 +55,7 @@ export default function NewProductPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null)
   const [status, setStatus] = useState<"draft" | "published">("draft")
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   // persist between reloads
   useEffect(() => {
@@ -176,6 +178,7 @@ export default function NewProductPage() {
       setError("Invalid price")
       return
     }
+    setLoading(true)
     let res: Response
     try {
       res = await fetch("/api/products", {
@@ -202,15 +205,18 @@ export default function NewProductPage() {
       })
     } catch {
       setError('Network error')
+      setLoading(false)
       return
     }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       setError(data.error || "Failed to save")
+      setLoading(false)
       return
     }
     localStorage.removeItem("newProduct")
     router.push("/products")
+    setLoading(false)
   }
 
   return (
@@ -580,7 +586,9 @@ export default function NewProductPage() {
                   />
                   Publish now
                 </label>
-                <Button onClick={handlePublish}>Save</Button>
+                <Button onClick={handlePublish} disabled={loading}>
+                  {loading && <Spinner className="mr-2" />}Save
+                </Button>
               </div>
             </CardFooter>
             {error && (

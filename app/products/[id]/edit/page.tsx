@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Spinner } from '@/components/ui/spinner'
 import {
   Select,
   SelectContent,
@@ -47,6 +48,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [availableUnits, setAvailableUnits] = useState('')
   const [unlimited, setUnlimited] = useState(false)
   const [expireDays, setExpireDays] = useState('')
+  const [loading, setLoading] = useState(false)
   const [deliveryFile, setDeliveryFile] = useState('')
   const [serverId, setServerId] = useState('')
   const [roleId, setRoleId] = useState('')
@@ -91,6 +93,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       setError('Invalid price')
       return
     }
+    setLoading(true)
     let res: Response
     try {
       res = await fetch(`/api/products/${params.id}`, {
@@ -117,17 +120,27 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       })
     } catch {
       setError('Network error')
+      setLoading(false)
       return
     }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       setError(data.error || 'Update failed')
+      setLoading(false)
       return
     }
     router.push('/products')
+    setLoading(false)
   }
 
-  if (!product) return <DashboardLayout title="Edit Product">Loading...</DashboardLayout>
+  if (!product)
+    return (
+      <DashboardLayout title="Edit Product">
+        <div className="flex flex-1 items-center justify-center p-6">
+          <Spinner className="size-6" />
+        </div>
+      </DashboardLayout>
+    )
 
   return (
     <DashboardLayout title="Edit Product">
@@ -278,7 +291,9 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           </Select>
         </div>
         {error && <p className="text-sm text-red-500">{error}</p>}
-        <Button type="submit">Save</Button>
+        <Button type="submit" disabled={loading}>
+          {loading && <Spinner className="mr-2" />}Save
+        </Button>
       </form>
     </DashboardLayout>
   )
