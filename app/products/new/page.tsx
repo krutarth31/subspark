@@ -172,24 +172,34 @@ export default function NewProductPage() {
       setError("Invalid price")
       return
     }
-    const res = await fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        description,
-        price: priceNumber,
-        currency,
-        billing,
-        period: billing === 'recurring' ? period : undefined,
-        planDescription,
-        availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
-        unlimited,
-        expireDays: expireDays ? parseInt(expireDays) : null,
-        type,
-        status,
-      }),
-    })
+    let res: Response
+    try {
+      res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          description,
+          price: priceNumber,
+          currency,
+          billing,
+          period: billing === 'recurring' ? period : undefined,
+          planDescription,
+          availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
+          unlimited,
+          expireDays: expireDays ? parseInt(expireDays) : null,
+          deliveryFile: contentFile ? contentFile.name : undefined,
+          serverId,
+          roleId,
+          licenseKeys,
+          type,
+          status,
+        }),
+      })
+    } catch {
+      setError('Network error')
+      return
+    }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       setError(data.error || "Failed to save")
@@ -512,6 +522,21 @@ export default function NewProductPage() {
                 <strong>Units:</strong>{' '}
                 {unlimited ? 'Unlimited' : availableUnits || '-'}
               </p>
+              {type === 'file' && contentFile && (
+                <p>
+                  <strong>File:</strong> {contentFile.name}
+                </p>
+              )}
+              {type === 'discord' && (
+                <p>
+                  <strong>Discord:</strong> {serverId} / {roleId}
+                </p>
+              )}
+              {type === 'key' && licenseKeys && (
+                <p>
+                  <strong>Keys:</strong> {licenseKeys.split('\n').length}
+                </p>
+              )}
               {(billing === 'free' || billing === 'one') && (
                 <>
                   {planDescription && (

@@ -28,6 +28,10 @@ interface Product {
   period?: string
   type: 'discord' | 'file' | 'key'
   status: 'draft' | 'published'
+  deliveryFile?: string
+  serverId?: string
+  roleId?: string
+  licenseKeys?: string
 }
 
 export default function EditProductPage({ params }: { params: { id: string } }) {
@@ -42,6 +46,10 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [availableUnits, setAvailableUnits] = useState('')
   const [unlimited, setUnlimited] = useState(false)
   const [expireDays, setExpireDays] = useState('')
+  const [deliveryFile, setDeliveryFile] = useState('')
+  const [serverId, setServerId] = useState('')
+  const [roleId, setRoleId] = useState('')
+  const [licenseKeys, setLicenseKeys] = useState('')
   const [period, setPeriod] = useState('month')
   const [type, setType] = useState<'discord' | 'file' | 'key'>('discord')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
@@ -62,11 +70,16 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           setAvailableUnits(data.product.availableUnits ? String(data.product.availableUnits) : '')
           setUnlimited(Boolean(data.product.unlimited))
           setExpireDays(data.product.expireDays ? String(data.product.expireDays) : '')
+          setDeliveryFile(data.product.deliveryFile || '')
+          setServerId(data.product.serverId || '')
+          setRoleId(data.product.roleId || '')
+          setLicenseKeys(data.product.licenseKeys || '')
           setPeriod(data.product.period || 'month')
           setType(data.product.type)
           setStatus(data.product.status)
         }
       })
+      .catch(() => setError('Failed to load product'))
   }, [params.id])
 
   async function handleSubmit(e: React.FormEvent) {
@@ -76,24 +89,34 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       setError('Invalid price')
       return
     }
-    const res = await fetch(`/api/products/${params.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        price: priceNumber,
-        currency,
-        billing,
-        period: billing === 'recurring' ? period : undefined,
-        planDescription,
-        availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
-        unlimited,
-        expireDays: expireDays ? parseInt(expireDays) : null,
-        description,
-        type,
-        status,
-      }),
-    })
+    let res: Response
+    try {
+      res = await fetch(`/api/products/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name,
+          price: priceNumber,
+          currency,
+          billing,
+          period: billing === 'recurring' ? period : undefined,
+          planDescription,
+          availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
+          unlimited,
+          expireDays: expireDays ? parseInt(expireDays) : null,
+          deliveryFile,
+          serverId,
+          roleId,
+          licenseKeys,
+          description,
+          type,
+          status,
+        }),
+      })
+    } catch {
+      setError('Network error')
+      return
+    }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       setError(data.error || 'Update failed')
@@ -187,6 +210,31 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 <SelectItem value="year">Yearly</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        )}
+        {type === 'file' && (
+          <div className="space-y-2">
+            <Label htmlFor="deliveryFile">File name</Label>
+            <Input id="deliveryFile" value={deliveryFile} onChange={(e) => setDeliveryFile(e.target.value)} />
+          </div>
+        )}
+        {type === 'discord' && (
+          <div className="space-y-2">
+            <Label htmlFor="serverId">Server ID</Label>
+            <Input id="serverId" value={serverId} onChange={(e) => setServerId(e.target.value)} />
+            <Label htmlFor="roleId">Role ID</Label>
+            <Input id="roleId" value={roleId} onChange={(e) => setRoleId(e.target.value)} />
+          </div>
+        )}
+        {type === 'key' && (
+          <div className="space-y-2">
+            <Label htmlFor="licenseKeys">License Keys</Label>
+            <textarea
+              id="licenseKeys"
+              className="min-h-[100px] w-full rounded border px-2 py-1"
+              value={licenseKeys}
+              onChange={(e) => setLicenseKeys(e.target.value)}
+            />
           </div>
         )}
         <div className="space-y-2">

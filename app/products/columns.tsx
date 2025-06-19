@@ -29,6 +29,10 @@ export type Product = {
   createdAt: string
   updatedAt?: string
   sales?: number
+  deliveryFile?: string
+  serverId?: string
+  roleId?: string
+  licenseKeys?: string
 }
 
 export function getColumns(onArchive: (id: string) => void): ColumnDef<Product>[] {

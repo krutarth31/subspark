@@ -17,6 +17,10 @@ const productSchema = z.object({
   period: z.enum(['day', 'week', 'month', 'year']).optional(),
   type: z.enum(['discord', 'file', 'key']),
   status: z.enum(['draft', 'published']).default('draft'),
+  deliveryFile: z.string().optional(),
+  serverId: z.string().optional(),
+  roleId: z.string().optional(),
+  licenseKeys: z.string().optional(),
 })
 
 export async function GET() {
@@ -48,6 +52,10 @@ export async function GET() {
         updatedAt?: Date
         sales?: number
         archived?: boolean
+        deliveryFile?: string
+        serverId?: string
+        roleId?: string
+        licenseKeys?: string
       }>('products')
       .find({ userId: session.userId, archived: { $ne: true } })
       .toArray()

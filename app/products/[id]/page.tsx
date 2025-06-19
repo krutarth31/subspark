@@ -20,6 +20,10 @@ interface Product {
   sales?: number
   createdAt: string
   updatedAt?: string
+  deliveryFile?: string
+  serverId?: string
+  roleId?: string
+  licenseKeys?: string
 }
 
 export default function ViewProductPage({ params }: { params: { id: string } }) {
@@ -55,6 +59,21 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
           <strong>Units:</strong>{' '}
           {product.unlimited ? 'Unlimited' : product.availableUnits ?? '-'}
         </p>
+        {product.type === 'file' && product.deliveryFile && (
+          <p>
+            <strong>File:</strong> {product.deliveryFile}
+          </p>
+        )}
+        {product.type === 'discord' && (
+          <p>
+            <strong>Discord:</strong> {product.serverId} / {product.roleId}
+          </p>
+        )}
+        {product.type === 'key' && product.licenseKeys && (
+          <p>
+            <strong>Keys:</strong> {product.licenseKeys.split('\n').length}
+          </p>
+        )}
         {(product.billing === 'free' || product.billing === 'one') && (
           <>
             {product.planDescription && (
