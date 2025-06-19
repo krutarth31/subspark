@@ -25,7 +25,7 @@ const types = [
 export default function NewProductPage() {
   const router = useRouter()
   const [step, setStep] = useState(1)
-  const [type, setType] = useState<string>("file")
+  const [type, setType] = useState<string>("")
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("10")
@@ -41,7 +41,7 @@ export default function NewProductPage() {
     if (stored) {
       try {
         const data = JSON.parse(stored)
-        setType(data.type || "file")
+        setType(data.type || "")
         setName(data.name || "")
         setDescription(data.description || "")
         setPrice(data.price || "10")
@@ -145,6 +145,11 @@ export default function NewProductPage() {
                 })}
               </div>
             </CardContent>
+            <CardFooter className="justify-end">
+              <Button onClick={() => setStep(2)} disabled={nextDisabled()}>
+                Next
+              </Button>
+            </CardFooter>
           </Card>
         )}
         {step === 2 && (
