@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/dashboard-layout'
 import { Input } from '@/components/ui/input'
 import { DataTable } from '@/components/ui/data-table'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 import { getColumns, Product } from './columns'
 
 export default function ProductsPage() {
@@ -36,11 +38,16 @@ export default function ProductsPage() {
   return (
     <DashboardLayout title="Products">
       <div className="p-4 space-y-4">
-        <Input
-          placeholder="Search products..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search products..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <Button asChild>
+            <Link href="/products/new">Add Product</Link>
+          </Button>
+        </div>
         {filtered.length === 0 ? (
           <p>No products found.</p>
         ) : (
