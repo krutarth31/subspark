@@ -32,6 +32,11 @@ export default function NewProductPage() {
   const [billing, setBilling] = useState("one")
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [contentFile, setContentFile] = useState<File | null>(null)
+  const [serverId, setServerId] = useState("")
+  const [roleId, setRoleId] = useState("")
+  const [licenseKeys, setLicenseKeys] = useState("")
+  const [csvFile, setCsvFile] = useState<File | null>(null)
   const [status, setStatus] = useState<"draft" | "published">("draft")
   const [error, setError] = useState<string | null>(null)
 
@@ -47,6 +52,9 @@ export default function NewProductPage() {
         setPrice(data.price || "10")
         setBilling(data.billing || "one")
         setStatus(data.status || "draft")
+        setServerId(data.serverId || "")
+        setRoleId(data.roleId || "")
+        setLicenseKeys(data.licenseKeys || "")
       } catch {
         /* ignore */
       }
@@ -63,14 +71,19 @@ export default function NewProductPage() {
   }, [file])
 
   useEffect(() => {
-    const data = { type, name, description, price, billing, status }
+    const data = { type, name, description, price, billing, status, serverId, roleId, licenseKeys }
     localStorage.setItem("newProduct", JSON.stringify(data))
-  }, [type, name, description, price, billing, status])
+  }, [type, name, description, price, billing, status, serverId, roleId, licenseKeys])
 
   const nextDisabled = () => {
     if (step === 1) return !type
     if (step === 2) return name.trim().length === 0
     if (step === 3) return price.trim().length === 0
+    if (step === 4) {
+      if (type === "file") return !contentFile
+      if (type === "discord") return !serverId.trim() || !roleId.trim()
+      if (type === "key") return licenseKeys.trim().length === 0 && !csvFile
+    }
     return false
   }
 
@@ -104,7 +117,7 @@ export default function NewProductPage() {
     <DashboardLayout title="New Product">
       <div className="p-6 max-w-3xl mx-auto space-y-6">
         <ol className="flex items-center gap-2">
-          {[1, 2, 3, 4].map((n) => (
+          {[1, 2, 3, 4, 5].map((n) => (
             <li key={n} className="flex flex-1 flex-col items-center">
               <div className="flex items-center w-full">
                 <div
@@ -115,7 +128,7 @@ export default function NewProductPage() {
                 >
                   {step > n ? <CheckIcon className="size-4" /> : n}
                 </div>
-                {n < 4 && <div className={`h-px flex-1 ${step > n ? "bg-primary" : "bg-border"}`} />}
+                {n < 5 && <div className={`h-px flex-1 ${step > n ? "bg-primary" : "bg-border"}`} />}
               </div>
             </li>
           ))}
@@ -251,6 +264,76 @@ export default function NewProductPage() {
           </Card>
         )}
         {step === 4 && (
+          <Card asChild>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                setStep(5)
+              }}
+              className="space-y-4"
+            >
+              <CardHeader>
+                <CardTitle>Delivery content</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {type === "file" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="content-file">Upload file</Label>
+                    <Input
+                      id="content-file"
+                      type="file"
+                      onChange={(e) => setContentFile(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                )}
+                {type === "discord" && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="server">Server ID</Label>
+                      <Input
+                        id="server"
+                        value={serverId}
+                        onChange={(e) => setServerId(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Role ID</Label>
+                      <Input
+                        id="role"
+                        value={roleId}
+                        onChange={(e) => setRoleId(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => alert("Test not implemented")}>Test Connection</Button>
+                  </div>
+                )}
+                {type === "key" && (
+                  <div className="space-y-2">
+                    <Label htmlFor="keys">License Keys</Label>
+                    <textarea
+                      id="keys"
+                      className="w-full rounded-md border px-3 py-1 min-h-[100px]"
+                      value={licenseKeys}
+                      onChange={(e) => setLicenseKeys(e.target.value)}
+                    />
+                    <Input id="csv" type="file" accept=".csv" onChange={(e) => setCsvFile(e.target.files?.[0] || null)} />
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter className="justify-between">
+                <Button type="button" variant="outline" onClick={() => setStep(3)}>
+                  Back
+                </Button>
+                <Button type="submit" disabled={nextDisabled()}>
+                  Next
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
+        )}
+        {step === 5 && (
           <Card>
             <CardHeader>
               <CardTitle>Confirm details</CardTitle>
@@ -270,7 +353,7 @@ export default function NewProductPage() {
               </p>
             </CardContent>
             <CardFooter className="justify-between gap-2">
-              <Button variant="outline" onClick={() => setStep(3)}>
+              <Button variant="outline" onClick={() => setStep(4)}>
                 Back
               </Button>
               <div className="flex items-center gap-2">
