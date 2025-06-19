@@ -30,7 +30,8 @@ const productSchema = z.object({
 export async function GET() {
   const db = await getDb()
   try {
-    const token = cookies().get('session')?.value
+    const cookieStore = await cookies()
+    const token = cookieStore.get('session')?.value
     if (!token) return NextResponse.json({ products: [] })
     const session = await db
       .collection<{ token: string; userId: ObjectId }>('sessions')
@@ -78,7 +79,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
     }
     const db = await getDb()
-    const token = cookies().get('session')?.value
+    const cookieStore = await cookies()
+    const token = cookieStore.get('session')?.value
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const session = await db
       .collection<{ token: string; userId: ObjectId }>('sessions')

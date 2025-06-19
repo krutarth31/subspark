@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       let userId: ObjectId | null = null
       let userInfo: { name: string; email: string; accountId?: string } | null = null
       try {
-        const cookieStore = cookies()
+        const cookieStore = await cookies()
         const token = cookieStore.get("session")?.value
         if (token) {
           const session = await db
