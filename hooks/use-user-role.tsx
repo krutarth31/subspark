@@ -5,14 +5,14 @@ import * as React from "react"
 export type UserRole = "buyer" | "seller"
 
 interface UserRoleContextValue {
-  role: UserRole
+  role: UserRole | null
   setRole: (role: UserRole) => void
 }
 
 const UserRoleContext = React.createContext<UserRoleContextValue | undefined>(undefined)
 
 export function UserRoleProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRoleState] = React.useState<UserRole>("buyer")
+  const [role, setRoleState] = React.useState<UserRole | null>(null)
 
   React.useEffect(() => {
     if (typeof window === "undefined") return
@@ -26,9 +26,13 @@ export function UserRoleProvider({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data.user?.role === "seller") {
           setRoleState("seller")
+        } else {
+          setRoleState("buyer")
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        setRoleState("buyer")
+      })
   }, [])
 
   const setRole = React.useCallback((newRole: UserRole) => {

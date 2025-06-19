@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongo'
-import { hashPassword, generateToken } from '@/lib/auth'
+import { hashPassword, generateToken, generateAccountId } from '@/lib/auth'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -22,7 +22,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'User exists' }, { status: 400 })
   }
   const hashed = hashPassword(password)
-  const result = await db.collection('users').insertOne({ name, email, password: hashed })
+  const accountId = generateAccountId()
+  const result = await db.collection('users').insertOne({
+    name,
+    email,
+    password: hashed,
+    accountId,
+  })
   const token = generateToken()
   await db.collection('sessions').insertOne({ token, userId: result.insertedId })
   const res = NextResponse.json({ ok: true })

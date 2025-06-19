@@ -25,6 +25,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSkeleton,
 } from "@/components/ui/sidebar"
 
 const defaultNav = [
@@ -94,7 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     email: "user@example.com",
     avatar: "/avatars/shadcn.jpg",
   })
-  const [isSeller, setIsSeller] = React.useState(false)
+  const [isSeller, setIsSeller] = React.useState<boolean | null>(null)
   const { setRole } = useUserRole()
 
   React.useEffect(() => {
@@ -106,20 +107,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           if (data.user.role === 'seller') {
             setIsSeller(true)
             setRole('seller')
+            return
           }
         }
+        setIsSeller(false)
       })
-      .catch(() => {})
+      .catch(() => {
+        setIsSeller(false)
+      })
   }, [setRole])
 
   React.useEffect(() => {
     fetch('/api/seller/status')
       .then((res) => res.json())
       .then((data) => {
-        if (data.active) setIsSeller(true)
+        if (data.active) {
+          setIsSeller(true)
+          setRole('seller')
+        } else if (isSeller === null) {
+          setIsSeller(false)
+        }
       })
-      .catch(() => {})
-  }, [])
+      .catch(() => {
+        if (isSeller === null) setIsSeller(false)
+      })
+  }, [setRole, isSeller])
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
@@ -139,7 +151,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={isSeller ? sellerNav : defaultNav} />
+        {isSeller === null ? (
+          <SidebarMenu>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SidebarMenuItem key={i}>
+                <SidebarMenuSkeleton showIcon />
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        ) : (
+          <NavMain items={isSeller ? sellerNav : defaultNav} />
+        )}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={user} />

@@ -13,12 +13,25 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { useUserRole } from "@/hooks/use-user-role"
 
 export default function OnboardingFlow() {
   const [step, setStep] = useState(1)
   const [name, setName] = useState("")
   const [bio, setBio] = useState("")
+  const [productName, setProductName] = useState("")
+  const [productPrice, setProductPrice] = useState("")
+  const [productDesc, setProductDesc] = useState("")
+  const [productType, setProductType] = useState<'discord' | 'file' | 'key'>('discord')
+  const [productStatus, setProductStatus] = useState<'draft' | 'published'>('draft')
   const [avatar, setAvatar] = useState<File | null>(null)
   const [banner, setBanner] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -29,6 +42,8 @@ export default function OnboardingFlow() {
   const [error, setError] = useState<string | null>(null)
   const [active, setActive] = useState(false)
   const { setRole } = useUserRole()
+  const cardClass =
+    "backdrop-blur-md shadow-lg border border-zinc-200/60 bg-white/70 text-zinc-900 dark:border-white/20 dark:bg-white/5 dark:text-white"
 
   useEffect(() => {
     fetch('/api/seller/status')
@@ -43,7 +58,7 @@ export default function OnboardingFlow() {
         if (data.accountId) setAccountId(data.accountId)
         if (data.active) {
           setActive(true)
-          setStep(5)
+          setStep(6)
           setRole('seller')
         }
       })
@@ -102,6 +117,7 @@ export default function OnboardingFlow() {
   const stepsList = [
     "Connect Stripe",
     "Set up profile",
+    "Add product",
     "Verify & accept",
     "Pay subscription",
     "Finish",
@@ -111,7 +127,7 @@ export default function OnboardingFlow() {
 
   if (step === 1) {
     content = (
-      <Card>
+      <Card className={cardClass}>
         <CardHeader className="text-center">
           <CardTitle>Connect Stripe</CardTitle>
           <CardDescription>
@@ -128,7 +144,7 @@ export default function OnboardingFlow() {
     )
   } else if (step === 2) {
     content = (
-      <Card asChild>
+      <Card className={cardClass} asChild>
         <form
           onSubmit={(e) => {
             e.preventDefault()
@@ -200,11 +216,97 @@ export default function OnboardingFlow() {
     )
   } else if (step === 3) {
     content = (
-      <Card asChild>
+      <Card className={cardClass} asChild>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault()
+            const price = parseFloat(productPrice)
+            if (isNaN(price)) {
+              setError('Invalid price')
+              return
+            }
+            setLoading(true)
+            setError(null)
+            const res = await fetch('/api/products', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: productName,
+                price,
+                description: productDesc,
+                type: productType,
+                status: productStatus,
+              }),
+            })
+            if (!res.ok) {
+              const data = await res.json().catch(() => ({}))
+              setError(data.error || 'Failed to save product')
+              setLoading(false)
+              return
+            }
+            setLoading(false)
+            setStep(4)
+          }}
+          className="space-y-4"
+        >
+          <CardHeader className="text-center">
+            <CardTitle>Add your first product</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="pname">Product Name</Label>
+              <Input id="pname" value={productName} onChange={(e) => setProductName(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pprice">Price</Label>
+              <Input id="pprice" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pdesc">Description</Label>
+              <Input id="pdesc" value={productDesc} onChange={(e) => setProductDesc(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="ptype">Type</Label>
+              <Select value={productType} onValueChange={(v) => setProductType(v as 'discord' | 'file' | 'key')}>
+                <SelectTrigger id="ptype" className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="discord">Discord</SelectItem>
+                  <SelectItem value="file">File</SelectItem>
+                  <SelectItem value="key">Key</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pstatus">Status</Label>
+              <Select value={productStatus} onValueChange={(v) => setProductStatus(v as 'draft' | 'published')}>
+                <SelectTrigger id="pstatus" className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Saving...' : 'Save and Continue'}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
+    )
+  } else if (step === 4) {
+    content = (
+      <Card className={cardClass} asChild>
         <form
           onSubmit={(e) => {
             e.preventDefault()
-            setStep(4)
+            setStep(5)
           }}
           className="space-y-4"
         >
@@ -250,10 +352,9 @@ export default function OnboardingFlow() {
               {loading ? "Redirecting..." : "Start verification"}
             </Button>
             <Label className="gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={accepted}
-                onChange={(e) => setAccepted(e.target.checked)}
+                onCheckedChange={(v) => setAccepted(!!v)}
                 required
               />
               I agree to the terms and conditions
@@ -267,9 +368,9 @@ export default function OnboardingFlow() {
         </form>
       </Card>
     )
-  } else if (step === 4) {
+  } else if (step === 5) {
     content = (
-      <Card>
+      <Card className={cardClass}>
         <CardHeader className="text-center">
           <CardTitle>Pay subscription</CardTitle>
           <CardDescription>
@@ -313,7 +414,7 @@ export default function OnboardingFlow() {
     )
   } else {
     content = (
-      <Card>
+      <Card className={cardClass}>
         <CardHeader className="text-center">
           <CardTitle>
             {active ? "Onboarding complete!" : "Payment pending"}
@@ -335,7 +436,7 @@ export default function OnboardingFlow() {
               Go to Dashboard
             </Button>
           ) : (
-            <Button onClick={() => setStep(4)}>Back to Payment</Button>
+            <Button onClick={() => setStep(5)}>Back to Payment</Button>
           )}
         </CardFooter>
       </Card>
@@ -343,7 +444,7 @@ export default function OnboardingFlow() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-5xl gap-10 md:grid-cols-[240px_1fr]">
+    <div className="mx-auto grid w-full max-w-5xl gap-10 rounded-2xl bg-white/5 p-8 backdrop-blur-lg ring-1 ring-white/10 md:grid-cols-[240px_1fr]">
       <ol className="relative hidden flex-col space-y-6 md:flex">
         {stepsList.map((label, idx) => (
           <li key={label} className="flex items-start gap-3">
@@ -351,8 +452,8 @@ export default function OnboardingFlow() {
               <div
                 className={`size-8 rounded-full border flex items-center justify-center font-medium ${
                   step >= idx + 1
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
+                    ? 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white border-none shadow'
+                    : 'bg-zinc-800 border-zinc-700 text-muted-foreground'
                 }`}
               >
                 {step > idx + 1 ? <CheckIcon className="size-4" /> : idx + 1}
@@ -360,7 +461,7 @@ export default function OnboardingFlow() {
               {idx < stepsList.length - 1 && (
                 <div
                   className={`w-px flex-1 ${
-                    step > idx + 1 ? 'bg-primary' : 'bg-border'
+                    step > idx + 1 ? 'bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500' : 'bg-border'
                   }`}
                 />
               )}
@@ -377,8 +478,8 @@ export default function OnboardingFlow() {
                 <div
                   className={`size-7 rounded-full border flex items-center justify-center font-medium ${
                     step >= idx + 1
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
+                      ? 'bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white border-none shadow'
+                      : 'bg-zinc-800 border-zinc-700 text-muted-foreground'
                   }`}
                 >
                   {step > idx + 1 ? <CheckIcon className="size-4" /> : idx + 1}
@@ -386,7 +487,7 @@ export default function OnboardingFlow() {
                 {idx < stepsList.length - 1 && (
                   <div
                     className={`h-px flex-1 ${
-                      step > idx + 1 ? 'bg-primary' : 'bg-border'
+                      step > idx + 1 ? 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500' : 'bg-border'
                     }`}
                   />
                 )}
