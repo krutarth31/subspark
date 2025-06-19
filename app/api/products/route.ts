@@ -7,12 +7,14 @@ import { z } from 'zod'
 const productSchema = z.object({
   name: z.string().min(1),
   price: z.number().nonnegative(),
+  currency: z.string().min(3).max(4).default('USD'),
   billing: z.enum(['free', 'one', 'recurring']).default('one'),
   description: z.string().optional(),
   planDescription: z.string().optional(),
   availableUnits: z.number().int().positive().optional(),
   unlimited: z.boolean().optional(),
   expireDays: z.number().int().positive().optional(),
+  period: z.enum(['day', 'week', 'month', 'year']).optional(),
   type: z.enum(['discord', 'file', 'key']),
   status: z.enum(['draft', 'published']).default('draft'),
 })
@@ -32,12 +34,14 @@ export async function GET() {
         userId: ObjectId
         name: string
         price: number
+        currency: string
         billing: string
         description?: string
         planDescription?: string
         availableUnits?: number
         unlimited?: boolean
         expireDays?: number
+        period?: string
         type: string
         status: string
         createdAt: Date

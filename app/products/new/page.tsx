@@ -29,7 +29,9 @@ export default function NewProductPage() {
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("10")
+  const [currency, setCurrency] = useState("USD")
   const [billing, setBilling] = useState("one")
+  const [period, setPeriod] = useState("month")
   const [availableUnits, setAvailableUnits] = useState("")
   const [unlimited, setUnlimited] = useState(false)
   const [planDescription, setPlanDescription] = useState("")
@@ -54,7 +56,9 @@ export default function NewProductPage() {
         setName(data.name || "")
         setDescription(data.description || "")
         setPrice(data.price || "10")
+        setCurrency(data.currency || "USD")
         setBilling(data.billing || "one")
+        setPeriod(data.period || "month")
         setStatus(data.status || "draft")
         setServerId(data.serverId || "")
         setRoleId(data.roleId || "")
@@ -84,7 +88,9 @@ export default function NewProductPage() {
       name,
       description,
       price,
+      currency,
       billing,
+      period,
       status,
       serverId,
       roleId,
@@ -109,19 +115,40 @@ export default function NewProductPage() {
     unlimited,
     planDescription,
     expireDays,
+    currency,
+    period,
   ])
 
   const nextDisabled = () => {
     if (step === 1) return !type
     if (step === 2) return name.trim().length === 0
     if (step === 3) {
+      const unitsInvalid =
+        !unlimited &&
+        availableUnits.trim().length > 0 &&
+        isNaN(parseInt(availableUnits))
+
       if (billing === 'free') {
-        return (
-          !unlimited &&
+        return !unlimited &&
           (availableUnits.trim().length === 0 || isNaN(parseInt(availableUnits)))
+      }
+
+      if (billing === 'one') {
+        return (
+          price.trim().length === 0 ||
+          currency.trim().length === 0 ||
+          unitsInvalid
         )
       }
-      return price.trim().length === 0
+
+      if (billing === 'recurring') {
+        return (
+          price.trim().length === 0 ||
+          currency.trim().length === 0 ||
+          !period ||
+          unitsInvalid
+        )
+      }
     }
     if (step === 4) {
       if (type === "file") return !contentFile
@@ -144,7 +171,9 @@ export default function NewProductPage() {
         name,
         description,
         price: priceNumber,
+        currency,
         billing,
+        period: billing === 'recurring' ? period : undefined,
         planDescription,
         availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
         unlimited,
@@ -293,56 +322,82 @@ export default function NewProductPage() {
                   </TabsList>
                 </Tabs>
                 {billing !== 'free' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Price (USD)</Label>
-                    <Input
-                      id="price"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      required
-                    />
-                  </div>
-                )}
-                {billing === 'free' && (
-                  <div className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="available">Available units</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id="available"
-                          value={availableUnits}
-                          onChange={(e) => setAvailableUnits(e.target.value)}
-                          disabled={unlimited}
-                        />
-                        <label className="flex items-center gap-1 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={unlimited}
-                            onChange={(e) => setUnlimited(e.target.checked)}
-                          />
-                          Unlimited
-                        </label>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="planDesc">Plan description</Label>
-                      <textarea
-                        id="planDesc"
-                        className="min-h-[60px] w-full rounded-md border px-3 py-1"
-                        value={planDescription}
-                        onChange={(e) => setPlanDescription(e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="expire">Auto expire access (days)</Label>
+                      <Label htmlFor="price">Price</Label>
                       <Input
-                        id="expire"
-                        value={expireDays}
-                        onChange={(e) => setExpireDays(e.target.value)}
+                        id="price"
+                        value={price}
+                        onChange={(e) => setPrice(e.target.value)}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="currency">Currency</Label>
+                      <Input
+                        id="currency"
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value.toUpperCase())}
                       />
                     </div>
                   </div>
                 )}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="available">Available units</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="available"
+                        value={availableUnits}
+                        onChange={(e) => setAvailableUnits(e.target.value)}
+                        disabled={unlimited}
+                      />
+                      <label className="flex items-center gap-1 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={unlimited}
+                          onChange={(e) => setUnlimited(e.target.checked)}
+                        />
+                        Unlimited
+                      </label>
+                    </div>
+                  </div>
+                  {billing !== 'recurring' && (
+                    <>
+                      <div className="space-y-2">
+                        <Label htmlFor="planDesc">Plan description</Label>
+                        <textarea
+                          id="planDesc"
+                          className="min-h-[60px] w-full rounded-md border px-3 py-1"
+                          value={planDescription}
+                          onChange={(e) => setPlanDescription(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="expire">Auto expire access (days)</Label>
+                        <Input
+                          id="expire"
+                          value={expireDays}
+                          onChange={(e) => setExpireDays(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+                  {billing === 'recurring' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="period">Subscription period</Label>
+                      <select
+                        id="period"
+                        className="w-full rounded-md border px-3 py-1"
+                        value={period}
+                        onChange={(e) => setPeriod(e.target.value)}
+                      >
+                        <option value="month">Monthly</option>
+                        <option value="year">Yearly</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
               </CardContent>
               <CardFooter className="justify-between">
                 <Button type="button" variant="outline" onClick={() => setStep(2)}>
@@ -442,16 +497,16 @@ export default function NewProductPage() {
               </p>
               {billing !== 'free' && (
                 <p>
-                  <strong>Price:</strong> ${parseFloat(price).toFixed(2)}{' '}
-                  {billing === 'recurring' ? '/ mo' : ''}
+                  <strong>Price:</strong> {parseFloat(price).toFixed(2)} {currency}
+                  {billing === 'recurring' ? ` / ${period}` : ''}
                 </p>
               )}
-              {billing === 'free' && (
+              <p>
+                <strong>Units:</strong>{' '}
+                {unlimited ? 'Unlimited' : availableUnits || '-'}
+              </p>
+              {(billing === 'free' || billing === 'one') && (
                 <>
-                  <p>
-                    <strong>Units:</strong>{' '}
-                    {unlimited ? 'Unlimited' : availableUnits || '-'}
-                  </p>
                   {planDescription && (
                     <p>
                       <strong>Plan:</strong> {planDescription}

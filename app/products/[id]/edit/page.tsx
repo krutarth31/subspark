@@ -10,12 +10,14 @@ import { Label } from '@/components/ui/label'
 interface Product {
   name: string
   price: number
+  currency: string
   billing: 'free' | 'one' | 'recurring'
   description?: string
   planDescription?: string
   availableUnits?: number
   unlimited?: boolean
   expireDays?: number
+  period?: string
   type: 'discord' | 'file' | 'key'
   status: 'draft' | 'published'
 }
@@ -25,12 +27,14 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [product, setProduct] = useState<Product | null>(null)
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
+  const [currency, setCurrency] = useState('USD')
   const [billing, setBilling] = useState<'free' | 'one' | 'recurring'>('one')
   const [description, setDescription] = useState('')
   const [planDescription, setPlanDescription] = useState('')
   const [availableUnits, setAvailableUnits] = useState('')
   const [unlimited, setUnlimited] = useState(false)
   const [expireDays, setExpireDays] = useState('')
+  const [period, setPeriod] = useState('month')
   const [type, setType] = useState<'discord' | 'file' | 'key'>('discord')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [error, setError] = useState('')
@@ -43,12 +47,14 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           setProduct(data.product)
           setName(data.product.name)
           setPrice(String(data.product.price))
+          setCurrency(data.product.currency || 'USD')
           setBilling(data.product.billing)
           setDescription(data.product.description || '')
           setPlanDescription(data.product.planDescription || '')
           setAvailableUnits(data.product.availableUnits ? String(data.product.availableUnits) : '')
           setUnlimited(Boolean(data.product.unlimited))
           setExpireDays(data.product.expireDays ? String(data.product.expireDays) : '')
+          setPeriod(data.product.period || 'month')
           setType(data.product.type)
           setStatus(data.product.status)
         }
@@ -68,7 +74,9 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       body: JSON.stringify({
         name,
         price: priceNumber,
+        currency,
         billing,
+        period: billing === 'recurring' ? period : undefined,
         planDescription,
         availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
         unlimited,
@@ -109,32 +117,38 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           </select>
         </div>
         {billing !== 'free' && (
-          <div className="space-y-2">
-            <Label htmlFor="price">Price</Label>
-            <Input id="price" value={price} onChange={(e) => setPrice(e.target.value)} required />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="price">Price</Label>
+              <Input id="price" value={price} onChange={(e) => setPrice(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="currency">Currency</Label>
+              <Input id="currency" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
+            </div>
           </div>
         )}
-        {billing === 'free' && (
+        <div className="space-y-2">
+          <Label htmlFor="available">Available units</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="available"
+              value={availableUnits}
+              onChange={(e) => setAvailableUnits(e.target.value)}
+              disabled={unlimited}
+            />
+            <label className="flex items-center gap-1 text-sm">
+              <input
+                type="checkbox"
+                checked={unlimited}
+                onChange={(e) => setUnlimited(e.target.checked)}
+              />
+              Unlimited
+            </label>
+          </div>
+        </div>
+        {billing !== 'recurring' && (
           <>
-            <div className="space-y-2">
-              <Label htmlFor="available">Available units</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="available"
-                  value={availableUnits}
-                  onChange={(e) => setAvailableUnits(e.target.value)}
-                  disabled={unlimited}
-                />
-                <label className="flex items-center gap-1 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={unlimited}
-                    onChange={(e) => setUnlimited(e.target.checked)}
-                  />
-                  Unlimited
-                </label>
-              </div>
-            </div>
             <div className="space-y-2">
               <Label htmlFor="planDesc">Plan description</Label>
               <textarea
@@ -153,6 +167,20 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
               />
             </div>
           </>
+        )}
+        {billing === 'recurring' && (
+          <div className="space-y-2">
+            <Label htmlFor="period">Subscription period</Label>
+            <select
+              id="period"
+              className="w-full rounded border px-2 py-1 text-sm"
+              value={period}
+              onChange={(e) => setPeriod(e.target.value)}
+            >
+              <option value="month">Monthly</option>
+              <option value="year">Yearly</option>
+            </select>
+          </div>
         )}
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>

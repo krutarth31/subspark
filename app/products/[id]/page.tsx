@@ -7,12 +7,14 @@ interface Product {
   _id: string
   name: string
   price: number
+  currency: string
   billing: 'free' | 'one' | 'recurring'
   description?: string
   planDescription?: string
   availableUnits?: number
   unlimited?: boolean
   expireDays?: number
+  period?: string
   type: "discord" | "file" | "key"
   status: "draft" | "published"
   sales?: number
@@ -44,14 +46,17 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
         <p><strong>Status:</strong> {product.status}</p>
         <p><strong>Billing:</strong> {product.billing}</p>
         {product.billing !== 'free' && (
-          <p><strong>Price:</strong> ${product.price.toFixed(2)}</p>
+          <p>
+            <strong>Price:</strong> {product.price.toFixed(2)} {product.currency}
+            {product.billing === 'recurring' ? ` / ${product.period}` : ''}
+          </p>
         )}
-        {product.billing === 'free' && (
+        <p>
+          <strong>Units:</strong>{' '}
+          {product.unlimited ? 'Unlimited' : product.availableUnits ?? '-'}
+        </p>
+        {(product.billing === 'free' || product.billing === 'one') && (
           <>
-            <p>
-              <strong>Units:</strong>{' '}
-              {product.unlimited ? 'Unlimited' : product.availableUnits ?? '-'}
-            </p>
             {product.planDescription && (
               <p>
                 <strong>Plan:</strong> {product.planDescription}
