@@ -30,6 +30,10 @@ export default function NewProductPage() {
   const [description, setDescription] = useState("")
   const [price, setPrice] = useState("10")
   const [billing, setBilling] = useState("one")
+  const [availableUnits, setAvailableUnits] = useState("")
+  const [unlimited, setUnlimited] = useState(false)
+  const [planDescription, setPlanDescription] = useState("")
+  const [expireDays, setExpireDays] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [contentFile, setContentFile] = useState<File | null>(null)
@@ -55,6 +59,10 @@ export default function NewProductPage() {
         setServerId(data.serverId || "")
         setRoleId(data.roleId || "")
         setLicenseKeys(data.licenseKeys || "")
+        setAvailableUnits(data.availableUnits || "")
+        setUnlimited(Boolean(data.unlimited))
+        setPlanDescription(data.planDescription || "")
+        setExpireDays(data.expireDays || "")
       } catch {
         /* ignore */
       }
@@ -71,14 +79,50 @@ export default function NewProductPage() {
   }, [file])
 
   useEffect(() => {
-    const data = { type, name, description, price, billing, status, serverId, roleId, licenseKeys }
+    const data = {
+      type,
+      name,
+      description,
+      price,
+      billing,
+      status,
+      serverId,
+      roleId,
+      licenseKeys,
+      availableUnits,
+      unlimited,
+      planDescription,
+      expireDays,
+    }
     localStorage.setItem("newProduct", JSON.stringify(data))
-  }, [type, name, description, price, billing, status, serverId, roleId, licenseKeys])
+  }, [
+    type,
+    name,
+    description,
+    price,
+    billing,
+    status,
+    serverId,
+    roleId,
+    licenseKeys,
+    availableUnits,
+    unlimited,
+    planDescription,
+    expireDays,
+  ])
 
   const nextDisabled = () => {
     if (step === 1) return !type
     if (step === 2) return name.trim().length === 0
-    if (step === 3) return price.trim().length === 0
+    if (step === 3) {
+      if (billing === 'free') {
+        return (
+          !unlimited &&
+          (availableUnits.trim().length === 0 || isNaN(parseInt(availableUnits)))
+        )
+      }
+      return price.trim().length === 0
+    }
     if (step === 4) {
       if (type === "file") return !contentFile
       if (type === "discord") return !serverId.trim() || !roleId.trim()
@@ -88,7 +132,7 @@ export default function NewProductPage() {
   }
 
   async function handlePublish() {
-    const priceNumber = parseFloat(price)
+    const priceNumber = billing === 'free' ? 0 : parseFloat(price)
     if (isNaN(priceNumber)) {
       setError("Invalid price")
       return
@@ -100,6 +144,11 @@ export default function NewProductPage() {
         name,
         description,
         price: priceNumber,
+        billing,
+        planDescription,
+        availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
+        unlimited,
+        expireDays: expireDays ? parseInt(expireDays) : null,
         type,
         status,
       }),
@@ -237,20 +286,63 @@ export default function NewProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <Tabs value={billing} onValueChange={setBilling} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="free">Free</TabsTrigger>
                     <TabsTrigger value="one">One time</TabsTrigger>
-                    <TabsTrigger value="sub">Subscription</TabsTrigger>
+                    <TabsTrigger value="recurring">Recurring</TabsTrigger>
                   </TabsList>
                 </Tabs>
-                <div className="space-y-2">
-                  <Label htmlFor="price">Price (USD)</Label>
-                  <Input
-                    id="price"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    required
-                  />
-                </div>
+                {billing !== 'free' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price (USD)</Label>
+                    <Input
+                      id="price"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+                {billing === 'free' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="available">Available units</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="available"
+                          value={availableUnits}
+                          onChange={(e) => setAvailableUnits(e.target.value)}
+                          disabled={unlimited}
+                        />
+                        <label className="flex items-center gap-1 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={unlimited}
+                            onChange={(e) => setUnlimited(e.target.checked)}
+                          />
+                          Unlimited
+                        </label>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="planDesc">Plan description</Label>
+                      <textarea
+                        id="planDesc"
+                        className="min-h-[60px] w-full rounded-md border px-3 py-1"
+                        value={planDescription}
+                        onChange={(e) => setPlanDescription(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="expire">Auto expire access (days)</Label>
+                      <Input
+                        id="expire"
+                        value={expireDays}
+                        onChange={(e) => setExpireDays(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
               </CardContent>
               <CardFooter className="justify-between">
                 <Button type="button" variant="outline" onClick={() => setStep(2)}>
@@ -346,8 +438,32 @@ export default function NewProductPage() {
                 <strong>Name:</strong> {name}
               </p>
               <p>
-                <strong>Price:</strong> ${parseFloat(price).toFixed(2)} {billing === "sub" ? "/ mo" : ""}
+                <strong>Billing:</strong> {billing}
               </p>
+              {billing !== 'free' && (
+                <p>
+                  <strong>Price:</strong> ${parseFloat(price).toFixed(2)}{' '}
+                  {billing === 'recurring' ? '/ mo' : ''}
+                </p>
+              )}
+              {billing === 'free' && (
+                <>
+                  <p>
+                    <strong>Units:</strong>{' '}
+                    {unlimited ? 'Unlimited' : availableUnits || '-'}
+                  </p>
+                  {planDescription && (
+                    <p>
+                      <strong>Plan:</strong> {planDescription}
+                    </p>
+                  )}
+                  {expireDays && (
+                    <p>
+                      <strong>Expires in:</strong> {expireDays} days
+                    </p>
+                  )}
+                </>
+              )}
               <p>
                 <strong>Status:</strong> {status}
               </p>

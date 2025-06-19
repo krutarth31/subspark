@@ -5,9 +5,14 @@ import { ObjectId } from 'mongodb'
 import { z } from 'zod'
 
 const productSchema = z.object({
-  name: z.string().min(1),
-  price: z.number().nonnegative(),
+  name: z.string().min(1).optional(),
+  price: z.number().nonnegative().optional(),
+  billing: z.enum(['free', 'one', 'recurring']).optional(),
   description: z.string().optional(),
+  planDescription: z.string().optional(),
+  availableUnits: z.number().int().positive().optional(),
+  unlimited: z.boolean().optional(),
+  expireDays: z.number().int().positive().optional(),
   type: z.enum(['discord', 'file', 'key']).optional(),
   status: z.enum(['draft', 'published']).optional(),
 })
@@ -25,7 +30,12 @@ export async function GET(
         userId: ObjectId
         name: string
         price: number
+        billing: string
         description?: string
+        planDescription?: string
+        availableUnits?: number
+        unlimited?: boolean
+        expireDays?: number
         type: string
         status: string
         createdAt: Date
@@ -60,11 +70,15 @@ export async function PUT(
       .findOne({ token })
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const id = params.id
+    const update: Record<string, unknown> = { ...parsed.data }
+    if (update.billing === 'free') {
+      update.price = 0
+    }
     await db
       .collection('products')
       .updateOne(
         { _id: new ObjectId(id), userId: session.userId },
-        { $set: { ...parsed.data, updatedAt: new Date() } }
+        { $set: { ...update, updatedAt: new Date() } }
       )
     return NextResponse.json({ ok: true })
   } catch (err) {

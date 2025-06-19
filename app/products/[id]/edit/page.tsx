@@ -10,7 +10,12 @@ import { Label } from '@/components/ui/label'
 interface Product {
   name: string
   price: number
+  billing: 'free' | 'one' | 'recurring'
   description?: string
+  planDescription?: string
+  availableUnits?: number
+  unlimited?: boolean
+  expireDays?: number
   type: 'discord' | 'file' | 'key'
   status: 'draft' | 'published'
 }
@@ -20,7 +25,12 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [product, setProduct] = useState<Product | null>(null)
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
+  const [billing, setBilling] = useState<'free' | 'one' | 'recurring'>('one')
   const [description, setDescription] = useState('')
+  const [planDescription, setPlanDescription] = useState('')
+  const [availableUnits, setAvailableUnits] = useState('')
+  const [unlimited, setUnlimited] = useState(false)
+  const [expireDays, setExpireDays] = useState('')
   const [type, setType] = useState<'discord' | 'file' | 'key'>('discord')
   const [status, setStatus] = useState<'draft' | 'published'>('draft')
   const [error, setError] = useState('')
@@ -33,7 +43,12 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           setProduct(data.product)
           setName(data.product.name)
           setPrice(String(data.product.price))
+          setBilling(data.product.billing)
           setDescription(data.product.description || '')
+          setPlanDescription(data.product.planDescription || '')
+          setAvailableUnits(data.product.availableUnits ? String(data.product.availableUnits) : '')
+          setUnlimited(Boolean(data.product.unlimited))
+          setExpireDays(data.product.expireDays ? String(data.product.expireDays) : '')
           setType(data.product.type)
           setStatus(data.product.status)
         }
@@ -42,7 +57,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const priceNumber = parseFloat(price)
+    const priceNumber = billing === 'free' ? 0 : parseFloat(price)
     if (isNaN(priceNumber)) {
       setError('Invalid price')
       return
@@ -53,6 +68,11 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
       body: JSON.stringify({
         name,
         price: priceNumber,
+        billing,
+        planDescription,
+        availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
+        unlimited,
+        expireDays: expireDays ? parseInt(expireDays) : null,
         description,
         type,
         status,
@@ -76,9 +96,64 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="price">Price</Label>
-          <Input id="price" value={price} onChange={(e) => setPrice(e.target.value)} required />
+          <Label htmlFor="billing">Billing</Label>
+          <select
+            id="billing"
+            className="w-full rounded border px-2 py-1 text-sm"
+            value={billing}
+            onChange={(e) => setBilling(e.target.value as 'free' | 'one' | 'recurring')}
+          >
+            <option value="free">Free</option>
+            <option value="one">One time</option>
+            <option value="recurring">Recurring</option>
+          </select>
         </div>
+        {billing !== 'free' && (
+          <div className="space-y-2">
+            <Label htmlFor="price">Price</Label>
+            <Input id="price" value={price} onChange={(e) => setPrice(e.target.value)} required />
+          </div>
+        )}
+        {billing === 'free' && (
+          <>
+            <div className="space-y-2">
+              <Label htmlFor="available">Available units</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="available"
+                  value={availableUnits}
+                  onChange={(e) => setAvailableUnits(e.target.value)}
+                  disabled={unlimited}
+                />
+                <label className="flex items-center gap-1 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={unlimited}
+                    onChange={(e) => setUnlimited(e.target.checked)}
+                  />
+                  Unlimited
+                </label>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="planDesc">Plan description</Label>
+              <textarea
+                id="planDesc"
+                className="min-h-[60px] w-full rounded border px-2 py-1"
+                value={planDescription}
+                onChange={(e) => setPlanDescription(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="expire">Auto expire access (days)</Label>
+              <Input
+                id="expire"
+                value={expireDays}
+                onChange={(e) => setExpireDays(e.target.value)}
+              />
+            </div>
+          </>
+        )}
         <div className="space-y-2">
           <Label htmlFor="description">Description</Label>
           <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} />

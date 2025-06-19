@@ -7,7 +7,12 @@ import { z } from 'zod'
 const productSchema = z.object({
   name: z.string().min(1),
   price: z.number().nonnegative(),
+  billing: z.enum(['free', 'one', 'recurring']).default('one'),
   description: z.string().optional(),
+  planDescription: z.string().optional(),
+  availableUnits: z.number().int().positive().optional(),
+  unlimited: z.boolean().optional(),
+  expireDays: z.number().int().positive().optional(),
   type: z.enum(['discord', 'file', 'key']),
   status: z.enum(['draft', 'published']).default('draft'),
 })
@@ -27,7 +32,12 @@ export async function GET() {
         userId: ObjectId
         name: string
         price: number
+        billing: string
         description?: string
+        planDescription?: string
+        availableUnits?: number
+        unlimited?: boolean
+        expireDays?: number
         type: string
         status: string
         createdAt: Date
@@ -58,8 +68,10 @@ export async function POST(request: Request) {
       .collection<{ token: string; userId: ObjectId }>('sessions')
       .findOne({ token })
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { billing } = parsed.data
     const product = {
       ...parsed.data,
+      price: billing === 'free' ? 0 : parsed.data.price,
       userId: session.userId,
       archived: false,
       createdAt: new Date(),

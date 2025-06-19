@@ -16,7 +16,12 @@ export type Product = {
   _id: string
   name: string
   price: number
+  billing: 'free' | 'one' | 'recurring'
   description?: string
+  planDescription?: string
+  availableUnits?: number
+  unlimited?: boolean
+  expireDays?: number
   type: "discord" | "file" | "key"
   status: "draft" | "published"
   createdAt: string
@@ -37,6 +42,10 @@ export function getColumns(onArchive: (id: string) => void): ColumnDef<Product>[
       const price = parseFloat(row.getValue("price"))
       return <div className="text-right font-medium">${price.toFixed(2)}</div>
     },
+  },
+  {
+    accessorKey: "billing",
+    header: "Billing",
   },
   {
     accessorKey: "sales",

@@ -7,7 +7,12 @@ interface Product {
   _id: string
   name: string
   price: number
+  billing: 'free' | 'one' | 'recurring'
   description?: string
+  planDescription?: string
+  availableUnits?: number
+  unlimited?: boolean
+  expireDays?: number
   type: "discord" | "file" | "key"
   status: "draft" | "published"
   sales?: number
@@ -37,7 +42,28 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
       <div className="p-4 space-y-2">
         <p><strong>Type:</strong> {product.type}</p>
         <p><strong>Status:</strong> {product.status}</p>
-        <p><strong>Price:</strong> ${product.price.toFixed(2)}</p>
+        <p><strong>Billing:</strong> {product.billing}</p>
+        {product.billing !== 'free' && (
+          <p><strong>Price:</strong> ${product.price.toFixed(2)}</p>
+        )}
+        {product.billing === 'free' && (
+          <>
+            <p>
+              <strong>Units:</strong>{' '}
+              {product.unlimited ? 'Unlimited' : product.availableUnits ?? '-'}
+            </p>
+            {product.planDescription && (
+              <p>
+                <strong>Plan:</strong> {product.planDescription}
+              </p>
+            )}
+            {product.expireDays && (
+              <p>
+                <strong>Expires in:</strong> {product.expireDays} days
+              </p>
+            )}
+          </>
+        )}
         <p><strong>Sales:</strong> {product.sales ?? 0}</p>
         <p><strong>Created:</strong> {new Date(product.createdAt).toLocaleDateString()}</p>
         {product.updatedAt && (
