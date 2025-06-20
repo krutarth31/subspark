@@ -51,6 +51,16 @@ STRIPE_PRICE_ID=price_12345
 #   stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
+Add SMTP settings to send password reset emails:
+
+```text
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_user
+SMTP_PASS=your_password
+EMAIL_FROM=no-reply@example.com
+```
+
 ## Dashboard Roles
 
 The dashboard renders different metrics depending on the active user role. You

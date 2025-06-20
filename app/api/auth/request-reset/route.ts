@@ -3,6 +3,7 @@ import { getDb } from '@/lib/mongo'
 import { z } from 'zod'
 import { ObjectId } from 'mongodb'
 import { generateToken } from '@/lib/auth'
+import { sendPasswordResetEmail } from '@/lib/email'
 
 const schema = z.object({
   email: z.string().email(),
@@ -23,7 +24,12 @@ export async function POST(request: Request) {
     await db
       .collection<{ token: string; userId: ObjectId; expiry: number }>('passwordResets')
       .insertOne({ token, userId: user._id, expiry })
-    console.log('Password reset token for', email, token)
+    const { origin } = new URL(request.url)
+    try {
+      await sendPasswordResetEmail(email, token, origin)
+    } catch (err) {
+      console.error('Failed to send reset email:', err)
+    }
   }
   return NextResponse.json({ ok: true })
 }
