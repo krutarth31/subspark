@@ -13,6 +13,7 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
+  const [archivingId, setArchivingId] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/products')
@@ -29,9 +30,13 @@ export default function ProductsPage() {
   )
 
   function archiveProduct(id: string) {
-    fetch(`/api/products/${id}`, { method: 'DELETE' }).then(() =>
-      setProducts((prev) => prev.filter((p) => p._id !== id))
-    )
+    if (archivingId) return
+    setArchivingId(id)
+    fetch(`/api/products/${id}`, { method: 'DELETE' })
+      .then(() => {
+        setProducts((prev) => prev.filter((p) => p._id !== id))
+      })
+      .finally(() => setArchivingId(null))
   }
 
   if (loading)
@@ -59,7 +64,10 @@ export default function ProductsPage() {
         {filtered.length === 0 ? (
           <p>No products found.</p>
         ) : (
-          <DataTable columns={getColumns(archiveProduct)} data={filtered} />
+          <DataTable
+            columns={getColumns(archiveProduct, archivingId)}
+            data={filtered}
+          />
         )}
       </div>
     </DashboardLayout>

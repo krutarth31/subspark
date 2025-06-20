@@ -6,6 +6,7 @@ import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 import { useUserRole } from "@/hooks/use-user-role"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { useEffect, useState } from "react"
 
 import data from "@/app/dashboard/data.json"
@@ -16,6 +17,7 @@ export default function DashboardView() {
   const [active, setActive] = useState<boolean | null>(null)
   const [accountId, setAccountId] = useState<string | null>(null)
   const [statusError, setStatusError] = useState<string | null>(null)
+  const [stripeLoading, setStripeLoading] = useState(false)
 
   useEffect(() => {
     if (role !== "seller") return
@@ -41,9 +43,12 @@ export default function DashboardView() {
   }, [role])
 
   async function startStripe() {
+    if (stripeLoading) return
+    setStripeLoading(true)
     const res = await fetch("/api/stripe/onboard", { method: "POST" })
     if (!res.ok) {
       alert("Failed to start onboarding")
+      setStripeLoading(false)
       return
     }
     const data = await res.json()
@@ -52,11 +57,14 @@ export default function DashboardView() {
     }
     if (data.url) {
       window.location.href = data.url
+    } else {
+      setStripeLoading(false)
     }
   }
 
   async function resumeStripe() {
-    if (!accountId) return
+    if (!accountId || stripeLoading) return
+    setStripeLoading(true)
     const res = await fetch("/api/stripe/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -64,10 +72,15 @@ export default function DashboardView() {
     })
     if (!res.ok) {
       alert("Failed to resume onboarding")
+      setStripeLoading(false)
       return
     }
     const data = await res.json()
-    if (data.url) window.location.href = data.url
+    if (data.url) {
+      window.location.href = data.url
+    } else {
+      setStripeLoading(false)
+    }
   }
 
   return (
@@ -82,11 +95,17 @@ export default function DashboardView() {
               {active === false && (
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-red-500">Stripe setup incomplete.</span>
-                  <Button size="sm" onClick={resumeStripe}>Resume Stripe Setup</Button>
+                  <Button size="sm" onClick={resumeStripe} disabled={stripeLoading}>
+                    {stripeLoading && <Spinner className="mr-2" />}
+                    Resume Stripe Setup
+                  </Button>
                 </div>
               )}
               {active === null && !accountId && (
-                <Button size="sm" onClick={startStripe}>Connect Stripe</Button>
+                <Button size="sm" onClick={startStripe} disabled={stripeLoading}>
+                  {stripeLoading && <Spinner className="mr-2" />}
+                  Connect Stripe
+                </Button>
               )}
               {active && <span className="text-green-600 text-sm">Stripe connected</span>}
             </div>
