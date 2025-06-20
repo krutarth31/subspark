@@ -61,6 +61,13 @@ SMTP_PASS=your_password
 EMAIL_FROM=no-reply@example.com
 ```
 
+Add Discord OAuth credentials for the integration page:
+
+```text
+DISCORD_CLIENT_ID=your_client_id
+DISCORD_CLIENT_SECRET=your_client_secret
+```
+
 ## Dashboard Roles
 
 The dashboard renders different metrics depending on the active user role. You
