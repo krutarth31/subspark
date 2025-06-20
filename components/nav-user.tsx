@@ -28,6 +28,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { useState } from "react"
 
 export function NavUser({
   user,
@@ -39,7 +40,7 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const [logoutLoading, setLogoutLoading] = React.useState(false)
+  const [logoutLoading, setLogoutLoading] = useState(false)
 
   return (
     <SidebarMenu>
