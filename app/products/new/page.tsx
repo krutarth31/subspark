@@ -264,7 +264,14 @@ export default function NewProductPage() {
                 })}
               </div>
             </CardContent>
-            <CardFooter className="justify-end">
+            <CardFooter className="justify-between">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.push('/products')}
+              >
+                Back
+              </Button>
               <Button onClick={() => setStep(2)} disabled={nextDisabled()}>
                 Next
               </Button>
