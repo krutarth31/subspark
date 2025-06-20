@@ -39,6 +39,7 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const [logoutLoading, setLogoutLoading] = React.useState(false)
 
   return (
     <SidebarMenu>
@@ -103,7 +104,10 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              disabled={logoutLoading}
               onClick={async () => {
+                if (logoutLoading) return
+                setLogoutLoading(true)
                 await fetch('/api/auth/logout', { method: 'POST' })
                 window.location.href = '/'
               }}

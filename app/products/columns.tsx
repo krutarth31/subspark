@@ -35,7 +35,10 @@ export type Product = {
   licenseKeys?: string
 }
 
-export function getColumns(onArchive: (id: string) => void): ColumnDef<Product>[] {
+export function getColumns(
+  onArchive: (id: string) => void,
+  archivingId?: string | null
+): ColumnDef<Product>[] {
   return [
   {
     accessorKey: "name",
@@ -122,7 +125,10 @@ export function getColumns(onArchive: (id: string) => void): ColumnDef<Product>[
               Copy Link
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => onArchive(product._id)}>
+            <DropdownMenuItem
+              onClick={() => onArchive(product._id)}
+              disabled={archivingId === product._id}
+            >
               Archive
             </DropdownMenuItem>
           </DropdownMenuContent>
