@@ -43,7 +43,12 @@ export default function ResetPage() {
   if (!token) return <div className="p-6 text-center">Invalid reset token</div>;
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="relative flex min-h-screen items-center justify-center p-4">
+      {loading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50">
+          <Spinner className="size-6" />
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
         <div className="space-y-2 text-center">
           <h1 className="text-xl font-bold">Reset Password</h1>

@@ -66,7 +66,12 @@ export function LoginForm({
   }
 
   return (
-    <div className={cn("flex flex-col gap-6", className)} {...props}>
+    <div className={cn('flex flex-col gap-6 relative', className)} {...props}>
+      {loading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/50">
+          <Spinner className="size-6" />
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <div className="flex flex-col items-center gap-2">
           <a href="#" className="flex flex-col items-center gap-2 font-medium">
