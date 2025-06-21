@@ -33,6 +33,13 @@ export type Product = {
   serverId?: string
   roleId?: string
   licenseKeys?: string
+  subProducts?: {
+    name?: string
+    billing: 'free' | 'one' | 'recurring'
+    price?: number
+    currency: string
+    period?: string
+  }[]
 }
 
 export function getColumns(

@@ -67,6 +67,35 @@ export default function ProductsPage() {
           <DataTable
             columns={getColumns(archiveProduct, archivingId)}
             data={filtered}
+            renderSubRows={(row) => {
+              const p = row.original as Product
+              if (!p.subProducts || p.subProducts.length <= 1) return null
+              return (
+                <table className="ml-4 text-sm border rounded w-full">
+                  <thead className="bg-muted text-xs">
+                    <tr>
+                      <th className="px-2 py-1 text-left">Name</th>
+                      <th className="px-2 py-1 text-left">Billing</th>
+                      <th className="px-2 py-1 text-right">Price</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {p.subProducts.map((s, i) => (
+                      <tr key={i} className="border-t">
+                        <td className="px-2 py-1">{s.name || '-'}</td>
+                        <td className="px-2 py-1">{s.billing}</td>
+                        <td className="px-2 py-1 text-right">
+                          {s.billing === 'free'
+                            ? 'Free'
+                            : `${s.price?.toFixed(2)} ${s.currency}`}
+                          {s.billing === 'recurring' && s.period ? ` / ${s.period}` : ''}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
+            }}
           />
         )}
       </div>
