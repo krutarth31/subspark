@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -236,12 +236,6 @@ export default function NewProductPage() {
   return (
     <DashboardLayout title="New Product">
       <div className="p-6 max-w-3xl mx-auto space-y-6">
-        <div className="relative h-2 rounded bg-muted overflow-hidden">
-          <div
-            className="absolute inset-0 bg-primary transition-all"
-            style={{ width: `${(step - 1) * 50}%` }}
-          />
-        </div>
         <ol className="flex items-center gap-2">
           {[1, 2, 3].map((n) => (
             <li key={n} className="flex flex-1 flex-col items-center">
@@ -339,8 +333,9 @@ export default function NewProductPage() {
               <CardTitle>Sub-products & Delivery</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {subProducts.map((sub, i) => (
-                <div key={i} className="rounded-lg border p-4 space-y-4 bg-muted/50">
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                {subProducts.map((sub, i) => (
+                  <div key={i} className="rounded-lg border p-4 space-y-4 bg-muted/50">
                   <div className="flex justify-between items-center gap-2">
                     <Input
                       placeholder="Name"
@@ -448,11 +443,17 @@ export default function NewProductPage() {
                       placeholder="List features, one per line"
                     />
                   </div>
-                </div>
-              ))}
-              <Button type="button" variant="outline" onClick={addSub}>
-                <PlusIcon className="size-4" /> Add Option
-              </Button>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addSub}
+                  className="col-span-full"
+                >
+                  <PlusIcon className="size-4" /> Add Option
+                </Button>
+              </div>
 
               {type === 'file' && (
                 <div className="space-y-2">
@@ -524,26 +525,36 @@ export default function NewProductPage() {
               </div>
               <div className="space-y-2">
                 <h3 className="font-medium">Options</h3>
-                {subProducts.map((s, i) => (
-                  <div key={i} className="border rounded p-2">
-                    <p>{s.name || `Option ${i + 1}`}</p>
-                    {s.service && (
-                      <ServiceDescription className="text-muted-foreground" text={s.service} />
-                    )}
-                    <p>
-                      {s.billing === 'free'
-                        ? 'Free'
-                        : `${s.price} ${s.currency} ${
-                            s.billing === 'recurring' ? `per ${s.period}` : ''
-                          }`}
-                    </p>
-                    {type === 'discord' && (
-                      <p>
-                        Role: {roles.find((r) => r.id === s.roleId)?.name || s.roleId}
-                      </p>
-                    )}
-                  </div>
-                ))}
+                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                  {subProducts.map((s, i) => (
+                    <Card key={i}>
+                      <CardHeader className="space-y-1">
+                        <CardTitle className="text-base">
+                          {s.name || `Option ${i + 1}`}
+                        </CardTitle>
+                        {s.service && (
+                          <CardDescription>
+                            <ServiceDescription text={s.service} />
+                          </CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-1">
+                        <p>
+                          {s.billing === 'free'
+                            ? 'Free'
+                            : `${s.price} ${s.currency} ${
+                                s.billing === 'recurring' ? `per ${s.period}` : ''
+                              }`}
+                        </p>
+                        {type === 'discord' && (
+                          <p className="text-xs text-muted-foreground">
+                            Role: {roles.find((r) => r.id === s.roleId)?.name || s.roleId}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
               {type === 'file' && contentFile && <p>File: {contentFile.name}</p>}
               {type === 'key' && <p>{licenseKeys.split('\n').filter(Boolean).length} keys</p>}
