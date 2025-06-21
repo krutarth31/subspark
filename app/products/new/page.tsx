@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { CheckIcon, FileIcon, KeyIcon, ServerIcon } from "lucide-react"
+import {
+  CheckIcon,
+  FileIcon,
+  KeyIcon,
+  PlusIcon,
+  ServerIcon,
+  XIcon,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Spinner } from "@/components/ui/spinner"
 import { ServiceDescription } from "@/components/service-description"
@@ -229,6 +236,12 @@ export default function NewProductPage() {
   return (
     <DashboardLayout title="New Product">
       <div className="p-6 max-w-3xl mx-auto space-y-6">
+        <div className="relative h-2 rounded bg-muted overflow-hidden">
+          <div
+            className="absolute inset-0 bg-primary transition-all"
+            style={{ width: `${(step - 1) * 50}%` }}
+          />
+        </div>
         <ol className="flex items-center gap-2">
           {[1, 2, 3].map((n) => (
             <li key={n} className="flex flex-1 flex-col items-center">
@@ -281,7 +294,13 @@ export default function NewProductPage() {
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                <Input
+                  id="name"
+                  value={name}
+                  aria-invalid={Boolean(errors.name)}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
                 {errors.name && (
                   <p className="text-sm text-destructive">{errors.name}</p>
                 )}
@@ -321,23 +340,30 @@ export default function NewProductPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {subProducts.map((sub, i) => (
-                <div key={i} className="rounded border p-4 space-y-4">
-                  <div className="flex justify-between items-center">
+                <div key={i} className="rounded-lg border p-4 space-y-4 bg-muted/50">
+                  <div className="flex justify-between items-center gap-2">
                     <Input
                       placeholder="Name"
+                      aria-invalid={Boolean(errors[`name${i}`])}
                       value={sub.name}
                       onChange={(e) => updateSub(i, "name", e.target.value)}
-                      className="flex-1 mr-2"
+                      className="flex-1"
                     />
-                    {errors[`name${i}`] && (
-                      <p className="text-sm text-destructive">{errors[`name${i}`]}</p>
-                    )}
                     {subProducts.length > 1 && (
-                      <Button type="button" size="sm" variant="outline" onClick={() => removeSub(i)}>
-                        Remove
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeSub(i)}
+                        aria-label="Remove option"
+                      >
+                        <XIcon className="size-4" />
                       </Button>
                     )}
                   </div>
+                  {errors[`name${i}`] && (
+                    <p className="text-sm text-destructive">{errors[`name${i}`]}</p>
+                  )}
                   <Select value={sub.billing} onValueChange={(v) => updateSub(i, "billing", v)}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Billing" />
@@ -356,6 +382,7 @@ export default function NewProductPage() {
                           inputMode="decimal"
                           pattern="^\d+(\.\d{1,2})?$"
                           value={sub.price}
+                          aria-invalid={Boolean(errors[`price${i}`])}
                           onChange={(e) => updateSub(i, 'price', e.target.value)}
                         />
                         {errors[`price${i}`] && (
@@ -366,6 +393,7 @@ export default function NewProductPage() {
                         <Label>Currency</Label>
                         <Input
                           value={sub.currency}
+                          aria-invalid={Boolean(errors[`currency${i}`])}
                           onChange={(e) => updateSub(i, "currency", e.target.value.toUpperCase())}
                         />
                         {errors[`currency${i}`] && (
@@ -378,7 +406,7 @@ export default function NewProductPage() {
                     <div className="space-y-2">
                       <Label>Subscription period</Label>
                       <Select value={sub.period} onValueChange={(v) => updateSub(i, "period", v)}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w-full" aria-invalid={Boolean(errors[`period${i}`])}>
                           <SelectValue placeholder="Select period" />
                         </SelectTrigger>
                         <SelectContent>
@@ -395,7 +423,7 @@ export default function NewProductPage() {
                     <div className="space-y-2">
                       <Label>Role</Label>
                       <Select value={sub.roleId} onValueChange={(v) => updateSub(i, 'roleId', v)}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w-full" aria-invalid={Boolean(errors[`role${i}`])}>
                           <SelectValue placeholder="Select role" />
                         </SelectTrigger>
                         <SelectContent>
@@ -423,13 +451,18 @@ export default function NewProductPage() {
                 </div>
               ))}
               <Button type="button" variant="outline" onClick={addSub}>
-                Add Sub-product
+                <PlusIcon className="size-4" /> Add Option
               </Button>
 
               {type === 'file' && (
                 <div className="space-y-2">
                   <Label htmlFor="file">Upload file</Label>
-                  <Input id="file" type="file" onChange={(e) => setContentFile(e.target.files?.[0] || null)} />
+                  <Input
+                    id="file"
+                    type="file"
+                    aria-invalid={Boolean(errors.file)}
+                    onChange={(e) => setContentFile(e.target.files?.[0] || null)}
+                  />
                   {errors.file && <p className="text-sm text-destructive">{errors.file}</p>}
                 </div>
               )}
@@ -455,6 +488,7 @@ export default function NewProductPage() {
                     id="keys"
                     className="w-full rounded-md border px-3 py-1 min-h-[100px]"
                     value={licenseKeys}
+                    aria-invalid={Boolean(errors.keys)}
                     onChange={(e) => setLicenseKeys(e.target.value)}
                   />
                   {errors.keys && <p className="text-sm text-destructive">{errors.keys}</p>}
