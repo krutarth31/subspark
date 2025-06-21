@@ -1,8 +1,17 @@
 "use client"
 
 import DashboardLayout from "@/components/dashboard-layout"
-import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
+import dynamic from "next/dynamic"
+
+const ChartAreaInteractive = dynamic(
+  () => import("@/components/chart-area-interactive"),
+  { ssr: false, loading: () => <p>Loading chart...</p> }
+)
+
+const DataTable = dynamic(() => import("@/components/data-table"), {
+  ssr: false,
+  loading: () => <p>Loading table...</p>,
+})
 import { SectionCards } from "@/components/section-cards"
 import { useUserRole } from "@/hooks/use-user-role"
 import { Button } from "@/components/ui/button"

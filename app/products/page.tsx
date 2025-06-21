@@ -3,7 +3,12 @@
 import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/dashboard-layout'
 import { Input } from '@/components/ui/input'
-import { DataTable } from '@/components/ui/data-table'
+import dynamic from 'next/dynamic'
+
+const DataTable = dynamic(() => import('@/components/ui/data-table'), {
+  ssr: false,
+  loading: () => <p>Loading table...</p>,
+})
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import Link from 'next/link'
