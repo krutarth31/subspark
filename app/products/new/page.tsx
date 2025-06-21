@@ -63,6 +63,9 @@ export default function NewProductPage() {
   const [discordLoading, setDiscordLoading] = useState<
     "connect" | "load" | null
   >(null)
+  const [extraOptions, setExtraOptions] = useState<
+    { billing: string; price: string; currency: string; period: string }[]
+  >([])
 
   // persist between reloads
   useEffect(() => {
@@ -73,10 +76,18 @@ export default function NewProductPage() {
         setType(data.type || "")
         setName(data.name || "")
         setDescription(data.description || "")
-        setPrice(data.price || "10")
-        setCurrency(data.currency || "USD")
-        setBilling(data.billing || "one")
-        setPeriod(data.period || "month")
+        if (Array.isArray(data.billingOptions) && data.billingOptions.length > 0) {
+          const first = data.billingOptions[0]
+          setPrice(String(first.price ?? ''))
+          setCurrency(first.currency || 'USD')
+          setBilling(first.billing || 'one')
+          setPeriod(first.period || 'month')
+        } else {
+          setPrice(data.price || '10')
+          setCurrency(data.currency || 'USD')
+          setBilling(data.billing || 'one')
+          setPeriod(data.period || 'month')
+        }
         setStatus(data.status || "draft")
         setServerId(data.serverId || "")
         setRoleId(data.roleId || "")
@@ -86,6 +97,17 @@ export default function NewProductPage() {
         setPlanDescription(data.planDescription || "")
         setAutoExpire(Boolean(data.autoExpire))
         setExpireDays(data.expireDays || "")
+        if (Array.isArray(data.billingOptions) && data.billingOptions.length > 1) {
+          const [, ...rest] = data.billingOptions
+          setExtraOptions(
+            rest.map((o: { billing?: string; price?: number; currency?: string; period?: string }) => ({
+              billing: o.billing || 'one',
+              price: String(o.price ?? ''),
+              currency: o.currency || 'USD',
+              period: o.period || 'month',
+            }))
+          )
+        }
       } catch {
         /* ignore */
       }
@@ -119,6 +141,10 @@ export default function NewProductPage() {
       planDescription,
       autoExpire,
       expireDays,
+      billingOptions: [
+        { billing, price, currency, period },
+        ...extraOptions,
+      ],
     }
     localStorage.setItem("newProduct", JSON.stringify(data))
   }, [
@@ -138,6 +164,7 @@ export default function NewProductPage() {
     expireDays,
     currency,
     period,
+    extraOptions,
   ])
 
   useEffect(() => {
@@ -175,6 +202,23 @@ export default function NewProductPage() {
     setDiscordLoading(null)
   }
 
+  function addOption() {
+    setExtraOptions((opts) => [
+      ...opts,
+      { billing: 'one', price: '10', currency: 'USD', period: 'month' },
+    ])
+  }
+
+  function updateOption(index: number, key: string, value: string) {
+    setExtraOptions((opts) =>
+      opts.map((o, i) => (i === index ? { ...o, [key]: value } : o))
+    )
+  }
+
+  function removeOption(index: number) {
+    setExtraOptions((opts) => opts.filter((_, i) => i !== index))
+  }
+
   const nextDisabled = () => {
     if (step === 1) return !type
     if (step === 2) return name.trim().length === 0
@@ -183,28 +227,19 @@ export default function NewProductPage() {
         !unlimited &&
         availableUnits.trim().length > 0 &&
         isNaN(parseInt(availableUnits))
-
-      if (billing === 'free') {
-        return !unlimited &&
-          (availableUnits.trim().length === 0 || isNaN(parseInt(availableUnits)))
+      const opts = [
+        { billing, price, currency, period },
+        ...extraOptions,
+      ]
+      for (const o of opts) {
+        if (o.billing !== 'free') {
+          if (o.price.trim().length === 0 || isNaN(parseFloat(o.price))) return true
+          if (o.currency.trim().length === 0) return true
+        }
+        if (o.billing === 'recurring' && !o.period) return true
       }
-
-      if (billing === 'one') {
-        return (
-          price.trim().length === 0 ||
-          currency.trim().length === 0 ||
-          unitsInvalid
-        )
-      }
-
-      if (billing === 'recurring') {
-        return (
-          price.trim().length === 0 ||
-          currency.trim().length === 0 ||
-          !period ||
-          unitsInvalid
-        )
-      }
+      if (!unlimited && availableUnits.trim().length === 0) return true
+      if (unitsInvalid) return true
     }
     if (step === 4) {
       if (type === "file") return !contentFile
@@ -243,6 +278,15 @@ export default function NewProductPage() {
           licenseKeys,
           type,
           status,
+          billingOptions: [
+            { billing, price: priceNumber, currency, period: billing === 'recurring' ? period : undefined },
+            ...extraOptions.map((o) => ({
+              billing: o.billing,
+              price: o.billing === 'free' ? 0 : parseFloat(o.price),
+              currency: o.currency,
+              period: o.billing === 'recurring' ? o.period : undefined,
+            })),
+          ],
         }),
       })
     } catch {
@@ -483,6 +527,74 @@ export default function NewProductPage() {
                     </div>
                   )}
                 </div>
+                {extraOptions.map((opt, i) => (
+                  <div key={i} className="rounded border p-4 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <p className="font-medium">Option {i + 2}</p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => removeOption(i)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                    <Select
+                      value={opt.billing}
+                      onValueChange={(v) => updateOption(i, 'billing', v)}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Billing" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="free">Free</SelectItem>
+                        <SelectItem value="one">One time</SelectItem>
+                        <SelectItem value="recurring">Recurring</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {opt.billing !== 'free' && (
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Price</Label>
+                          <Input
+                            value={opt.price}
+                            onChange={(e) => updateOption(i, 'price', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Currency</Label>
+                          <Input
+                            value={opt.currency}
+                            onChange={(e) =>
+                              updateOption(i, 'currency', e.target.value.toUpperCase())
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+                    {opt.billing === 'recurring' && (
+                      <div className="space-y-2">
+                        <Label>Subscription period</Label>
+                        <Select
+                          value={opt.period}
+                          onValueChange={(v) => updateOption(i, 'period', v)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select period" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="month">Monthly</SelectItem>
+                            <SelectItem value="year">Yearly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <Button type="button" variant="outline" onClick={addOption}>
+                  Add Option
+                </Button>
               </CardContent>
               <CardFooter className="justify-between">
                 <Button type="button" variant="outline" onClick={() => setStep(2)}>
@@ -599,14 +711,34 @@ export default function NewProductPage() {
               <p>
                 <strong>Name:</strong> {name}
               </p>
-              <p>
-                <strong>Billing:</strong> {billing}
-              </p>
-              {billing !== 'free' && (
-                <p>
-                  <strong>Price:</strong> {parseFloat(price).toFixed(2)} {currency}
-                  {billing === 'recurring' ? ` / ${period}` : ''}
-                </p>
+              {extraOptions.length > 0 ? (
+                <div>
+                  <p className="font-semibold">Billing Options:</p>
+                  <ul className="ml-4 list-disc">
+                    {[{ billing, price, currency, period }, ...extraOptions].map(
+                      (o, idx) => (
+                        <li key={idx}>
+                          {o.billing === 'free'
+                            ? 'Free'
+                            : `${parseFloat(o.price).toFixed(2)} ${o.currency}`}
+                          {o.billing === 'recurring' && o.period ? ` / ${o.period}` : ''}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              ) : (
+                <>
+                  <p>
+                    <strong>Billing:</strong> {billing}
+                  </p>
+                  {billing !== 'free' && (
+                    <p>
+                      <strong>Price:</strong> {parseFloat(price).toFixed(2)} {currency}
+                      {billing === 'recurring' ? ` / ${period}` : ''}
+                    </p>
+                  )}
+                </>
               )}
               <p>
                 <strong>Units:</strong>{' '}
