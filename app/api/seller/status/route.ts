@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     const db = await getDb()
     if (!accountId) {
       try {
-        const cookieStore = cookies()
+        const cookieStore = await cookies()
         const token = cookieStore.get('session')?.value
         if (token) {
           const session = await db
