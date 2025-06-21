@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -44,12 +44,39 @@ export type Product = {
 
 export function getColumns(
   onArchive: (id: string) => void,
-  archivingId?: string | null
+  archivingId?: string | null,
+  onToggle?: (id: string) => void,
+  expanded?: Record<string, boolean>,
 ): ColumnDef<Product>[] {
   return [
   {
     accessorKey: "name",
     header: "Name",
+    cell: ({ row }) => {
+      const prod = row.original
+      const hasSub = Array.isArray(prod.subProducts) && prod.subProducts.length > 1
+      const isOpen = expanded?.[prod._id]
+      return (
+        <div className="flex items-center gap-1">
+          {hasSub && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-5"
+              onClick={() => onToggle?.(prod._id)}
+            >
+              {isOpen ? (
+                <ChevronDown className="size-4" />
+              ) : (
+                <ChevronRight className="size-4" />
+              )}
+              <span className="sr-only">Toggle</span>
+            </Button>
+          )}
+          <span>{row.getValue<string>('name')}</span>
+        </div>
+      )
+    },
   },
   {
     accessorKey: "price",
