@@ -32,7 +32,8 @@ export default function SubscriptionsPage() {
         const list = Array.isArray(productsData.products)
           ? productsData.products.filter(
               (p: SubscriptionProduct & { billing: string; type: string }) =>
-                p.billing === 'recurring' && p.type === 'discord'
+                p.type === 'discord' &&
+                (p.billing === 'recurring' || p.billing === 'one')
             )
           : []
         setProducts(list)
@@ -85,7 +86,7 @@ export default function SubscriptionsPage() {
             <Spinner className="size-6" />
           </div>
         ) : filtered.length === 0 ? (
-          <p>No subscriptions found.</p>
+          <p>No products found.</p>
         ) : (
           <DataTable columns={columns} data={filtered} />
         )}
