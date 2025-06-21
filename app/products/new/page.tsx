@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CheckIcon, FileIcon, KeyIcon, ServerIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Spinner } from "@/components/ui/spinner"
+import { ServiceDescription } from "@/components/service-description"
 
 const types = [
   { id: "file", label: "File", icon: FileIcon },
@@ -416,6 +417,7 @@ export default function NewProductPage() {
                       className="w-full rounded-md border px-3 py-1 min-h-[60px]"
                       value={sub.service}
                       onChange={(e) => updateSub(i, 'service', e.target.value)}
+                      placeholder="List features, one per line"
                     />
                   </div>
                 </div>
@@ -491,7 +493,9 @@ export default function NewProductPage() {
                 {subProducts.map((s, i) => (
                   <div key={i} className="border rounded p-2">
                     <p>{s.name || `Option ${i + 1}`}</p>
-                    {s.service && <p className="text-muted-foreground">{s.service}</p>}
+                    {s.service && (
+                      <ServiceDescription className="text-muted-foreground" text={s.service} />
+                    )}
                     <p>
                       {s.billing === 'free'
                         ? 'Free'

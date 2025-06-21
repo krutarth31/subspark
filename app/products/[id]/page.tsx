@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { ServiceDescription } from "@/components/service-description"
 
 interface Product {
   _id: string
@@ -81,15 +82,19 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
         {product.subProducts && product.subProducts.length > 1 ? (
           <div>
             <p className="font-semibold">Sub-products:</p>
-            <ul className="ml-4 list-disc">
+            <ul className="ml-4 list-disc space-y-2">
               {product.subProducts.map((o, idx) => (
-                <li key={idx}>
-                  {o.name ? `${o.name}: ` : ""}
-                  {o.service && `${o.service} - `}
-                  {o.billing === 'free'
-                    ? 'Free'
-                    : `${o.price?.toFixed(2)} ${o.currency}`}
-                  {o.billing === 'recurring' && o.period ? ` / ${o.period}` : ''}
+                <li key={idx} className="space-y-1">
+                  <p className="font-medium">{o.name || `Option ${idx + 1}`}</p>
+                  {o.service && (
+                    <ServiceDescription className="text-muted-foreground" text={o.service} />
+                  )}
+                  <p>
+                    {o.billing === 'free'
+                      ? 'Free'
+                      : `${o.price?.toFixed(2)} ${o.currency}`}
+                    {o.billing === 'recurring' && o.period ? ` / ${o.period}` : ''}
+                  </p>
                 </li>
               ))}
             </ul>

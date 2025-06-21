@@ -11,6 +11,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card"
+import { ServiceDescription } from "@/components/service-description"
 
 interface BillingOption {
   name?: string
@@ -88,6 +89,7 @@ export default function BuyPage({ params }: { params: { id: string } }) {
     price: product?.price,
     currency: product?.currency,
     period: product?.period,
+    service: product?.planDescription,
   }
 
   return (
@@ -122,7 +124,9 @@ export default function BuyPage({ params }: { params: { id: string } }) {
                         {o.name || `Option ${idx + 1}`}
                       </CardTitle>
                       {o.service && (
-                        <CardDescription>{o.service}</CardDescription>
+                        <CardDescription>
+                          <ServiceDescription text={o.service} />
+                        </CardDescription>
                       )}
                     </CardHeader>
                     <CardContent className="text-center">
@@ -133,9 +137,16 @@ export default function BuyPage({ params }: { params: { id: string } }) {
               </div>
             )}
             {!product.subProducts || product.subProducts.length === 0 ? (
-              <p className="text-center text-2xl font-semibold">
-                {formatOption(display)}
-              </p>
+              <>
+                {display.service && (
+                  <div className="text-center text-sm text-muted-foreground mb-2">
+                    <ServiceDescription text={display.service} />
+                  </div>
+                )}
+                <p className="text-center text-2xl font-semibold">
+                  {formatOption(display)}
+                </p>
+              </>
             ) : null}
             <Button onClick={checkout} disabled={paying} className="w-full">
               {paying && <Spinner className="mr-2" />}
