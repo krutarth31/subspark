@@ -23,6 +23,7 @@ type SubProduct = {
   price: string
   currency: string
   period: string
+  roleId: string
 }
 
 export default function NewProductPage() {
@@ -34,10 +35,16 @@ export default function NewProductPage() {
   const [image, setImage] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [subProducts, setSubProducts] = useState<SubProduct[]>([
-    { name: "Default", billing: "one", price: "10", currency: "USD", period: "month" },
+    {
+      name: "Default",
+      billing: "one",
+      price: "10",
+      currency: "USD",
+      period: "month",
+      roleId: "",
+    },
   ])
   const [serverId, setServerId] = useState("")
-  const [roleId, setRoleId] = useState("")
   const [licenseKeys, setLicenseKeys] = useState("")
   const [contentFile, setContentFile] = useState<File | null>(null)
   const [discordStatus, setDiscordStatus] = useState<
@@ -96,7 +103,14 @@ export default function NewProductPage() {
   function addSub() {
     setSubProducts((subs) => [
       ...subs,
-      { name: "", billing: "one", price: "10", currency: "USD", period: "month" },
+      {
+        name: "",
+        billing: "one",
+        price: "10",
+        currency: "USD",
+        period: "month",
+        roleId: "",
+      },
     ])
   }
 
@@ -122,7 +136,13 @@ export default function NewProductPage() {
     }
     if (step === 3) {
       if (type === "file") return !contentFile
-      if (type === "discord") return !serverId.trim() || !roleId.trim()
+      if (type === "discord") {
+        if (!serverId.trim()) return true
+        for (const s of subProducts) {
+          if (!s.roleId.trim()) return true
+        }
+        return false
+      }
       if (type === "key") return licenseKeys.trim().length === 0
     }
     return false
@@ -142,10 +162,11 @@ export default function NewProductPage() {
           price: s.billing === "free" ? 0 : parseFloat(s.price),
           currency: s.currency,
           period: s.billing === "recurring" ? s.period : undefined,
+          roleId: s.roleId,
         })),
         deliveryFile: contentFile ? contentFile.name : undefined,
         serverId,
-        roleId,
+        roleId: subProducts[0]?.roleId,
         licenseKeys,
       }
       const res = await fetch("/api/products", {
@@ -344,21 +365,28 @@ export default function NewProductPage() {
                   ) : (
                     <>
                       <p className="text-sm">Connected to: {discordStatus.guildName || serverId}</p>
-                      <div className="space-y-2">
-                        <Label htmlFor="role">Assign role</Label>
-                        <Select value={roleId} onValueChange={setRoleId}>
-                          <SelectTrigger id="role" className="w-full">
-                            <SelectValue placeholder="Select role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {roles.map((r) => (
-                              <SelectItem key={r.id} value={r.id}>
-                                {r.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                      {subProducts.map((sub, i) => (
+                        <div key={i} className="space-y-2">
+                          <Label>
+                            Role for {sub.name || `Option ${i + 1}`}
+                          </Label>
+                          <Select
+                            value={sub.roleId}
+                            onValueChange={(v) => updateSub(i, 'roleId', v)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {roles.map((r) => (
+                                <SelectItem key={r.id} value={r.id}>
+                                  {r.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      ))}
                     </>
                   )}
                 </div>

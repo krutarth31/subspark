@@ -39,6 +39,7 @@ export type Product = {
     price?: number
     currency: string
     period?: string
+    roleId?: string
   }[]
 }
 

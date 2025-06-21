@@ -20,6 +20,7 @@ const billingOptionSchema = z.object({
   price: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(4).default('USD'),
   period: z.enum(['day', 'week', 'month', 'year']).optional(),
+  roleId: z.string().optional(),
 })
 
 const productSchema = z.object({
@@ -70,6 +71,7 @@ export async function GET() {
           currency: string
           period?: string
           stripePriceId?: string
+          roleId?: string
         }[]
         description?: string
         planDescription?: string
@@ -130,6 +132,7 @@ export async function POST(request: Request) {
               price: parsed.data.price,
               currency: parsed.data.currency,
               period: parsed.data.period,
+              roleId: parsed.data.roleId,
             },
           ]
     const { billing } = subProducts[0]
@@ -175,6 +178,7 @@ export async function POST(request: Request) {
       billing,
       period: subProducts[0].period,
       subProducts,
+      roleId: subProducts[0].roleId,
       userId: session.userId,
       archived: false,
       createdAt: new Date(),

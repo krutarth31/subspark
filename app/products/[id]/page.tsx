@@ -115,9 +115,23 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
           </p>
         )}
         {product.type === 'discord' && (
-          <p>
-            <strong>Discord:</strong> {guildName || product.serverId} / {roles.find((r) => r.id === product.roleId)?.name || product.roleId}
-          </p>
+          <div>
+            <p>
+              <strong>Discord:</strong> {guildName || product.serverId}
+            </p>
+            {product.subProducts && product.subProducts.length > 0 ? (
+              <ul className="ml-4 list-disc">
+                {product.subProducts.map((s, idx) => (
+                  <li key={idx}>
+                    {(s.name ? `${s.name}: ` : '') +
+                      (roles.find((r) => r.id === s.roleId)?.name || s.roleId || '-')}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="ml-4">{roles.find((r) => r.id === product.roleId)?.name || product.roleId}</p>
+            )}
+          </div>
         )}
         {product.type === 'key' && product.licenseKeys && (
           <p>

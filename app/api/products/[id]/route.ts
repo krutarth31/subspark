@@ -10,6 +10,7 @@ const billingOptionSchema = z.object({
   price: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(4).default('USD'),
   period: z.enum(['day', 'week', 'month', 'year']).optional(),
+  roleId: z.string().optional(),
 })
 
 const productSchema = z.object({
@@ -35,6 +36,10 @@ const productSchema = z.object({
   licenseKeys: z.string().optional(),
 })
 
+const updateSchema = productSchema.extend({
+  subIndex: z.number().int().nonnegative().optional(),
+})
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -57,6 +62,7 @@ export async function GET(
           currency: string
           period?: string
           stripePriceId?: string
+          roleId?: string
         }[]
         description?: string
         planDescription?: string
@@ -92,7 +98,7 @@ export async function PUT(
 ) {
   try {
     const body = await request.json().catch(() => null)
-    const parsed = productSchema.safeParse(body)
+    const parsed = updateSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
     }
@@ -105,13 +111,28 @@ export async function PUT(
       .findOne({ token })
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const id = params.id
-    const update: Record<string, unknown> = { ...parsed.data }
-    if (Array.isArray(parsed.data.subProducts) && parsed.data.subProducts.length > 0) {
-      const opt = parsed.data.subProducts[0]
+    const { subIndex, ...data } = parsed.data
+    const update: Record<string, unknown> = { ...data }
+    if (typeof subIndex === 'number' && 'roleId' in parsed.data) {
+      await db.collection('products').updateOne(
+        { _id: new ObjectId(id), userId: session.userId },
+        {
+          $set: {
+            [`subProducts.${subIndex}.roleId`]: parsed.data.roleId || undefined,
+            ...(parsed.data.serverId ? { serverId: parsed.data.serverId } : {}),
+            updatedAt: new Date(),
+          },
+        }
+      )
+      return NextResponse.json({ ok: true })
+    }
+    if (Array.isArray(data.subProducts) && data.subProducts.length > 0) {
+      const opt = data.subProducts[0]
       update.billing = opt.billing
       update.price = opt.billing === 'free' ? 0 : opt.price
       update.currency = opt.currency
       update.period = opt.period
+      update.roleId = opt.roleId
     } else if (update.billing === 'free') {
       update.price = 0
     }

@@ -29,13 +29,45 @@ export default function SubscriptionsPage() {
         const statusData = await statusRes.json().catch(() => ({}))
         setRoles(rolesData.roles || [])
         setGuildId(statusData.guildId || null)
-        const list = Array.isArray(productsData.products)
-          ? productsData.products.filter(
-              (p: SubscriptionProduct & { billing: string; type: string }) =>
-                p.type === 'discord' &&
-                (p.billing === 'recurring' || p.billing === 'one')
-            )
-          : []
+        const list: SubscriptionProduct[] = []
+        if (Array.isArray(productsData.products)) {
+          for (const p of productsData.products) {
+            if (p.type !== 'discord') continue
+            const subs: {
+              name?: string
+              billing: string
+              price?: number
+              currency: string
+              period?: string
+              roleId?: string
+            }[] =
+              Array.isArray(p.subProducts) && p.subProducts.length > 0
+                ? p.subProducts
+                : [
+                    {
+                      billing: p.billing,
+                      price: p.price,
+                      currency: p.currency,
+                      period: p.period,
+                      roleId: p.roleId,
+                      name: p.name,
+                    },
+                  ]
+            subs.forEach((s, idx) => {
+              if (s.billing === 'recurring' || s.billing === 'one') {
+                list.push({
+                  _id: p._id,
+                  index: idx,
+                  name: s.name ? `${p.name} - ${s.name}` : p.name,
+                  price: s.price ?? p.price,
+                  currency: s.currency || p.currency,
+                  period: s.billing === 'recurring' ? s.period : undefined,
+                  roleId: s.roleId,
+                })
+              }
+            })
+          }
+        }
         setProducts(list)
       } finally {
         setLoading(false)
@@ -44,20 +76,22 @@ export default function SubscriptionsPage() {
     load()
   }, [])
 
-  async function updateRole(id: string, roleId: string) {
+  async function updateRole(id: string, index: number, roleId: string) {
     if (!guildId) return
-    setSavingId(id)
+    setSavingId(`${id}-${index}`)
     try {
       const res = await fetch(`/api/products/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roleId, serverId: guildId }),
+        body: JSON.stringify({ roleId, serverId: guildId, subIndex: index }),
       })
       if (!res.ok) throw new Error('Request failed')
       toast.success('Role updated')
       setProducts((prev) =>
         prev.map((p) =>
-          p._id === id ? { ...p, roleId: roleId || undefined } : p
+          p._id === id && p.index === index
+            ? { ...p, roleId: roleId || undefined }
+            : p
         )
       )
     } catch {

@@ -16,6 +16,7 @@ export type Role = {
 
 export type SubscriptionProduct = {
   _id: string
+  index: number
   name: string
   price: number
   currency: string
@@ -25,7 +26,7 @@ export type SubscriptionProduct = {
 
 export function getColumns(
   roles: Role[],
-  onUpdate: (id: string, roleId: string) => void,
+  onUpdate: (id: string, index: number, roleId: string) => void,
   savingId: string | null,
 ): ColumnDef<SubscriptionProduct>[] {
   return [
@@ -56,8 +57,10 @@ export function getColumns(
         return (
           <Select
             value={prod.roleId || "none"}
-            onValueChange={(v) => onUpdate(prod._id, v === "none" ? "" : v)}
-            disabled={savingId === prod._id}
+            onValueChange={(v) =>
+              onUpdate(prod._id, prod.index, v === "none" ? "" : v)
+            }
+            disabled={savingId === `${prod._id}-${prod.index}`}
           >
             <SelectTrigger className="w-36">
               <SelectValue placeholder="Select role" />
