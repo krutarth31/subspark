@@ -14,8 +14,11 @@ function getStripe(): Stripe {
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  ctx: { params: { id: string } } | { params: Promise<{ id: string }> }
 ) {
+  const { id } = await (ctx as {
+    params: { id: string } | Promise<{ id: string }>
+  }).params
   try {
     const db = await getDb()
     const product = await db
@@ -33,7 +36,7 @@ export async function POST(
           stripePriceId?: string
         }[]
       }>('products')
-      .findOne({ _id: new ObjectId(params.id) })
+      .findOne({ _id: new ObjectId(id) })
     if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
@@ -58,15 +61,15 @@ export async function POST(
     }
     const { origin } = new URL(request.url)
     if (option.billing === 'free') {
-      return NextResponse.json({ url: `${origin}/products/${params.id}?success=1` })
+      return NextResponse.json({ url: `${origin}/products/${id}?success=1` })
     }
     const session = await getStripe().checkout.sessions.create(
       {
         mode: option.billing === 'recurring' ? 'subscription' : 'payment',
         payment_method_types: ['card'],
         line_items: [{ price: option.stripePriceId!, quantity: 1 }],
-        success_url: `${origin}/products/${params.id}?success=1`,
-        cancel_url: `${origin}/products/${params.id}?canceled=1`,
+        success_url: `${origin}/products/${id}?success=1`,
+        cancel_url: `${origin}/products/${id}?canceled=1`,
       },
       { stripeAccount: seller._id }
     )

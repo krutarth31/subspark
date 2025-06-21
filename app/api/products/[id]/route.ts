@@ -43,11 +43,13 @@ const updateSchema = productSchema.extend({
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  ctx: { params: { id: string } } | { params: Promise<{ id: string }> }
 ) {
+  const { id } = await (ctx as {
+    params: { id: string } | Promise<{ id: string }>
+  }).params
   try {
     const db = await getDb()
-    const id = params.id
     const product = await db
       .collection<{
         _id: ObjectId
@@ -96,8 +98,11 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  ctx: { params: { id: string } } | { params: Promise<{ id: string }> }
 ) {
+  const { id } = await (ctx as {
+    params: { id: string } | Promise<{ id: string }>
+  }).params
   try {
     const body = await request.json().catch(() => null)
     const parsed = updateSchema.safeParse(body)
@@ -112,7 +117,7 @@ export async function PUT(
       .collection<{ token: string; userId: ObjectId }>('sessions')
       .findOne({ token })
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const id = params.id
+    
     const { subIndex, ...data } = parsed.data
     const update: Record<string, unknown> = { ...data }
     if (typeof subIndex === 'number' && 'roleId' in parsed.data) {
@@ -153,8 +158,11 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  ctx: { params: { id: string } } | { params: Promise<{ id: string }> }
 ) {
+  const { id } = await (ctx as {
+    params: { id: string } | Promise<{ id: string }>
+  }).params
   try {
     const db = await getDb()
     const cookieStore = await cookies()
@@ -164,7 +172,6 @@ export async function DELETE(
       .collection<{ token: string; userId: ObjectId }>('sessions')
       .findOne({ token })
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    const id = params.id
     await db.collection('products').updateOne(
       { _id: new ObjectId(id), userId: session.userId },
       { $set: { archived: true } }
