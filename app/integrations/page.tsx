@@ -69,9 +69,7 @@ export default function IntegrationPage() {
             </p>
             {status?.connected && (
               <div className="space-y-1 text-sm">
-                <p>
-                  ✅ Connected to: {status.guildName} (Server ID: {status.guildId})
-                </p>
+                <p>✅ Connected to: {status.guildName}</p>
                 <p>
                   Bot is active in <code>#verify-access</code>,{' '}
                   <code>#alerts</code>.

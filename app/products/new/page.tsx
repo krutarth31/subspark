@@ -619,7 +619,7 @@ export default function NewProductPage() {
               )}
               {type === 'discord' && (
                 <p>
-                  <strong>Discord:</strong> {serverId} / {roleId}
+                  <strong>Discord:</strong> {discordStatus.guildName || serverId} / {roles.find((r) => r.id === roleId)?.name || roleId}
                 </p>
               )}
               {type === 'key' && licenseKeys && (

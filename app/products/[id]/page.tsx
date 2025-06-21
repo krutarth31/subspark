@@ -30,6 +30,8 @@ interface Product {
 export default function ViewProductPage({ params }: { params: { id: string } }) {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
+  const [guildName, setGuildName] = useState<string | null>(null)
+  const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     fetch(`/api/products/${params.id}`)
@@ -40,6 +42,18 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
       })
       .catch(() => setLoading(false))
   }, [params.id])
+
+  useEffect(() => {
+    if (!product || product.type !== 'discord') return
+    fetch('/api/discord/status')
+      .then((res) => res.json())
+      .then((data) => setGuildName(data.guildName || null))
+      .catch(() => {})
+    fetch('/api/discord/roles')
+      .then((res) => res.json())
+      .then((data) => setRoles(Array.isArray(data.roles) ? data.roles : []))
+      .catch(() => {})
+  }, [product])
 
   if (loading)
     return (
@@ -74,7 +88,7 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
         )}
         {product.type === 'discord' && (
           <p>
-            <strong>Discord:</strong> {product.serverId} / {product.roleId}
+            <strong>Discord:</strong> {guildName || product.serverId} / {roles.find((r) => r.id === product.roleId)?.name || product.roleId}
           </p>
         )}
         {product.type === 'key' && product.licenseKeys && (
