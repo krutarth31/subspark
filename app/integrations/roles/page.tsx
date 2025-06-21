@@ -63,7 +63,9 @@ export default function RolesPage() {
       if (!res.ok) throw new Error('Request failed')
       toast.success('Role updated')
       setProducts(prev =>
-        prev?.map(p => (p._id === id ? { ...p, roleId } : p)) || null
+        prev?.map(p =>
+          p._id === id ? { ...p, roleId: roleId || undefined } : p
+        ) || null
       )
     } catch {
       toast.error('Failed to update')
@@ -88,15 +90,17 @@ export default function RolesPage() {
               >
                 <span>{prod.name}</span>
                 <Select
-                  value={prod.roleId || ''}
-                  onValueChange={(v) => updateRole(prod._id, v)}
+                  value={prod.roleId || 'none'}
+                  onValueChange={(v) =>
+                    updateRole(prod._id, v === 'none' ? '' : v)
+                  }
                   disabled={savingId === prod._id}
                 >
                   <SelectTrigger className="w-40">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {roles.map((role) => (
                       <SelectItem key={role.id} value={role.id}>
                         {role.name}
