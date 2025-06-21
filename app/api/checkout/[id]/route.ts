@@ -24,10 +24,29 @@ export async function POST(
         userId: ObjectId
         stripePriceId?: string
         billing: string
+        billingOptions?: {
+          billing: string
+          price?: number
+          currency: string
+          period?: string
+          stripePriceId?: string
+        }[]
       }>('products')
       .findOne({ _id: new ObjectId(params.id) })
-    if (!product || !product.stripePriceId) {
+    if (!product) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    }
+    const body = await request.json().catch(() => null)
+    const billing = body?.billing || product.billing
+    const option = Array.isArray(product.billingOptions)
+      ? product.billingOptions.find((o) => o.billing === billing) ||
+        product.billingOptions[0]
+      : { billing: product.billing, stripePriceId: product.stripePriceId }
+    if (!option) {
+      return NextResponse.json({ error: 'Billing option not found' }, { status: 400 })
+    }
+    if (option.billing !== 'free' && !option.stripePriceId) {
+      return NextResponse.json({ error: 'Billing option invalid' }, { status: 400 })
     }
     const seller = await db
       .collection<{ _id: string }>('sellers')
@@ -36,11 +55,14 @@ export async function POST(
       return NextResponse.json({ error: 'Seller not found' }, { status: 500 })
     }
     const { origin } = new URL(request.url)
+    if (option.billing === 'free') {
+      return NextResponse.json({ url: `${origin}/products/${params.id}?success=1` })
+    }
     const session = await getStripe().checkout.sessions.create(
       {
-        mode: product.billing === 'recurring' ? 'subscription' : 'payment',
+        mode: option.billing === 'recurring' ? 'subscription' : 'payment',
         payment_method_types: ['card'],
-        line_items: [{ price: product.stripePriceId, quantity: 1 }],
+        line_items: [{ price: option.stripePriceId!, quantity: 1 }],
         success_url: `${origin}/products/${params.id}?success=1`,
         cancel_url: `${origin}/products/${params.id}?canceled=1`,
       },

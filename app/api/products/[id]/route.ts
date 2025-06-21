@@ -4,11 +4,19 @@ import { cookies } from 'next/headers'
 import { ObjectId } from 'mongodb'
 import { z } from 'zod'
 
+const billingOptionSchema = z.object({
+  billing: z.enum(['free', 'one', 'recurring']),
+  price: z.number().nonnegative().optional(),
+  currency: z.string().min(3).max(4).default('USD'),
+  period: z.enum(['day', 'week', 'month', 'year']).optional(),
+})
+
 const productSchema = z.object({
   name: z.string().min(1).optional(),
   price: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(4).optional(),
   billing: z.enum(['free', 'one', 'recurring']).optional(),
+  billingOptions: z.array(billingOptionSchema).optional(),
   description: z.string().optional(),
   planDescription: z.string().optional(),
   availableUnits: z
@@ -18,7 +26,6 @@ const productSchema = z.object({
     .nullish(),
   unlimited: z.boolean().optional(),
   expireDays: z.number().int().positive().nullish(),
-  period: z.enum(['day', 'week', 'month', 'year']).optional(),
   type: z.enum(['discord', 'file', 'key']).optional(),
   status: z.enum(['draft', 'published']).optional(),
   deliveryFile: z.string().optional(),
@@ -42,6 +49,13 @@ export async function GET(
         price: number
         currency: string
         billing: string
+        billingOptions?: {
+          billing: string
+          price?: number
+          currency: string
+          period?: string
+          stripePriceId?: string
+        }[]
         description?: string
         planDescription?: string
         availableUnits?: number
@@ -90,7 +104,13 @@ export async function PUT(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const id = params.id
     const update: Record<string, unknown> = { ...parsed.data }
-    if (update.billing === 'free') {
+    if (Array.isArray(parsed.data.billingOptions) && parsed.data.billingOptions.length > 0) {
+      const opt = parsed.data.billingOptions[0]
+      update.billing = opt.billing
+      update.price = opt.billing === 'free' ? 0 : opt.price
+      update.currency = opt.currency
+      update.period = opt.period
+    } else if (update.billing === 'free') {
       update.price = 0
     }
     await db

@@ -25,6 +25,13 @@ interface Product {
   serverId?: string
   roleId?: string
   licenseKeys?: string
+  billingOptions?: {
+    billing: "free" | "one" | "recurring"
+    price?: number
+    currency: string
+    period?: string
+    stripePriceId?: string
+  }[]
 }
 
 export default function ViewProductPage({ params }: { params: { id: string } }) {
@@ -70,12 +77,32 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
       <div className="p-4 space-y-2">
         <p><strong>Type:</strong> {product.type}</p>
         <p><strong>Status:</strong> {product.status}</p>
-        <p><strong>Billing:</strong> {product.billing}</p>
-        {product.billing !== 'free' && (
-          <p>
-            <strong>Price:</strong> {product.price.toFixed(2)} {product.currency}
-            {product.billing === 'recurring' ? ` / ${product.period}` : ''}
-          </p>
+        {product.billingOptions && product.billingOptions.length > 1 ? (
+          <div>
+            <p className="font-semibold">Billing Options:</p>
+            <ul className="ml-4 list-disc">
+              {product.billingOptions.map((o) => (
+                <li key={o.billing}>
+                  {o.billing === 'free'
+                    ? 'Free'
+                    : `${o.price?.toFixed(2)} ${o.currency}`}
+                  {o.billing === 'recurring' && o.period ? ` / ${o.period}` : ''}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <>
+            <p>
+              <strong>Billing:</strong> {product.billing}
+            </p>
+            {product.billing !== 'free' && (
+              <p>
+                <strong>Price:</strong> {product.price.toFixed(2)} {product.currency}
+                {product.billing === 'recurring' ? ` / ${product.period}` : ''}
+              </p>
+            )}
+          </>
         )}
         <p>
           <strong>Units:</strong>{' '}

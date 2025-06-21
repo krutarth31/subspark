@@ -14,11 +14,19 @@ function getStripe(): Stripe {
   return stripe
 }
 
+const billingOptionSchema = z.object({
+  billing: z.enum(['free', 'one', 'recurring']),
+  price: z.number().nonnegative().optional(),
+  currency: z.string().min(3).max(4).default('USD'),
+  period: z.enum(['day', 'week', 'month', 'year']).optional(),
+})
+
 const productSchema = z.object({
   name: z.string().min(1),
-  price: z.number().nonnegative(),
+  price: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(4).default('USD'),
-  billing: z.enum(['free', 'one', 'recurring']).default('one'),
+  billing: z.enum(['free', 'one', 'recurring']).default('one').optional(),
+  billingOptions: z.array(billingOptionSchema).optional(),
   description: z.string().optional(),
   planDescription: z.string().optional(),
   availableUnits: z
@@ -28,7 +36,6 @@ const productSchema = z.object({
     .nullish(),
   unlimited: z.boolean().optional(),
   expireDays: z.number().int().positive().nullish(),
-  period: z.enum(['day', 'week', 'month', 'year']).optional(),
   type: z.enum(['discord', 'file', 'key']),
   status: z.enum(['draft', 'published']).default('draft'),
   deliveryFile: z.string().optional(),
@@ -55,12 +62,18 @@ export async function GET() {
         price: number
         currency: string
         billing: string
+        billingOptions?: {
+          billing: string
+          price?: number
+          currency: string
+          period?: string
+          stripePriceId?: string
+        }[]
         description?: string
         planDescription?: string
         availableUnits?: number
         unlimited?: boolean
         expireDays?: number
-        period?: string
         type: string
         status: string
         createdAt: Date
@@ -105,7 +118,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Seller account not found' }, { status: 400 })
     }
 
-    const { billing } = parsed.data
+    const billingOptions =
+      parsed.data.billingOptions && parsed.data.billingOptions.length > 0
+        ? parsed.data.billingOptions
+        : [
+            {
+              billing: parsed.data.billing || 'one',
+              price: parsed.data.price,
+              currency: parsed.data.currency,
+              period: parsed.data.period,
+            },
+          ]
+    const { billing } = billingOptions[0]
     let stripeProductId: string | undefined
     let stripePriceId: string | undefined
 
@@ -118,21 +142,23 @@ export async function POST(request: Request) {
         { stripeAccount: seller._id }
       )
       stripeProductId = stripeProd.id
-      if (billing !== 'free') {
+      for (const opt of billingOptions) {
+        if (opt.billing === 'free' || typeof opt.price !== 'number') continue
         const priceParams: Stripe.PriceCreateParams = {
-          unit_amount: Math.round(parsed.data.price * 100),
-          currency: parsed.data.currency.toLowerCase(),
+          unit_amount: Math.round(opt.price * 100),
+          currency: opt.currency.toLowerCase(),
           product: stripeProd.id,
         }
-        if (billing === 'recurring' && parsed.data.period) {
+        if (opt.billing === 'recurring' && opt.period) {
           priceParams.recurring = {
-            interval: parsed.data.period as Stripe.PriceCreateParams.Recurring.Interval,
+            interval: opt.period as Stripe.PriceCreateParams.Recurring.Interval,
           }
         }
         const stripePrice = await getStripe().prices.create(priceParams, {
           stripeAccount: seller._id,
         })
-        stripePriceId = stripePrice.id
+        opt.stripePriceId = stripePrice.id
+        if (!stripePriceId) stripePriceId = stripePrice.id
       }
     } catch (err) {
       console.error('Stripe product creation failed', err)
@@ -141,7 +167,11 @@ export async function POST(request: Request) {
 
     const product = {
       ...parsed.data,
-      price: billing === 'free' ? 0 : parsed.data.price,
+      price: billing === 'free' ? 0 : billingOptions[0].price ?? 0,
+      currency: billingOptions[0].currency,
+      billing,
+      period: billingOptions[0].period,
+      billingOptions,
       userId: session.userId,
       archived: false,
       createdAt: new Date(),
