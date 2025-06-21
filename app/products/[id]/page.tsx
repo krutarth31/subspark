@@ -82,7 +82,7 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
         {product.subProducts && product.subProducts.length > 1 ? (
           <div>
             <p className="font-semibold">Sub-products:</p>
-            <ul className="ml-4 list-disc space-y-2">
+            <ul className="list-disc list-inside space-y-2">
               {product.subProducts.map((o, idx) => (
                 <li key={idx} className="space-y-1">
                   <p className="font-medium">{o.name || `Option ${idx + 1}`}</p>
@@ -127,7 +127,7 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
               <strong>Discord:</strong> {guildName || product.serverId}
             </p>
             {product.subProducts && product.subProducts.length > 0 ? (
-              <ul className="ml-4 list-disc">
+              <ul className="list-disc list-inside space-y-1 ml-4">
                 {product.subProducts.map((s, idx) => (
                   <li key={idx}>
                     {(s.name ? `${s.name}: ` : '') +
