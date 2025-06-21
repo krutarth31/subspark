@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 
 interface BillingOption {
+  name?: string
   billing: "free" | "one" | "recurring"
   price?: number
   currency: string
@@ -22,7 +23,7 @@ interface Product {
   billing: "free" | "one" | "recurring"
   period?: string
   stripePriceId?: string
-  billingOptions?: BillingOption[]
+  subProducts?: BillingOption[]
 }
 
 export default function BuyPage({ params }: { params: { id: string } }) {
@@ -36,8 +37,8 @@ export default function BuyPage({ params }: { params: { id: string } }) {
       .then((res) => res.json())
       .then((data) => {
         setProduct(data.product)
-        if (data.product?.billingOptions?.length) {
-          setBilling(data.product.billingOptions[0].billing)
+        if (data.product?.subProducts?.length) {
+          setBilling(data.product.subProducts[0].name || data.product.subProducts[0].billing)
         } else if (data.product) {
           setBilling(data.product.billing)
         }
@@ -65,7 +66,9 @@ export default function BuyPage({ params }: { params: { id: string } }) {
     }
   }
 
-  const option = product?.billingOptions?.find((o) => o.billing === billing)
+  const option = product?.subProducts?.find(
+    (o) => (o.name ? o.name === billing : o.billing === billing),
+  )
   const display = option || {
     billing: product?.billing,
     price: product?.price,
@@ -92,15 +95,15 @@ export default function BuyPage({ params }: { params: { id: string } }) {
                   : ""}
               </p>
             )}
-            {product.billingOptions && product.billingOptions.length > 1 && (
+            {product.subProducts && product.subProducts.length > 1 && (
               <select
                 value={billing}
                 onChange={(e) => setBilling(e.target.value)}
                 className="rounded border px-2 py-1"
               >
-                {product.billingOptions.map((o) => (
-                  <option key={o.billing} value={o.billing}>
-                    {o.billing}
+                {product.subProducts.map((o, idx) => (
+                  <option key={idx} value={o.name || o.billing}>
+                    {o.name || o.billing}
                   </option>
                 ))}
               </select>

@@ -15,6 +15,7 @@ function getStripe(): Stripe {
 }
 
 const billingOptionSchema = z.object({
+  name: z.string().optional(),
   billing: z.enum(['free', 'one', 'recurring']),
   price: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(4).default('USD'),
@@ -26,7 +27,7 @@ const productSchema = z.object({
   price: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(4).default('USD'),
   billing: z.enum(['free', 'one', 'recurring']).default('one').optional(),
-  billingOptions: z.array(billingOptionSchema).optional(),
+  subProducts: z.array(billingOptionSchema).optional(),
   description: z.string().optional(),
   planDescription: z.string().optional(),
   availableUnits: z
@@ -62,7 +63,8 @@ export async function GET() {
         price: number
         currency: string
         billing: string
-        billingOptions?: {
+        subProducts?: {
+          name?: string
           billing: string
           price?: number
           currency: string
@@ -118,18 +120,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Seller account not found' }, { status: 400 })
     }
 
-    const billingOptions =
-      parsed.data.billingOptions && parsed.data.billingOptions.length > 0
-        ? parsed.data.billingOptions
+    const subProducts =
+      parsed.data.subProducts && parsed.data.subProducts.length > 0
+        ? parsed.data.subProducts
         : [
             {
+              name: parsed.data.name,
               billing: parsed.data.billing || 'one',
               price: parsed.data.price,
               currency: parsed.data.currency,
               period: parsed.data.period,
             },
           ]
-    const { billing } = billingOptions[0]
+    const { billing } = subProducts[0]
     let stripeProductId: string | undefined
     let stripePriceId: string | undefined
 
@@ -142,7 +145,7 @@ export async function POST(request: Request) {
         { stripeAccount: seller._id }
       )
       stripeProductId = stripeProd.id
-      for (const opt of billingOptions) {
+      for (const opt of subProducts) {
         if (opt.billing === 'free' || typeof opt.price !== 'number') continue
         const priceParams: Stripe.PriceCreateParams = {
           unit_amount: Math.round(opt.price * 100),
@@ -167,11 +170,11 @@ export async function POST(request: Request) {
 
     const product = {
       ...parsed.data,
-      price: billing === 'free' ? 0 : billingOptions[0].price ?? 0,
-      currency: billingOptions[0].currency,
+      price: billing === 'free' ? 0 : subProducts[0].price ?? 0,
+      currency: subProducts[0].currency,
       billing,
-      period: billingOptions[0].period,
-      billingOptions,
+      period: subProducts[0].period,
+      subProducts,
       userId: session.userId,
       archived: false,
       createdAt: new Date(),

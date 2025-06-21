@@ -24,7 +24,8 @@ export async function POST(
         userId: ObjectId
         stripePriceId?: string
         billing: string
-        billingOptions?: {
+        subProducts?: {
+          name?: string
           billing: string
           price?: number
           currency: string
@@ -37,10 +38,11 @@ export async function POST(
       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
     }
     const body = await request.json().catch(() => null)
-    const billing = body?.billing || product.billing
-    const option = Array.isArray(product.billingOptions)
-      ? product.billingOptions.find((o) => o.billing === billing) ||
-        product.billingOptions[0]
+    const billing = body?.sub || product.billing
+    const option = Array.isArray(product.subProducts)
+      ? product.subProducts.find((o) =>
+          o.name ? o.name === billing : o.billing === billing,
+        ) || product.subProducts[0]
       : { billing: product.billing, stripePriceId: product.stripePriceId }
     if (!option) {
       return NextResponse.json({ error: 'Billing option not found' }, { status: 400 })

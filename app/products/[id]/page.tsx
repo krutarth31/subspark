@@ -25,12 +25,12 @@ interface Product {
   serverId?: string
   roleId?: string
   licenseKeys?: string
-  billingOptions?: {
+  subProducts?: {
+    name?: string
     billing: "free" | "one" | "recurring"
     price?: number
     currency: string
     period?: string
-    stripePriceId?: string
   }[]
 }
 
@@ -77,12 +77,13 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
       <div className="p-4 space-y-2">
         <p><strong>Type:</strong> {product.type}</p>
         <p><strong>Status:</strong> {product.status}</p>
-        {product.billingOptions && product.billingOptions.length > 1 ? (
+        {product.subProducts && product.subProducts.length > 1 ? (
           <div>
-            <p className="font-semibold">Billing Options:</p>
+            <p className="font-semibold">Sub-products:</p>
             <ul className="ml-4 list-disc">
-              {product.billingOptions.map((o) => (
-                <li key={o.billing}>
+              {product.subProducts.map((o, idx) => (
+                <li key={idx}>
+                  {o.name ? `${o.name}: ` : ""}
                   {o.billing === 'free'
                     ? 'Free'
                     : `${o.price?.toFixed(2)} ${o.currency}`}

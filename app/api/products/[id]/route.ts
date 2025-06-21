@@ -5,6 +5,7 @@ import { ObjectId } from 'mongodb'
 import { z } from 'zod'
 
 const billingOptionSchema = z.object({
+  name: z.string().optional(),
   billing: z.enum(['free', 'one', 'recurring']),
   price: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(4).default('USD'),
@@ -16,7 +17,7 @@ const productSchema = z.object({
   price: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(4).optional(),
   billing: z.enum(['free', 'one', 'recurring']).optional(),
-  billingOptions: z.array(billingOptionSchema).optional(),
+  subProducts: z.array(billingOptionSchema).optional(),
   description: z.string().optional(),
   planDescription: z.string().optional(),
   availableUnits: z
@@ -49,7 +50,8 @@ export async function GET(
         price: number
         currency: string
         billing: string
-        billingOptions?: {
+        subProducts?: {
+          name?: string
           billing: string
           price?: number
           currency: string
@@ -104,8 +106,8 @@ export async function PUT(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const id = params.id
     const update: Record<string, unknown> = { ...parsed.data }
-    if (Array.isArray(parsed.data.billingOptions) && parsed.data.billingOptions.length > 0) {
-      const opt = parsed.data.billingOptions[0]
+    if (Array.isArray(parsed.data.subProducts) && parsed.data.subProducts.length > 0) {
+      const opt = parsed.data.subProducts[0]
       update.billing = opt.billing
       update.price = opt.billing === 'free' ? 0 : opt.price
       update.currency = opt.currency
