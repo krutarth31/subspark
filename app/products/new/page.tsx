@@ -55,6 +55,7 @@ export default function NewProductPage() {
   const [status, setStatus] = useState<"draft" | "published">("draft")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (image) {
@@ -66,7 +67,7 @@ export default function NewProductPage() {
   }, [image])
 
   useEffect(() => {
-    if (step !== 3 || type !== "discord") return
+    if (step !== 2 || type !== "discord") return
     async function loadDiscord() {
       setDiscordLoading("load")
       try {
@@ -122,33 +123,57 @@ export default function NewProductPage() {
     setSubProducts((subs) => subs.filter((_, i) => i !== index))
   }
 
+  function validate(current: number): boolean {
+    const errs: Record<string, string> = {}
+    if (current === 1) {
+      if (!type) errs.type = 'Select a type'
+      if (!name.trim()) errs.name = 'Name is required'
+    }
+    if (current === 2) {
+      subProducts.forEach((s, i) => {
+        if (!s.name.trim()) errs[`name${i}`] = 'Required'
+        if (s.billing !== 'free') {
+          if (!s.price.trim() || isNaN(parseFloat(s.price)))
+            errs[`price${i}`] = 'Invalid price'
+          if (!s.currency.trim()) errs[`currency${i}`] = 'Currency'
+        }
+        if (s.billing === 'recurring' && !s.period)
+          errs[`period${i}`] = 'Period'
+        if (type === 'discord' && !s.roleId.trim())
+          errs[`role${i}`] = 'Role required'
+      })
+      if (type === 'file' && !contentFile) errs.file = 'File required'
+      if (type === 'key' && licenseKeys.trim().length === 0)
+        errs.keys = 'Provide keys'
+      if (type === 'discord') {
+        if (!serverId.trim()) errs.server = 'Connect server'
+      }
+    }
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
   const nextDisabled = () => {
     if (step === 1) return !type || name.trim().length === 0
     if (step === 2) {
       for (const s of subProducts) {
         if (!s.name.trim()) return true
-        if (s.billing !== "free") {
+        if (s.billing !== 'free') {
           if (!s.price.trim() || isNaN(parseFloat(s.price))) return true
           if (!s.currency.trim()) return true
         }
-        if (s.billing === "recurring" && !s.period) return true
+        if (s.billing === 'recurring' && !s.period) return true
+        if (type === 'discord' && !s.roleId.trim()) return true
       }
-    }
-    if (step === 3) {
-      if (type === "file") return !contentFile
-      if (type === "discord") {
-        if (!serverId.trim()) return true
-        for (const s of subProducts) {
-          if (!s.roleId.trim()) return true
-        }
-        return false
-      }
-      if (type === "key") return licenseKeys.trim().length === 0
+      if (type === 'file' && !contentFile) return true
+      if (type === 'key' && licenseKeys.trim().length === 0) return true
+      if (type === 'discord' && !serverId.trim()) return true
     }
     return false
   }
 
   async function handlePublish() {
+    if (!validate(2)) return
     setLoading(true)
     try {
       const body = {
@@ -237,10 +262,16 @@ export default function NewProductPage() {
                     )
                   })}
                 </div>
+                {errors.type && (
+                  <p className="text-sm text-destructive">{errors.type}</p>
+                )}
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="name">Name</Label>
                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                {errors.name && (
+                  <p className="text-sm text-destructive">{errors.name}</p>
+                )}
               </div>
               <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="desc">Description</Label>
@@ -259,7 +290,12 @@ export default function NewProductPage() {
             </CardContent>
             <CardFooter className="justify-between">
               <Button variant="outline" onClick={() => router.push("/products")}>Back</Button>
-              <Button onClick={() => setStep(2)} disabled={nextDisabled()}>
+              <Button
+                onClick={() => {
+                  if (validate(1)) setStep(2)
+                }}
+                disabled={nextDisabled()}
+              >
                 Next
               </Button>
             </CardFooter>
@@ -268,7 +304,7 @@ export default function NewProductPage() {
         {step === 2 && (
           <Card>
             <CardHeader>
-              <CardTitle>Sub-products</CardTitle>
+              <CardTitle>Sub-products & Delivery</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {subProducts.map((sub, i) => (
@@ -280,6 +316,9 @@ export default function NewProductPage() {
                       onChange={(e) => updateSub(i, "name", e.target.value)}
                       className="flex-1 mr-2"
                     />
+                    {errors[`name${i}`] && (
+                      <p className="text-sm text-destructive">{errors[`name${i}`]}</p>
+                    )}
                     {subProducts.length > 1 && (
                       <Button type="button" size="sm" variant="outline" onClick={() => removeSub(i)}>
                         Remove
@@ -301,6 +340,9 @@ export default function NewProductPage() {
                       <div className="space-y-2">
                         <Label>Price</Label>
                         <Input value={sub.price} onChange={(e) => updateSub(i, "price", e.target.value)} />
+                        {errors[`price${i}`] && (
+                          <p className="text-sm text-destructive">{errors[`price${i}`]}</p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label>Currency</Label>
@@ -308,6 +350,9 @@ export default function NewProductPage() {
                           value={sub.currency}
                           onChange={(e) => updateSub(i, "currency", e.target.value.toUpperCase())}
                         />
+                        {errors[`currency${i}`] && (
+                          <p className="text-sm text-destructive">{errors[`currency${i}`]}</p>
+                        )}
                       </div>
                     </div>
                   )}
@@ -323,6 +368,29 @@ export default function NewProductPage() {
                           <SelectItem value="year">Yearly</SelectItem>
                         </SelectContent>
                       </Select>
+                      {errors[`period${i}`] && (
+                        <p className="text-sm text-destructive">{errors[`period${i}`]}</p>
+                      )}
+                    </div>
+                  )}
+                  {type === 'discord' && (
+                    <div className="space-y-2">
+                      <Label>Role</Label>
+                      <Select value={sub.roleId} onValueChange={(v) => updateSub(i, 'roleId', v)}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {roles.map((r) => (
+                            <SelectItem key={r.id} value={r.id}>
+                              {r.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors[`role${i}`] && (
+                        <p className="text-sm text-destructive">{errors[`role${i}`]}</p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -330,68 +398,30 @@ export default function NewProductPage() {
               <Button type="button" variant="outline" onClick={addSub}>
                 Add Sub-product
               </Button>
-            </CardContent>
-            <CardFooter className="justify-between">
-              <Button variant="outline" onClick={() => setStep(1)}>
-                Back
-              </Button>
-              <Button onClick={() => setStep(3)} disabled={nextDisabled()}>
-                Next
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
-        {step === 3 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Delivery</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {type === "file" && (
+
+              {type === 'file' && (
                 <div className="space-y-2">
                   <Label htmlFor="file">Upload file</Label>
                   <Input id="file" type="file" onChange={(e) => setContentFile(e.target.files?.[0] || null)} />
+                  {errors.file && <p className="text-sm text-destructive">{errors.file}</p>}
                 </div>
               )}
-              {type === "discord" && (
+              {type === 'discord' && (
                 <div className="space-y-4">
                   {!discordStatus?.connected ? (
                     <div className="space-y-2">
                       <p className="text-sm">Connect your Discord server to assign a role to buyers.</p>
-                      <Button type="button" onClick={connectDiscord} disabled={discordLoading === "connect"}>
-                        {discordLoading === "connect" && <Spinner className="mr-2" />}Connect Discord
+                      <Button type="button" onClick={connectDiscord} disabled={discordLoading === 'connect'}>
+                        {discordLoading === 'connect' && <Spinner className="mr-2" />}Connect Discord
                       </Button>
+                      {errors.server && <p className="text-sm text-destructive">{errors.server}</p>}
                     </div>
                   ) : (
-                    <>
-                      <p className="text-sm">Connected to: {discordStatus.guildName || serverId}</p>
-                      {subProducts.map((sub, i) => (
-                        <div key={i} className="space-y-2">
-                          <Label>
-                            Role for {sub.name || `Option ${i + 1}`}
-                          </Label>
-                          <Select
-                            value={sub.roleId}
-                            onValueChange={(v) => updateSub(i, 'roleId', v)}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {roles.map((r) => (
-                                <SelectItem key={r.id} value={r.id}>
-                                  {r.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ))}
-                    </>
+                    <p className="text-sm">Connected to: {discordStatus.guildName || serverId}</p>
                   )}
                 </div>
               )}
-              {type === "key" && (
+              {type === 'key' && (
                 <div className="space-y-2">
                   <Label htmlFor="keys">License Keys (one per line)</Label>
                   <textarea
@@ -400,7 +430,61 @@ export default function NewProductPage() {
                     value={licenseKeys}
                     onChange={(e) => setLicenseKeys(e.target.value)}
                   />
+                  {errors.keys && <p className="text-sm text-destructive">{errors.keys}</p>}
                 </div>
+              )}
+            </CardContent>
+            <CardFooter className="justify-between">
+              <Button variant="outline" onClick={() => setStep(1)}>
+                Back
+              </Button>
+              <Button
+                onClick={() => {
+                  if (validate(2)) setStep(3)
+                }}
+                disabled={nextDisabled()}
+              >
+                Next
+              </Button>
+            </CardFooter>
+          </Card>
+        )}
+        {step === 3 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Review</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div>
+                <h3 className="font-medium">Details</h3>
+                <p>Name: {name}</p>
+                {description && <p>Description: {description}</p>}
+                <p>Type: {type}</p>
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-medium">Options</h3>
+                {subProducts.map((s, i) => (
+                  <div key={i} className="border rounded p-2">
+                    <p>{s.name || `Option ${i + 1}`}</p>
+                    <p>
+                      {s.billing === 'free'
+                        ? 'Free'
+                        : `${s.price} ${s.currency} ${
+                            s.billing === 'recurring' ? `per ${s.period}` : ''
+                          }`}
+                    </p>
+                    {type === 'discord' && (
+                      <p>
+                        Role: {roles.find((r) => r.id === s.roleId)?.name || s.roleId}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {type === 'file' && contentFile && <p>File: {contentFile.name}</p>}
+              {type === 'key' && <p>{licenseKeys.split('\n').filter(Boolean).length} keys</p>}
+              {type === 'discord' && discordStatus?.guildName && (
+                <p>Server: {discordStatus.guildName}</p>
               )}
             </CardContent>
             <CardFooter className="justify-between gap-2">
@@ -411,12 +495,17 @@ export default function NewProductPage() {
                 <label className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
-                    checked={status === "published"}
-                    onChange={(e) => setStatus(e.target.checked ? "published" : "draft")}
+                    checked={status === 'published'}
+                    onChange={(e) => setStatus(e.target.checked ? 'published' : 'draft')}
                   />
                   Publish now
                 </label>
-                <Button onClick={handlePublish} disabled={loading}>
+                <Button
+                  onClick={() => {
+                    if (validate(2)) handlePublish()
+                  }}
+                  disabled={loading}
+                >
                   {loading && <Spinner className="mr-2" />}Save
                 </Button>
               </div>
