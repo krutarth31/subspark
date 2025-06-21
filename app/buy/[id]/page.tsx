@@ -4,6 +4,21 @@ import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface BillingOption {
   name?: string
@@ -32,6 +47,12 @@ export default function BuyPage({ params }: { params: { id: string } }) {
   const [paying, setPaying] = useState(false)
   const [billing, setBilling] = useState<string>('')
 
+  function formatOption(o: BillingOption) {
+    if (o.billing === 'free') return 'Free'
+    const base = `${o.price?.toFixed(2)} ${o.currency}`
+    return o.billing === 'recurring' && o.period ? `${base} / ${o.period}` : base
+  }
+
   useEffect(() => {
     fetch(`/api/products/${params.id}`)
       .then((res) => res.json())
@@ -54,7 +75,7 @@ export default function BuyPage({ params }: { params: { id: string } }) {
       const res = await fetch(`/api/checkout/${product._id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billing }),
+        body: JSON.stringify({ sub: billing }),
       })
       const data = await res.json().catch(() => ({}))
       if (data.url) {
@@ -69,7 +90,7 @@ export default function BuyPage({ params }: { params: { id: string } }) {
   const option = product?.subProducts?.find(
     (o) => (o.name ? o.name === billing : o.billing === billing),
   )
-  const display = option || {
+  const display: BillingOption = option || {
     billing: product?.billing,
     price: product?.price,
     currency: product?.currency,
@@ -77,45 +98,49 @@ export default function BuyPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <DashboardLayout title="Buy Product">
-      <div className="p-6 flex flex-col items-center gap-4">
+    <DashboardLayout title="Checkout">
+      <div className="p-6 flex justify-center">
         {loading ? (
           <Spinner className="size-6" />
         ) : !product ? (
           <p>Product not found.</p>
         ) : (
-          <div className="space-y-4 text-center">
-            <h1 className="text-2xl font-semibold">{product.name}</h1>
-            {product.description && <p>{product.description}</p>}
-            {display.billing !== "free" && (
-              <p>
-                Price: {display.price?.toFixed(2)} {display.currency}
-                {display.billing === "recurring" && display.period
-                  ? ` / ${display.period}`
-                  : ""}
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center space-y-2">
+              <CardTitle>{product.name}</CardTitle>
+              {product.description && (
+                <CardDescription>{product.description}</CardDescription>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {product.subProducts && product.subProducts.length > 1 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-center">Choose option</p>
+                  <Select value={billing} onValueChange={setBilling}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {product.subProducts.map((o, idx) => (
+                        <SelectItem key={idx} value={o.name || o.billing}>
+                          {o.name ? `${o.name} - ${formatOption(o)}` : formatOption(o)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <p className="text-center text-2xl font-semibold">
+                {formatOption(display)}
               </p>
-            )}
-            {product.subProducts && product.subProducts.length > 1 && (
-              <select
-                value={billing}
-                onChange={(e) => setBilling(e.target.value)}
-                className="rounded border px-2 py-1"
-              >
-                {product.subProducts.map((o, idx) => (
-                  <option key={idx} value={o.name || o.billing}>
-                    {o.name || o.billing}
-                  </option>
-                ))}
-              </select>
-            )}
-            {display.billing === "free" ? (
-              <p>This product is free.</p>
-            ) : (
-              <Button onClick={checkout} disabled={paying}>
-                {paying && <Spinner className="mr-2" />}Checkout
+            </CardContent>
+            <CardFooter>
+              <Button onClick={checkout} disabled={paying} className="w-full">
+                {paying && <Spinner className="mr-2" />}
+                {display.billing === "free" ? "Get Access" : "Checkout"}
               </Button>
-            )}
-          </div>
+            </CardFooter>
+          </Card>
         )}
       </div>
     </DashboardLayout>
