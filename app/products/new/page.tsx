@@ -56,6 +56,13 @@ export default function NewProductPage() {
   const [status, setStatus] = useState<"draft" | "published">("draft")
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [discordStatus, setDiscordStatus] = useState<
+    { connected: boolean; guildId?: string; guildName?: string } | null
+  >(null)
+  const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
+  const [discordLoading, setDiscordLoading] = useState<
+    "connect" | "load" | null
+  >(null)
 
   // persist between reloads
   useEffect(() => {
@@ -132,6 +139,41 @@ export default function NewProductPage() {
     currency,
     period,
   ])
+
+  useEffect(() => {
+    if (step !== 4 || type !== 'discord') return
+    async function loadDiscord() {
+      setDiscordLoading('load')
+      try {
+        const statusRes = await fetch('/api/discord/status')
+        const statusData = await statusRes.json().catch(() => ({}))
+        setDiscordStatus(statusData)
+        if (statusData.connected) {
+          setServerId(statusData.guildId || '')
+          const rolesRes = await fetch('/api/discord/roles')
+          const rolesData = await rolesRes.json().catch(() => ({}))
+          setRoles(Array.isArray(rolesData.roles) ? rolesData.roles : [])
+        }
+      } finally {
+        setDiscordLoading(null)
+      }
+    }
+    loadDiscord()
+  }, [step, type])
+
+  async function connectDiscord() {
+    if (discordLoading) return
+    setDiscordLoading('connect')
+    const res = await fetch('/api/discord/connect', { method: 'POST' })
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}))
+      if (data.url) {
+        window.location.href = data.url as string
+        return
+      }
+    }
+    setDiscordLoading(null)
+  }
 
   const nextDisabled = () => {
     if (step === 1) return !type
@@ -478,25 +520,47 @@ export default function NewProductPage() {
                 )}
                 {type === "discord" && (
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="server">Server ID</Label>
-                      <Input
-                        id="server"
-                        value={serverId}
-                        onChange={(e) => setServerId(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="role">Role ID</Label>
-                      <Input
-                        id="role"
-                        value={roleId}
-                        onChange={(e) => setRoleId(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <Button type="button" variant="outline" onClick={() => alert("Test not implemented")}>Test Connection</Button>
+                    {!discordStatus?.connected ? (
+                      <div className="space-y-2">
+                        <p className="text-sm">
+                          Connect your Discord server to assign a role to buyers.
+                        </p>
+                        <Button
+                          type="button"
+                          onClick={connectDiscord}
+                          disabled={discordLoading === 'connect'}
+                        >
+                          {discordLoading === 'connect' && (
+                            <Spinner className="mr-2" />
+                          )}
+                          Connect Discord
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm">
+                          Connected to: {discordStatus.guildName || serverId}
+                        </p>
+                        <div className="space-y-2">
+                          <Label htmlFor="role">Assign role</Label>
+                          <Select
+                            value={roleId}
+                            onValueChange={setRoleId}
+                          >
+                            <SelectTrigger id="role" className="w-full">
+                              <SelectValue placeholder="Select role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {roles.map((r) => (
+                                <SelectItem key={r.id} value={r.id}>
+                                  {r.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
                 {type === "key" && (
