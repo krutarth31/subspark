@@ -92,7 +92,9 @@ export default function IntegrationPage() {
               </>
             ) : (
               <>
-                <Button variant="outline">Manage Roles</Button>
+                <Button asChild variant="outline">
+                  <a href="/integrations/roles">Manage Roles</a>
+                </Button>
                 <Button onClick={connectDiscord} variant="outline" disabled={!!loading}>
                   {loading === 'connect' && <Spinner className="mr-2" />}Reconnect
                 </Button>

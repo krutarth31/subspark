@@ -82,8 +82,8 @@ export async function GET(request: Request) {
       })
 
       if (guildResp.ok) {
-        const guilds = await guildResp.json()
-        const g = guilds.find((x: any) => x.id === guildId)
+        const guilds = (await guildResp.json()) as { id: string; name: string }[]
+        const g = guilds.find((x) => x.id === guildId)
         if (g) guildName = g.name
       } else {
         console.warn('Could not fetch guilds:', await guildResp.text())
