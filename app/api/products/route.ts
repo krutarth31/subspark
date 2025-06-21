@@ -20,6 +20,7 @@ const billingOptionSchema = z.object({
   price: z.number().nonnegative().optional(),
   currency: z.string().min(3).max(4).default('USD'),
   period: z.enum(['day', 'week', 'month', 'year']).optional(),
+  service: z.string().optional(),
   roleId: z.string().optional(),
 })
 
@@ -71,6 +72,7 @@ export async function GET() {
           currency: string
           period?: string
           stripePriceId?: string
+          service?: string
           roleId?: string
         }[]
         description?: string
@@ -132,6 +134,7 @@ export async function POST(request: Request) {
               price: parsed.data.price,
               currency: parsed.data.currency,
               period: parsed.data.period,
+              service: parsed.data.planDescription,
               roleId: parsed.data.roleId,
             },
           ]

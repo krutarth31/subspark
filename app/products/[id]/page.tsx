@@ -31,6 +31,7 @@ interface Product {
     price?: number
     currency: string
     period?: string
+    service?: string
   }[]
 }
 
@@ -84,6 +85,7 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
               {product.subProducts.map((o, idx) => (
                 <li key={idx}>
                   {o.name ? `${o.name}: ` : ""}
+                  {o.service && `${o.service} - `}
                   {o.billing === 'free'
                     ? 'Free'
                     : `${o.price?.toFixed(2)} ${o.currency}`}

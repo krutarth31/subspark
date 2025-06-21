@@ -24,6 +24,7 @@ type SubProduct = {
   currency: string
   period: string
   roleId: string
+  service: string
 }
 
 type Product = {
@@ -39,6 +40,7 @@ type Product = {
     currency: string
     period?: string
     roleId?: string
+    service?: string
   }[]
   deliveryFile?: string
   serverId?: string
@@ -86,6 +88,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                   currency: s.currency || "USD",
                   period: s.period || "month",
                   roleId: s.roleId || "",
+                  service: s.service || "",
                 }))
               : [
                   {
@@ -95,6 +98,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                     currency: p.currency || "USD",
                     period: p.period || "month",
                     roleId: p.roleId || "",
+                    service: p.planDescription || "",
                   },
                 ]
           )
@@ -161,6 +165,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         currency: "USD",
         period: "month",
         roleId: "",
+        service: "",
       },
     ])
   }
@@ -241,6 +246,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           currency: s.currency,
           period: s.billing === "recurring" ? s.period : undefined,
           roleId: s.roleId,
+          service: s.service,
         })),
         deliveryFile: contentFile ? contentFile.name : undefined,
         serverId,
@@ -423,6 +429,14 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                       {errors[`role${i}`] && <p className="text-sm text-destructive">{errors[`role${i}`]}</p>}
                     </div>
                   )}
+                  <div className="space-y-2">
+                    <Label>Service details</Label>
+                    <textarea
+                      className="w-full rounded-md border px-3 py-1 min-h-[60px]"
+                      value={sub.service}
+                      onChange={(e) => updateSub(i, 'service', e.target.value)}
+                    />
+                  </div>
                 </div>
               ))}
               <Button type="button" variant="outline" onClick={addSub}>Add Sub-product</Button>
@@ -480,6 +494,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 {subProducts.map((s, i) => (
                   <div key={i} className="border rounded p-2">
                     <p>{s.name || `Option ${i + 1}`}</p>
+                    {s.service && <p className="text-muted-foreground">{s.service}</p>}
                     <p>{s.billing === 'free' ? 'Free' : `${s.price} ${s.currency} ${s.billing === 'recurring' ? `per ${s.period}` : ''}`}</p>
                     {type === 'discord' && <p>Role: {roles.find((r) => r.id === s.roleId)?.name || s.roleId}</p>}
                   </div>

@@ -24,6 +24,7 @@ type SubProduct = {
   currency: string
   period: string
   roleId: string
+  service: string
 }
 
 export default function NewProductPage() {
@@ -42,6 +43,7 @@ export default function NewProductPage() {
       currency: "USD",
       period: "month",
       roleId: "",
+      service: "",
     },
   ])
   const [serverId, setServerId] = useState("")
@@ -111,6 +113,7 @@ export default function NewProductPage() {
         currency: "USD",
         period: "month",
         roleId: "",
+        service: "",
       },
     ])
   }
@@ -196,6 +199,7 @@ export default function NewProductPage() {
           currency: s.currency,
           period: s.billing === "recurring" ? s.period : undefined,
           roleId: s.roleId,
+          service: s.service,
         })),
         deliveryFile: contentFile ? contentFile.name : undefined,
         serverId,
@@ -406,6 +410,14 @@ export default function NewProductPage() {
                       )}
                     </div>
                   )}
+                  <div className="space-y-2">
+                    <Label>Service details</Label>
+                    <textarea
+                      className="w-full rounded-md border px-3 py-1 min-h-[60px]"
+                      value={sub.service}
+                      onChange={(e) => updateSub(i, 'service', e.target.value)}
+                    />
+                  </div>
                 </div>
               ))}
               <Button type="button" variant="outline" onClick={addSub}>
@@ -479,6 +491,7 @@ export default function NewProductPage() {
                 {subProducts.map((s, i) => (
                   <div key={i} className="border rounded p-2">
                     <p>{s.name || `Option ${i + 1}`}</p>
+                    {s.service && <p className="text-muted-foreground">{s.service}</p>}
                     <p>
                       {s.billing === 'free'
                         ? 'Free'

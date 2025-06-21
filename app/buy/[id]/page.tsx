@@ -7,18 +7,10 @@ import { Spinner } from "@/components/ui/spinner"
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
   CardDescription,
 } from "@/components/ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 interface BillingOption {
   name?: string
@@ -27,6 +19,7 @@ interface BillingOption {
   currency: string
   period?: string
   stripePriceId?: string
+  service?: string
 }
 
 interface Product {
@@ -105,42 +98,50 @@ export default function BuyPage({ params }: { params: { id: string } }) {
         ) : !product ? (
           <p>Product not found.</p>
         ) : (
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center space-y-2">
-              <CardTitle>{product.name}</CardTitle>
+          <div className="w-full max-w-2xl space-y-4">
+            <div className="text-center space-y-1">
+              <h2 className="text-2xl font-bold">{product.name}</h2>
               {product.description && (
-                <CardDescription>{product.description}</CardDescription>
+                <p className="text-sm text-muted-foreground">
+                  {product.description}
+                </p>
               )}
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {product.subProducts && product.subProducts.length > 1 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-center">Choose option</p>
-                  <Select value={billing} onValueChange={setBilling}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {product.subProducts.map((o, idx) => (
-                        <SelectItem key={idx} value={o.name || o.billing}>
-                          {o.name ? `${o.name} - ${formatOption(o)}` : formatOption(o)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+            </div>
+            {product.subProducts && product.subProducts.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {product.subProducts.map((o, idx) => (
+                  <Card
+                    key={idx}
+                    className={`cursor-pointer${
+                      billing === (o.name || o.billing) ? ' ring-2 ring-primary' : ''
+                    }`}
+                    onClick={() => setBilling(o.name || o.billing)}
+                  >
+                    <CardHeader className="text-center space-y-1">
+                      <CardTitle className="text-lg">
+                        {o.name || `Option ${idx + 1}`}
+                      </CardTitle>
+                      {o.service && (
+                        <CardDescription>{o.service}</CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="text-center">
+                      <p className="text-xl font-semibold">{formatOption(o)}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            {!product.subProducts || product.subProducts.length === 0 ? (
               <p className="text-center text-2xl font-semibold">
                 {formatOption(display)}
               </p>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={checkout} disabled={paying} className="w-full">
-                {paying && <Spinner className="mr-2" />}
-                {display.billing === "free" ? "Get Access" : "Checkout"}
-              </Button>
-            </CardFooter>
-          </Card>
+            ) : null}
+            <Button onClick={checkout} disabled={paying} className="w-full">
+              {paying && <Spinner className="mr-2" />}
+              {display.billing === 'free' ? 'Get Access' : 'Checkout'}
+            </Button>
+          </div>
         )}
       </div>
     </DashboardLayout>
