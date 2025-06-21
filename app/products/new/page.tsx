@@ -116,6 +116,14 @@ export default function NewProductPage() {
   }
 
   function updateSub(index: number, key: keyof SubProduct, value: string) {
+    if (key === 'price') {
+      // allow only digits and at most one decimal point
+      value = value.replace(/[^0-9.]/g, '')
+      const parts = value.split('.')
+      if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('')
+      }
+    }
     setSubProducts((subs) => subs.map((s, i) => (i === index ? { ...s, [key]: value } : s)))
   }
 
@@ -133,7 +141,7 @@ export default function NewProductPage() {
       subProducts.forEach((s, i) => {
         if (!s.name.trim()) errs[`name${i}`] = 'Required'
         if (s.billing !== 'free') {
-          if (!s.price.trim() || isNaN(parseFloat(s.price)))
+          if (!s.price.trim() || !/^\d+(\.\d{1,2})?$/.test(s.price))
             errs[`price${i}`] = 'Invalid price'
           if (!s.currency.trim()) errs[`currency${i}`] = 'Currency'
         }
@@ -159,7 +167,7 @@ export default function NewProductPage() {
       for (const s of subProducts) {
         if (!s.name.trim()) return true
         if (s.billing !== 'free') {
-          if (!s.price.trim() || isNaN(parseFloat(s.price))) return true
+          if (!s.price.trim() || !/^\d+(\.\d{1,2})?$/.test(s.price)) return true
           if (!s.currency.trim()) return true
         }
         if (s.billing === 'recurring' && !s.period) return true
@@ -339,7 +347,12 @@ export default function NewProductPage() {
                     <div className="grid sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Price</Label>
-                        <Input value={sub.price} onChange={(e) => updateSub(i, "price", e.target.value)} />
+                        <Input
+                          inputMode="decimal"
+                          pattern="^\d+(\.\d{1,2})?$"
+                          value={sub.price}
+                          onChange={(e) => updateSub(i, 'price', e.target.value)}
+                        />
                         {errors[`price${i}`] && (
                           <p className="text-sm text-destructive">{errors[`price${i}`]}</p>
                         )}
