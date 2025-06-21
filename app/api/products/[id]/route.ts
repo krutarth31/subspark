@@ -58,6 +58,8 @@ export async function GET(
         serverId?: string
         roleId?: string
         licenseKeys?: string
+        stripeProductId?: string
+        stripePriceId?: string
       }>('products')
       .findOne({ _id: new ObjectId(id) })
     if (!product) return NextResponse.json({ product: null }, { status: 404 })

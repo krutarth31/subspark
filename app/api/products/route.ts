@@ -3,6 +3,16 @@ import { getDb } from '@/lib/mongo'
 import { cookies } from 'next/headers'
 import { ObjectId } from 'mongodb'
 import { z } from 'zod'
+import Stripe from 'stripe'
+
+let stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (stripe) return stripe
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  if (!secretKey) throw new Error('STRIPE_SECRET_KEY is not defined')
+  stripe = new Stripe(secretKey, { apiVersion: '2022-11-15' })
+  return stripe
+}
 
 const productSchema = z.object({
   name: z.string().min(1),
@@ -61,6 +71,8 @@ export async function GET() {
         serverId?: string
         roleId?: string
         licenseKeys?: string
+        stripeProductId?: string
+        stripePriceId?: string
       }>('products')
       .find({ userId: session.userId, archived: { $ne: true } })
       .toArray()
@@ -86,7 +98,47 @@ export async function POST(request: Request) {
       .collection<{ token: string; userId: ObjectId }>('sessions')
       .findOne({ token })
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const seller = await db
+      .collection<{ _id: string }>('sellers')
+      .findOne({ userId: session.userId })
+    if (!seller) {
+      return NextResponse.json({ error: 'Seller account not found' }, { status: 400 })
+    }
+
     const { billing } = parsed.data
+    let stripeProductId: string | undefined
+    let stripePriceId: string | undefined
+
+    try {
+      const stripeProd = await getStripe().products.create(
+        {
+          name: parsed.data.name,
+          description: parsed.data.description || undefined,
+        },
+        { stripeAccount: seller._id }
+      )
+      stripeProductId = stripeProd.id
+      if (billing !== 'free') {
+        const priceParams: Stripe.PriceCreateParams = {
+          unit_amount: Math.round(parsed.data.price * 100),
+          currency: parsed.data.currency.toLowerCase(),
+          product: stripeProd.id,
+        }
+        if (billing === 'recurring' && parsed.data.period) {
+          priceParams.recurring = {
+            interval: parsed.data.period as Stripe.PriceCreateParams.Recurring.Interval,
+          }
+        }
+        const stripePrice = await getStripe().prices.create(priceParams, {
+          stripeAccount: seller._id,
+        })
+        stripePriceId = stripePrice.id
+      }
+    } catch (err) {
+      console.error('Stripe product creation failed', err)
+      return NextResponse.json({ error: 'Stripe error' }, { status: 500 })
+    }
+
     const product = {
       ...parsed.data,
       price: billing === 'free' ? 0 : parsed.data.price,
@@ -95,6 +147,8 @@ export async function POST(request: Request) {
       createdAt: new Date(),
       updatedAt: new Date(),
       sales: 0,
+      stripeProductId,
+      stripePriceId,
     }
     const result = await db.collection('products').insertOne(product)
     return NextResponse.json({ id: result.insertedId })
