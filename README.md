@@ -76,6 +76,13 @@ DISCORD_CLIENT_ID=your_client_id
 DISCORD_CLIENT_SECRET=your_client_secret
 ```
 
+Add Google OAuth credentials for sign in:
+
+```text
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
 ## Dashboard Roles
 
 The dashboard renders different metrics depending on the active user role. You
