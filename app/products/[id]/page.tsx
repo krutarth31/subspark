@@ -26,6 +26,7 @@ interface Product {
   serverId?: string
   roleId?: string
   licenseKeys?: string
+  imageUrl?: string
   subProducts?: {
     name?: string
     billing: "free" | "one" | "recurring"
@@ -77,6 +78,13 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
   return (
     <DashboardLayout title={product.name}>
       <div className="p-4 space-y-2">
+        {product.imageUrl && (
+          <img
+            src={product.imageUrl}
+            alt="Product image"
+            className="w-full h-48 object-cover rounded-md"
+          />
+        )}
         <p><strong>Type:</strong> {product.type}</p>
         <p><strong>Status:</strong> {product.status}</p>
         {product.subProducts && product.subProducts.length > 1 ? (

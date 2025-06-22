@@ -45,6 +45,7 @@ const productSchema = z.object({
   serverId: z.string().optional(),
   roleId: z.string().optional(),
   licenseKeys: z.string().optional(),
+  imageUrl: z.string().optional(),
 })
 
 const updateSchema = productSchema.extend({
@@ -94,6 +95,7 @@ export async function GET(
         serverId?: string
         roleId?: string
         licenseKeys?: string
+        imageUrl?: string
         stripeProductId?: string
         stripePriceId?: string
       }>('products')
@@ -155,6 +157,7 @@ export async function PUT(
           period?: string
           stripePriceId?: string
         }[]
+        imageUrl?: string
       }>('products')
       .findOne({ _id: new ObjectId(id), userId: session.userId })
     if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 })

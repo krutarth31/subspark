@@ -27,6 +27,7 @@ interface Product {
   _id: string
   name: string
   description?: string
+  imageUrl?: string
   price: number
   currency: string
   billing: "free" | "one" | "recurring"
@@ -101,6 +102,13 @@ export default function BuyPage({ params }: { params: { id: string } }) {
           <p>Product not found.</p>
         ) : (
           <div className="w-full max-w-2xl space-y-4">
+            {product.imageUrl && (
+              <img
+                src={product.imageUrl}
+                alt="Product image"
+                className="w-full h-48 object-cover rounded-md"
+              />
+            )}
             <div className="text-center space-y-1">
               <h2 className="text-2xl font-bold">{product.name}</h2>
               {product.description && (
