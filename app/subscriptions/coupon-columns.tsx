@@ -1,29 +1,30 @@
-"use client"
+"use client";
 
-import { ColumnDef } from "@tanstack/react-table"
-import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
-import { Switch } from "@/components/ui/switch"
-import { Button } from "@/components/ui/button"
-import { MoreHorizontal } from "lucide-react"
+import { ColumnDef } from "@tanstack/react-table";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 export type Coupon = {
-  _id: string
-  code: string
-  percentOff: number
-  active: boolean
-  productId?: string
-  subIndex?: number
-}
+  _id: string;
+  code: string;
+  percentOff: number;
+  active: boolean;
+  productId?: string;
+  subIndex?: number;
+};
 
 export function getCouponColumns(
-  getName: (c: Coupon) => string,
+  getProductName: (c: Coupon) => string,
+  getSubName: (c: Coupon) => string,
   onToggle: (id: string, active: boolean) => void,
   updatingId: string | null,
   onDelete: (id: string) => void,
@@ -31,11 +32,18 @@ export function getCouponColumns(
 ): ColumnDef<Coupon>[] {
   return [
     {
-      id: "target",
+      id: "product",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Target" />
+        <DataTableColumnHeader column={column} title="Product" />
       ),
-      cell: ({ row }) => getName(row.original),
+      cell: ({ row }) => getProductName(row.original),
+    },
+    {
+      id: "sub",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Sub-product" />
+      ),
+      cell: ({ row }) => getSubName(row.original),
     },
     {
       accessorKey: "code",
@@ -86,5 +94,5 @@ export function getCouponColumns(
         </DropdownMenu>
       ),
     },
-  ]
+  ];
 }
