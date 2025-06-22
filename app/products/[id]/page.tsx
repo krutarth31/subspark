@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import * as React from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -37,23 +37,24 @@ interface Product {
   }[]
 }
 
-export default function ViewProductPage({ params }: { params: { id: string } }) {
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [guildName, setGuildName] = useState<string | null>(null)
-  const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
+export default function ViewProductPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
+  const { id } = React.use(params)
+  const [product, setProduct] = React.useState<Product | null>(null)
+  const [loading, setLoading] = React.useState(true)
+  const [guildName, setGuildName] = React.useState<string | null>(null)
+  const [roles, setRoles] = React.useState<{ id: string; name: string }[]>([])
 
-  useEffect(() => {
-    fetch(`/api/products/${params.id}`)
+  React.useEffect(() => {
+    fetch(`/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data.product)
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [params.id])
+  }, [id])
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!product || product.type !== 'discord') return
     fetch('/api/discord/status')
       .then((res) => res.json())
@@ -180,7 +181,7 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
           <p><strong>Updated:</strong> {new Date(product.updatedAt).toLocaleDateString()}</p>
         )}
         <Button asChild>
-          <a href={`/products/${params.id}/edit`}>Edit Product</a>
+          <a href={`/products/${id}/edit`}>Edit Product</a>
         </Button>
       </div>
     </DashboardLayout>
