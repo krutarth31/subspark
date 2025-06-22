@@ -23,9 +23,10 @@ export async function POST(request: Request) {
   const url = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}&permissions=${permissions}`
 
   const res = NextResponse.json({ url })
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
   res.headers.append(
     'Set-Cookie',
-    `discord_state=${state}; Path=/; HttpOnly; Max-Age=600; SameSite=Lax; Secure`
+    `discord_state=${state}; Path=/; HttpOnly; Max-Age=600; SameSite=Lax${secure}`
   )
   return res
 }

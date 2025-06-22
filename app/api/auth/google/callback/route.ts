@@ -14,7 +14,11 @@ export async function GET(request: Request) {
   const redirectUrl = `${origin}/dashboard`
 
   const res = NextResponse.redirect(redirectUrl)
-  res.headers.append('Set-Cookie', 'google_state=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax; Secure')
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  res.headers.append(
+    'Set-Cookie',
+    `google_state=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secure}`
+  )
 
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
@@ -102,7 +106,11 @@ export async function GET(request: Request) {
     const token = generateToken()
     await db.collection('sessions').insertOne({ token, userId })
 
-    res.headers.append('Set-Cookie', `session=${token}; Path=/; HttpOnly; SameSite=Lax; Secure`)
+    const secureCookie = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+    res.headers.append(
+      'Set-Cookie',
+      `session=${token}; Path=/; HttpOnly; SameSite=Lax${secureCookie}`
+    )
   } catch (err) {
     console.error('OAuth callback error:', err)
   }
