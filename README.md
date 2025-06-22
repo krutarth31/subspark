@@ -45,7 +45,7 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Environment Variables
 
-Create a `.env.local` file with your Stripe keys:
+Copy `.env.example` to `.env.local` and fill in your Stripe and database keys:
 
 ```text
 STRIPE_SECRET_KEY=sk_test_your_key
