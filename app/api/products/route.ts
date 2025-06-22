@@ -45,6 +45,7 @@ const productSchema = z.object({
   serverId: z.string().optional(),
   roleId: z.string().optional(),
   licenseKeys: z.string().optional(),
+  imageUrl: z.string().optional(),
 })
 
 export async function GET() {
@@ -90,6 +91,7 @@ export async function GET() {
         serverId?: string
         roleId?: string
         licenseKeys?: string
+        imageUrl?: string
         stripeProductId?: string
         stripePriceId?: string
       }>('products')

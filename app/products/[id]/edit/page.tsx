@@ -69,6 +69,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [licenseKeys, setLicenseKeys] = useState("")
   const [contentFile, setContentFile] = useState<File | null>(null)
   const [existingFile, setExistingFile] = useState<string | null>(null)
+  const [existingImage, setExistingImage] = useState<string | null>(null)
   const [discordStatus, setDiscordStatus] = useState<{ connected: boolean; guildId?: string; guildName?: string } | null>(null)
   const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
   const [discordLoading, setDiscordLoading] = useState<"connect" | "load" | null>(null)
@@ -113,6 +114,8 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
           setServerId(p.serverId || "")
           setLicenseKeys(p.licenseKeys || "")
           setExistingFile(p.deliveryFile || null)
+          setExistingImage(p.imageUrl || null)
+          if (p.imageUrl) setPreview(p.imageUrl)
         }
         setLoading(false)
       })
@@ -242,6 +245,17 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     if (!validate(2)) return
     setSaving(true)
     try {
+      let imageUrl: string | undefined = existingImage || undefined
+      if (image) {
+        const form = new FormData()
+        form.append('file', image)
+        const upload = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: form,
+        })
+        const data = await upload.json().catch(() => ({}))
+        if (data.url) imageUrl = data.url as string
+      }
       const body = {
         name,
         description,
@@ -260,6 +274,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         serverId,
         roleId: subProducts[0]?.roleId,
         licenseKeys,
+        imageUrl,
       }
       const res = await fetch(`/api/products/${params.id}`, {
         method: "PUT",

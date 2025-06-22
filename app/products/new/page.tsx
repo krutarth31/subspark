@@ -195,6 +195,17 @@ export default function NewProductPage() {
     if (!validate(2)) return
     setLoading(true)
     try {
+      let imageUrl: string | undefined = undefined
+      if (image) {
+        const form = new FormData()
+        form.append('file', image)
+        const upload = await fetch('/api/upload-image', {
+          method: 'POST',
+          body: form,
+        })
+        const data = await upload.json().catch(() => ({}))
+        if (data.url) imageUrl = data.url as string
+      }
       const body = {
         name,
         description,
@@ -213,6 +224,7 @@ export default function NewProductPage() {
         serverId,
         roleId: subProducts[0]?.roleId,
         licenseKeys,
+        imageUrl,
       }
       const res = await fetch("/api/products", {
         method: "POST",
