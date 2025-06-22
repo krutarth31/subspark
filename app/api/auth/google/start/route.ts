@@ -18,6 +18,10 @@ export async function POST(request: Request) {
   const url = `https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&scope=${scope}&state=${state}`
 
   const res = NextResponse.json({ url })
-  res.headers.append('Set-Cookie', `google_state=${state}; Path=/; HttpOnly; Max-Age=600; SameSite=Lax; Secure`)
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
+  res.headers.append(
+    'Set-Cookie',
+    `google_state=${state}; Path=/; HttpOnly; Max-Age=600; SameSite=Lax${secure}`
+  )
   return res
 }

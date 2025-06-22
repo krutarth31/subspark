@@ -17,9 +17,10 @@ export async function GET(request: Request) {
 
   const redirectUrl = `${origin}/integrations`
   const res = NextResponse.redirect(redirectUrl)
+  const secure = process.env.NODE_ENV === 'production' ? '; Secure' : ''
   res.headers.append(
     'Set-Cookie',
-    'discord_state=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax; Secure'
+    `discord_state=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secure}`
   )
 
   if (!code || !clientId || !clientSecret) {
