@@ -19,15 +19,6 @@ import { toast } from "sonner";
 import { getColumns, SubscriptionProduct, Role } from "./columns";
 import { getCouponColumns, Coupon } from "./coupon-columns";
 
-interface Coupon {
-  _id: string;
-  code: string;
-  percentOff: number;
-  active: boolean;
-  productId?: string;
-  subIndex?: number;
-}
-
 export default function SubscriptionsPage() {
   const [products, setProducts] = useState<SubscriptionProduct[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -106,7 +97,11 @@ export default function SubscriptionsPage() {
                 list.push({
                   _id: p._id,
                   index: idx,
-                  name: s.name ? `${p.name} - ${s.name}` : p.name,
+                  product: p.name,
+                  sub:
+                    Array.isArray(p.subProducts) && p.subProducts.length > 0
+                      ? s.name || s.billing
+                      : undefined,
                   price: s.price ?? p.price,
                   currency: s.currency || p.currency,
                   period: s.billing === "recurring" ? s.period : undefined,
@@ -240,16 +235,44 @@ export default function SubscriptionsPage() {
     setDeletingId(null);
   }
 
-  const getCouponsFor = (id: string, index: number) =>
-    coupons
-      .filter((c) => {
-        if (!c.productId) return true;
-        if (c.productId !== id) return false;
-        return typeof c.subIndex === "number" ? c.subIndex === index : true;
-      })
-      .map((c) => c.code);
+  async function assignCoupon(
+    couponId: string,
+    checked: boolean,
+    productId: string,
+    subIndex: number,
+  ) {
+    const body: any = { id: couponId }
+    if (checked) {
+      body.productId = productId
+      body.subIndex = subIndex
+    } else {
+      body.productId = ""
+      body.subIndex = null
+    }
+    const res = await fetch("/api/coupons", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    if (res.ok) {
+      setCoupons((prev) =>
+        prev.map((c) =>
+          c._id === couponId
+            ? {
+                ...c,
+                productId: checked ? productId : undefined,
+                subIndex: checked ? subIndex : undefined,
+              }
+            : c,
+        ),
+      )
+    } else {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error || "Failed to update")
+    }
+  }
 
-  const columns = getColumns(roles, updateRole, savingId, getCouponsFor);
+  const columns = getColumns(roles, updateRole, savingId, coupons, assignCoupon)
   const couponColumns = getCouponColumns(
     toggleCoupon,
     updatingId,

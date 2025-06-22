@@ -121,7 +121,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json().catch(() => null)
-    if (!body || typeof body.id !== 'string' || typeof body.active !== 'boolean') {
+    if (!body || typeof body.id !== 'string') {
       return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
     }
     const db = await getDb()
@@ -132,9 +132,23 @@ export async function PATCH(request: Request) {
       .collection<{ token: string; userId: ObjectId }>('sessions')
       .findOne({ token })
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const update: any = {}
+    const unset: any = {}
+    if (typeof body.active === 'boolean') update.active = body.active
+    if ('productId' in body) {
+      if (body.productId) update.productId = new ObjectId(body.productId)
+      else unset.productId = ''
+    }
+    if ('subIndex' in body) {
+      if (typeof body.subIndex === 'number') update.subIndex = body.subIndex
+      else unset.subIndex = ''
+    }
     const result = await db.collection('coupons').updateOne(
       { _id: new ObjectId(body.id), sellerId: session.userId },
-      { $set: { active: body.active } }
+      {
+        ...(Object.keys(update).length ? { $set: update } : {}),
+        ...(Object.keys(unset).length ? { $unset: unset } : {}),
+      },
     )
     if (!result.matchedCount) {
       return NextResponse.json({ error: 'Coupon not found' }, { status: 404 })

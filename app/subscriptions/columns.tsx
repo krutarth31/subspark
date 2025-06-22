@@ -10,6 +10,14 @@ import {
 } from "@/components/ui/select"
 import { CheckIcon } from "lucide-react"
 import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
+import type { Coupon } from "./coupon-columns"
 
 export type Role = {
   id: string
@@ -19,7 +27,8 @@ export type Role = {
 export type SubscriptionProduct = {
   _id: string
   index: number
-  name: string
+  product: string
+  sub?: string
   price: number
   currency: string
   period?: string
@@ -30,19 +39,33 @@ export function getColumns(
   roles: Role[],
   onUpdate: (id: string, index: number, roleId: string) => void,
   savingId: string | null,
-  getCoupons: (id: string, index: number) => string[],
+  coupons: Coupon[],
+  onAssignCoupon: (
+    couponId: string,
+    checked: boolean,
+    productId: string,
+    subIndex: number,
+  ) => void,
 ): ColumnDef<SubscriptionProduct>[] {
   return [
     {
-      accessorKey: "name",
+      accessorKey: "product",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Name" />
+        <DataTableColumnHeader column={column} title="Product" />
+      ),
+      cell: ({ row }) => row.getValue<string>('product'),
+    },
+    {
+      accessorKey: "sub",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Sub-product" />
       ),
       cell: ({ row }) => {
         const assigned = !!row.original.roleId
+        const sub = row.getValue<string>('sub')
         return (
           <div className="flex items-center gap-1">
-            <span>{row.getValue<string>('name')}</span>
+            <span>{sub || '-'}</span>
             {assigned && <CheckIcon className="size-4 text-green-500" />}
           </div>
         )
@@ -105,8 +128,44 @@ export function getColumns(
       ),
       cell: ({ row }) => {
         const prod = row.original
-        const list = getCoupons(prod._id, prod.index)
-        return list.length ? list.join(", ") : "-"
+        const selected = coupons
+          .filter((c) => {
+            if (c.productId !== prod._id) return false
+            return typeof c.subIndex === 'number'
+              ? c.subIndex === prod.index
+              : true
+          })
+          .map((c) => c._id)
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-40 truncate">
+                {selected.length
+                  ? coupons
+                      .filter((c) => selected.includes(c._id))
+                      .map((c) => c.code)
+                      .join(', ')
+                  : 'Select coupons'}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              {coupons.map((c) => {
+                const checked = selected.includes(c._id)
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={c._id}
+                    checked={checked}
+                    onCheckedChange={(v) =>
+                      onAssignCoupon(c._id, v, prod._id, prod.index)
+                    }
+                  >
+                    <span className="font-mono">{c.code}</span>
+                  </DropdownMenuCheckboxItem>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
       },
     },
   ]
