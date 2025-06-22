@@ -65,18 +65,25 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
       .catch(() => {})
   }, [product])
 
+  const help = (
+    <p>
+      This page shows details for a single product. Use the Edit button to
+      modify it.
+    </p>
+  )
+
   if (loading)
     return (
-      <DashboardLayout title="Product">
+      <DashboardLayout title="Product" helpContent={help}>
         <div className="flex flex-1 items-center justify-center p-6">
           <Spinner className="size-6" />
         </div>
       </DashboardLayout>
     )
-  if (!product) return <DashboardLayout title="Product">Not found</DashboardLayout>
+  if (!product) return <DashboardLayout title="Product" helpContent={help}>Not found</DashboardLayout>
 
   return (
-    <DashboardLayout title={product.name}>
+    <DashboardLayout title={product.name} helpContent={help}>
       <div className="p-4 space-y-2">
         {product.imageUrl && (
           <img

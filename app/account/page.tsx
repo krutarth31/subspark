@@ -24,8 +24,9 @@ export default function Page() {
       .catch(() => {})
   }, [])
 
+  const help = <p>View your profile information on this page.</p>
   return (
-    <DashboardLayout title="Account">
+    <DashboardLayout title="Account" helpContent={help}>
       <div className="flex flex-1 flex-col items-center justify-center p-6">
         {user ? (
           <div className="space-y-4 text-center">

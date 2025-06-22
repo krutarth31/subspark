@@ -42,6 +42,8 @@ export default function BuyPage({ params }: { params: { id: string } }) {
   const [paying, setPaying] = useState(false)
   const [billing, setBilling] = useState<string>('')
 
+  const help = <p>Select a plan and proceed to checkout.</p>
+
   function formatOption(o: BillingOption) {
     if (o.billing === 'free') return 'Free'
     const base = `${o.price?.toFixed(2)} ${o.currency}`
@@ -94,7 +96,7 @@ export default function BuyPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <DashboardLayout title="Checkout">
+    <DashboardLayout title="Checkout" helpContent={help}>
       <div className="p-6 flex justify-center">
         {loading ? (
           <Spinner className="size-6" />

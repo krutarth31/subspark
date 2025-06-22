@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { HelpButton } from "@/components/help-button";
 
 export default function ResetPage() {
   const params = useSearchParams();
@@ -15,6 +16,8 @@ export default function ResetPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  const help = <p>Enter your new password to reset your account.</p>;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -44,6 +47,9 @@ export default function ResetPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
+      <div className="absolute right-2 top-2">
+        <HelpButton content={help} />
+      </div>
       {loading && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50">
           <Spinner className="size-6" />

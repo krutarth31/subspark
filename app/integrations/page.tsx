@@ -53,8 +53,11 @@ export default function IntegrationPage() {
     setLoading(null)
   }
 
+  const help = (
+    <p>Connect your Discord server to automate customer access and alerts.</p>
+  )
   return (
-    <DashboardLayout title="Integrations">
+    <DashboardLayout title="Integrations" helpContent={help}>
       <div className="flex flex-1 items-center justify-center p-6">
         <Card className="w-full max-w-md">
           <CardHeader>

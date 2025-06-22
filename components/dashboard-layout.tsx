@@ -9,9 +9,11 @@ import { useUserRole } from "@/hooks/use-user-role"
 export default function DashboardLayout({
   children,
   title: titleProp,
+  helpContent,
 }: {
   children: ReactNode
   title?: string
+  helpContent?: React.ReactNode
 }) {
   const { role } = useUserRole()
   const title = titleProp ?? (role === "seller" ? "Seller Dashboard" : "Buyer Dashboard")
@@ -25,7 +27,7 @@ export default function DashboardLayout({
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader title={title} />
+        <SiteHeader title={title} helpContent={helpContent} />
         <div className="flex flex-1 flex-col">{children}</div>
       </SidebarInset>
     </SidebarProvider>

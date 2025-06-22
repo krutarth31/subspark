@@ -47,9 +47,15 @@ export default function ProductsPage() {
     setExpanded((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
+  const help = (
+    <p>
+      Manage your products here. Add new products or archive existing ones.
+    </p>
+  )
+
   if (loading)
     return (
-      <DashboardLayout title="Products">
+      <DashboardLayout title="Products" helpContent={help}>
         <div className="flex flex-1 items-center justify-center p-6">
           <Spinner className="size-6" />
         </div>
@@ -57,7 +63,7 @@ export default function ProductsPage() {
     )
 
   return (
-    <DashboardLayout title="Products">
+    <DashboardLayout title="Products" helpContent={help}>
       <div className="p-4 space-y-4">
         <div className="flex items-center gap-2">
           <Button asChild>
