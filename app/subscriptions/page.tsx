@@ -11,6 +11,7 @@ export default function SubscriptionsPage() {
   const [products, setProducts] = useState<SubscriptionProduct[]>([])
   const [roles, setRoles] = useState<Role[]>([])
   const [guildId, setGuildId] = useState<string | null>(null)
+  const [guildName, setGuildName] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
 
@@ -27,6 +28,7 @@ export default function SubscriptionsPage() {
         const statusData = await statusRes.json().catch(() => ({}))
         setRoles(rolesData.roles || [])
         setGuildId(statusData.guildId || null)
+        setGuildName(statusData.guildName || null)
         const list: SubscriptionProduct[] = []
         if (Array.isArray(productsData.products)) {
           for (const p of productsData.products) {
@@ -77,26 +79,29 @@ export default function SubscriptionsPage() {
   async function updateRole(id: string, index: number, roleId: string) {
     if (!guildId) return
     setSavingId(`${id}-${index}`)
-    try {
-      const res = await fetch(`/api/products/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roleId, serverId: guildId, subIndex: index }),
-      })
-      if (!res.ok) throw new Error('Request failed')
-      toast.success('Role updated')
-      setProducts((prev) =>
-        prev.map((p) =>
-          p._id === id && p.index === index
-            ? { ...p, roleId: roleId || undefined }
-            : p
+    await toast.promise(
+      (async () => {
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roleId, serverId: guildId, subIndex: index }),
+        })
+        if (!res.ok) throw new Error('Request failed')
+        setProducts((prev) =>
+          prev.map((p) =>
+            p._id === id && p.index === index
+              ? { ...p, roleId: roleId || undefined }
+              : p
+          )
         )
-      )
-    } catch {
-      toast.error('Failed to update')
-    } finally {
-      setSavingId(null)
-    }
+      })(),
+      {
+        loading: 'Saving...',
+        success: 'Role updated',
+        error: 'Failed to update',
+      }
+    )
+    setSavingId(null)
   }
 
   const columns = getColumns(roles, updateRole, savingId)
@@ -111,7 +116,12 @@ export default function SubscriptionsPage() {
         ) : products.length === 0 ? (
           <p>No products found.</p>
         ) : (
-          <DataTable columns={columns} data={products} />
+          <>
+            <div className="text-sm text-muted-foreground">
+              Discord Guild: {guildName || guildId || 'Not connected'}
+            </div>
+            <DataTable columns={columns} data={products} />
+          </>
         )}
       </div>
     </DashboardLayout>

@@ -8,6 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { CheckIcon } from "lucide-react"
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header"
 
 export type Role = {
   id: string
@@ -32,7 +34,18 @@ export function getColumns(
   return [
     {
       accessorKey: "name",
-      header: "Name",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Name" />
+      ),
+      cell: ({ row }) => {
+        const assigned = !!row.original.roleId
+        return (
+          <div className="flex items-center gap-1">
+            <span>{row.getValue<string>('name')}</span>
+            {assigned && <CheckIcon className="size-4 text-green-500" />}
+          </div>
+        )
+      },
     },
     {
       accessorKey: "price",
@@ -50,8 +63,15 @@ export function getColumns(
       },
     },
     {
-      id: "role",
-      header: "Role",
+      accessorKey: "roleId",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Role" />
+      ),
+      sortingFn: (a, b) => {
+        const getName = (id?: string) =>
+          roles.find((r) => r.id === id)?.name || ""
+        return getName(a.original.roleId).localeCompare(getName(b.original.roleId))
+      },
       cell: ({ row }) => {
         const prod = row.original
         return (
