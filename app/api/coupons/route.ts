@@ -16,7 +16,8 @@ function getStripe(): Stripe {
 
 const couponSchema = z.object({
   code: z.string().min(3).max(40),
-  percentOff: z.number().int().positive().max(100)
+  percentOff: z.number().int().positive().max(100),
+  productId: z.string().optional(),
 })
 
 export async function GET() {
@@ -34,7 +35,7 @@ export async function GET() {
       .findOne({ userId: session.userId })
     if (!seller) return NextResponse.json({ coupons: [] })
     const coupons = await db
-      .collection<{ _id: ObjectId; code: string; percentOff: number; active: boolean }>('coupons')
+      .collection<{ _id: ObjectId; code: string; percentOff: number; active: boolean; productId?: ObjectId }>('coupons')
       .find({ sellerId: session.userId })
       .toArray()
     return NextResponse.json({ coupons })
@@ -84,13 +85,42 @@ export async function POST(request: Request) {
       sellerId: session.userId,
       code: parsed.data.code,
       percentOff: parsed.data.percentOff,
+      ...(parsed.data.productId ? { productId: new ObjectId(parsed.data.productId) } : {}),
       stripeCouponId,
       active: true,
-      createdAt: new Date()
+      createdAt: new Date(),
     })
     return NextResponse.json({ id: result.insertedId })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Failed to create coupon' }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body.id !== 'string' || typeof body.active !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
+    }
+    const db = await getDb()
+    const cookieStore = await cookies()
+    const token = cookieStore.get('session')?.value
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const session = await db
+      .collection<{ token: string; userId: ObjectId }>('sessions')
+      .findOne({ token })
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const result = await db.collection('coupons').updateOne(
+      { _id: new ObjectId(body.id), sellerId: session.userId },
+      { $set: { active: body.active } }
+    )
+    if (!result.matchedCount) {
+      return NextResponse.json({ error: 'Coupon not found' }, { status: 404 })
+    }
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Failed to update coupon' }, { status: 500 })
   }
 }

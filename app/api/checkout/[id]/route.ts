@@ -45,8 +45,13 @@ export async function POST(
     let stripeCouponId: string | undefined
     if (body?.coupon) {
       const coupon = await db
-        .collection<{ code: string; stripeCouponId: string; sellerId: ObjectId; active: boolean }>('coupons')
-        .findOne({ code: body.coupon as string, sellerId: product.userId, active: true })
+        .collection<{ code: string; stripeCouponId: string; sellerId: ObjectId; active: boolean; productId?: ObjectId }>('coupons')
+        .findOne({
+          code: body.coupon as string,
+          sellerId: product.userId,
+          active: true,
+          $or: [{ productId: product._id }, { productId: { $exists: false } }],
+        })
       if (!coupon) {
         return NextResponse.json({ error: 'Invalid coupon' }, { status: 400 })
       }

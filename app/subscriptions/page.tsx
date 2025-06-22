@@ -7,6 +7,8 @@ import { Spinner } from '@/components/ui/spinner'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 import { getColumns, SubscriptionProduct, Role } from './columns'
 
@@ -15,6 +17,7 @@ interface Coupon {
   code: string
   percentOff: number
   active: boolean
+  productId?: string
 }
 
 export default function SubscriptionsPage() {
@@ -28,6 +31,9 @@ export default function SubscriptionsPage() {
   const [couponCode, setCouponCode] = useState('')
   const [couponPercent, setCouponPercent] = useState('10')
   const [creating, setCreating] = useState(false)
+  const [allProducts, setAllProducts] = useState<{ _id: string; name: string }[]>([])
+  const [couponProduct, setCouponProduct] = useState<string>('')
+  const [updatingId, setUpdatingId] = useState<string | null>(null)
 
   const help = (
     <p>Assign Discord roles to each subscription product on this page.</p>
@@ -51,8 +57,10 @@ export default function SubscriptionsPage() {
         setGuildName(statusData.guildName || null)
         setCoupons(Array.isArray(couponsData.coupons) ? couponsData.coupons : [])
         const list: SubscriptionProduct[] = []
+        const prodList: { _id: string; name: string }[] = []
         if (Array.isArray(productsData.products)) {
           for (const p of productsData.products) {
+            prodList.push({ _id: p._id, name: p.name })
             if (p.type !== 'discord') continue
             const subs: {
               name?: string
@@ -90,6 +98,7 @@ export default function SubscriptionsPage() {
           }
         }
         setProducts(list)
+        setAllProducts(prodList)
       } finally {
         setLoading(false)
       }
@@ -131,18 +140,49 @@ export default function SubscriptionsPage() {
     const res = await fetch('/api/coupons', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: couponCode, percentOff: Number(couponPercent) })
+      body: JSON.stringify({
+        code: couponCode,
+        percentOff: Number(couponPercent),
+        productId: couponProduct || undefined,
+      })
     })
     if (res.ok) {
       const data = await res.json().catch(() => ({}))
-      setCoupons((prev) => [...prev, { _id: data.id, code: couponCode, percentOff: Number(couponPercent), active: true }])
+      setCoupons((prev) => [
+        ...prev,
+        {
+          _id: data.id,
+          code: couponCode,
+          percentOff: Number(couponPercent),
+          active: true,
+          productId: couponProduct || undefined,
+        },
+      ])
       setCouponCode('')
       setCouponPercent('10')
+      setCouponProduct('')
     } else {
       const data = await res.json().catch(() => ({}))
       toast.error(data.error || 'Failed to create')
     }
     setCreating(false)
+  }
+
+  async function toggleCoupon(id: string, active: boolean) {
+    if (updatingId) return
+    setUpdatingId(id)
+    const res = await fetch('/api/coupons', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, active }),
+    })
+    if (res.ok) {
+      setCoupons((prev) => prev.map((c) => (c._id === id ? { ...c, active } : c)))
+    } else {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error || 'Failed to update')
+    }
+    setUpdatingId(null)
   }
 
   const columns = getColumns(roles, updateRole, savingId)
@@ -167,6 +207,18 @@ export default function SubscriptionsPage() {
               <div className="max-w-sm space-y-2">
                 <Label htmlFor="coupon-code">Code</Label>
                 <Input id="coupon-code" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
+                <Label htmlFor="coupon-product" className="mt-2">Product</Label>
+                <Select value={couponProduct} onValueChange={setCouponProduct}>
+                  <SelectTrigger id="coupon-product" className="w-full">
+                    <SelectValue placeholder="All products" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">All products</SelectItem>
+                    {allProducts.map((p) => (
+                      <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Label htmlFor="coupon-percent" className="mt-2">Percent Off</Label>
                 <Input id="coupon-percent" value={couponPercent} onChange={(e) => setCouponPercent(e.target.value.replace(/[^0-9]/g, ''))} />
                 <Button className="mt-2" onClick={createCoupon} disabled={creating}>
@@ -176,6 +228,7 @@ export default function SubscriptionsPage() {
               <table className="min-w-full text-sm">
                 <thead>
                   <tr className="text-left">
+                    <th className="px-2 py-1">Product</th>
                     <th className="px-2 py-1">Code</th>
                     <th className="px-2 py-1">Percent Off</th>
                     <th className="px-2 py-1">Active</th>
@@ -184,14 +237,23 @@ export default function SubscriptionsPage() {
                 <tbody>
                   {coupons.map((c) => (
                     <tr key={c._id} className="border-t">
+                      <td className="px-2 py-1">
+                        {allProducts.find((p) => p._id === c.productId)?.name || 'All'}
+                      </td>
                       <td className="px-2 py-1 font-mono">{c.code}</td>
                       <td className="px-2 py-1">{c.percentOff}%</td>
-                      <td className="px-2 py-1">{c.active ? 'Yes' : 'No'}</td>
+                      <td className="px-2 py-1">
+                        <Switch
+                          checked={c.active}
+                          onCheckedChange={(v) => toggleCoupon(c._id, v)}
+                          disabled={updatingId === c._id}
+                        />
+                      </td>
                     </tr>
                   ))}
                   {coupons.length === 0 && (
                     <tr>
-                      <td className="px-2 py-4 text-center" colSpan={3}>No coupons yet.</td>
+                      <td className="px-2 py-4 text-center" colSpan={4}>No coupons yet.</td>
                     </tr>
                   )}
                 </tbody>
