@@ -73,13 +73,13 @@ export function getColumns(
     },
     {
       accessorKey: "price",
-      header: () => <div className="text-center">Price</div>,
+      header: () => <div className="text-right">Price</div>,
       cell: ({ row }) => {
         const price = parseFloat(row.getValue("price"))
         const currency = row.original.currency
         const per = row.original.period ? ` / ${row.original.period}` : ""
         return (
-          <div className="text-center font-medium">
+          <div className="text-right font-medium">
             {price.toFixed(2)} {currency}
             {per}
           </div>

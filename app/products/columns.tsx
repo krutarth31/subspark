@@ -82,13 +82,13 @@ export function getColumns(
   },
   {
     accessorKey: "price",
-    header: () => <div className="text-center">Price</div>,
+    header: () => <div className="text-right">Price</div>,
     cell: ({ row }) => {
       const price = parseFloat(row.getValue("price"))
       const currency = row.original.currency
       const per = row.original.billing === 'recurring' ? ` / ${row.original.period}` : ''
       return (
-        <div className="text-center font-medium">
+        <div className="text-right font-medium">
           {price.toFixed(2)} {currency}
           {per}
         </div>
@@ -101,10 +101,10 @@ export function getColumns(
   },
   {
     accessorKey: "sales",
-    header: () => <div className="text-center">Sales</div>,
+    header: () => <div className="text-right">Sales</div>,
     cell: ({ row }) => {
       const count = row.getValue<number>("sales") || 0
-      return <div className="text-center">{count}</div>
+      return <div className="text-right">{count}</div>
     },
   },
   {

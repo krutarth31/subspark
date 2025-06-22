@@ -87,7 +87,7 @@ export default function ProductsPage() {
                       <TableRow>
                         <TableHead>Name</TableHead>
                         <TableHead>Billing</TableHead>
-                        <TableHead className="text-center">Price</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -95,7 +95,7 @@ export default function ProductsPage() {
                         <TableRow key={i} className="border-t">
                           <TableCell>{s.name || '-'}</TableCell>
                           <TableCell>{s.billing}</TableCell>
-                          <TableCell className="text-center">
+                          <TableCell className="text-right">
                             {s.billing === 'free'
                               ? 'Free'
                               : `${s.price?.toFixed(2)} ${s.currency}`}
