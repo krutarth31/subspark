@@ -42,11 +42,9 @@ export default function SubscriptionsPage() {
   const [productOptions, setProductOptions] = useState<
     { value: string; label: string }[]
   >([]);
-  const [productNames, setProductNames] = useState<Record<string, string>>({});
   const [subOptions, setSubOptions] = useState<
     Record<string, { value: string; label: string }[]>
   >({});
-  const [subNames, setSubNames] = useState<Record<string, string>>({});
   const [couponProductId, setCouponProductId] = useState<string>("");
   const [couponSubIndex, setCouponSubIndex] = useState<string>("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -78,13 +76,10 @@ export default function SubscriptionsPage() {
         );
         const list: SubscriptionProduct[] = [];
         const prodOpts: { value: string; label: string }[] = [];
-        const prodMap: Record<string, string> = {};
         const subOpts: Record<string, { value: string; label: string }[]> = {};
-        const subMap: Record<string, string> = {};
         if (Array.isArray(productsData.products)) {
           for (const p of productsData.products) {
             prodOpts.push({ value: p._id, label: p.name });
-            prodMap[p._id] = p.name;
             if (p.type !== "discord") continue;
             const subs: {
               name?: string;
@@ -123,15 +118,12 @@ export default function SubscriptionsPage() {
                 value: String(idx),
                 label: s.name || s.billing,
               });
-              subMap[`${p._id}|${idx}`] = s.name || s.billing;
             });
           }
         }
         setProducts(list);
         setProductOptions(prodOpts);
-        setProductNames(prodMap);
         setSubOptions(subOpts);
-        setSubNames(subMap);
       } finally {
         setLoading(false);
       }
@@ -248,15 +240,17 @@ export default function SubscriptionsPage() {
     setDeletingId(null);
   }
 
-  const columns = getColumns(roles, updateRole, savingId);
+  const getCouponsFor = (id: string, index: number) =>
+    coupons
+      .filter((c) => {
+        if (!c.productId) return true;
+        if (c.productId !== id) return false;
+        return typeof c.subIndex === "number" ? c.subIndex === index : true;
+      })
+      .map((c) => c.code);
+
+  const columns = getColumns(roles, updateRole, savingId, getCouponsFor);
   const couponColumns = getCouponColumns(
-    (c) => (c.productId ? productNames[c.productId] || "Unknown" : "All"),
-    (c) =>
-      c.productId
-        ? typeof c.subIndex === "number"
-          ? subNames[`${c.productId}|${c.subIndex}`] || "Unknown"
-          : "All"
-        : "All",
     toggleCoupon,
     updatingId,
     deleteCoupon,

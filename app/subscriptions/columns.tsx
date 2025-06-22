@@ -30,6 +30,7 @@ export function getColumns(
   roles: Role[],
   onUpdate: (id: string, index: number, roleId: string) => void,
   savingId: string | null,
+  getCoupons: (id: string, index: number) => string[],
 ): ColumnDef<SubscriptionProduct>[] {
   return [
     {
@@ -95,6 +96,17 @@ export function getColumns(
             </SelectContent>
           </Select>
         )
+      },
+    },
+    {
+      id: "coupons",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="Coupons" />
+      ),
+      cell: ({ row }) => {
+        const prod = row.original
+        const list = getCoupons(prod._id, prod.index)
+        return list.length ? list.join(", ") : "-"
       },
     },
   ]

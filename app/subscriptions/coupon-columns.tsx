@@ -23,28 +23,12 @@ export type Coupon = {
 };
 
 export function getCouponColumns(
-  getProductName: (c: Coupon) => string,
-  getSubName: (c: Coupon) => string,
   onToggle: (id: string, active: boolean) => void,
   updatingId: string | null,
   onDelete: (id: string) => void,
   deletingId: string | null,
 ): ColumnDef<Coupon>[] {
   return [
-    {
-      id: "product",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Product" />
-      ),
-      cell: ({ row }) => getProductName(row.original),
-    },
-    {
-      id: "sub",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Sub-product" />
-      ),
-      cell: ({ row }) => getSubName(row.original),
-    },
     {
       accessorKey: "code",
       header: ({ column }) => (
