@@ -335,7 +335,11 @@ export default function NewProductPage() {
             <CardContent className="space-y-4">
               <div
                 className={`grid gap-4 ${
-                  subProducts.length > 1 ? 'sm:grid-cols-2 md:grid-cols-3' : ''
+                  subProducts.length > 1
+                    ? `sm:grid-cols-2 ${
+                        subProducts.length > 2 ? 'md:grid-cols-3' : 'md:grid-cols-2'
+                      }`
+                    : ''
                 }`}
               >
                 {subProducts.map((sub, i) => (
@@ -534,7 +538,11 @@ export default function NewProductPage() {
                 <h3 className="font-medium">Options</h3>
                 <div
                   className={`grid gap-4 ${
-                    subProducts.length > 1 ? 'sm:grid-cols-2 md:grid-cols-3' : ''
+                    subProducts.length > 1
+                      ? `sm:grid-cols-2 ${
+                          subProducts.length > 2 ? 'md:grid-cols-3' : 'md:grid-cols-2'
+                        }`
+                      : ''
                   }`}
                 >
                   {subProducts.map((s, i) => (
