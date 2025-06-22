@@ -18,21 +18,25 @@ export async function GET(request: Request) {
 
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+
   if (!code || !clientId || !clientSecret) {
-    console.error('Missing code or Google credentials')
+    console.error('Missing required OAuth values')
     return res
   }
 
+  // Manually parse cookies
   const rawCookie = request.headers.get('cookie') ?? ''
   const cookieMap = Object.fromEntries(
-    rawCookie.split(';').map(c => c.trim().split('=')).map(([k,v]) => [decodeURIComponent(k), decodeURIComponent(v ?? '')])
+    rawCookie.split(';').map(c => c.trim().split('=')).map(([k, v]) => [decodeURIComponent(k), decodeURIComponent(v ?? '')])
   )
+
   if (cookieMap['google_state'] !== state) {
-    console.error('CSRF state mismatch')
+    console.error('Invalid CSRF state')
     return res
   }
 
   try {
+    // Exchange code for access token
     const tokenResp = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -46,56 +50,61 @@ export async function GET(request: Request) {
     })
 
     if (!tokenResp.ok) {
-      console.error('Google token exchange failed:', await tokenResp.text())
+      console.error('Token exchange failed:', await tokenResp.text())
       return res
     }
 
-    const tokenData = await tokenResp.json()
-    const accessToken = tokenData.access_token as string | undefined
+    const { access_token: accessToken } = await tokenResp.json()
     if (!accessToken) {
-      console.error('No access token returned')
+      console.error('No access token received')
       return res
     }
 
+    // Fetch user info
     const userResp = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
 
     if (!userResp.ok) {
-      console.error('Google user fetch failed:', await userResp.text())
+      console.error('User info fetch failed:', await userResp.text())
       return res
     }
 
-    const userInfo = await userResp.json() as { email?: string; name?: string; picture?: string }
+    const userInfo = await userResp.json() as {
+      email?: string
+      name?: string
+      picture?: string
+    }
+
     const email = userInfo.email
     const name = userInfo.name
     const avatar = userInfo.picture
 
     if (!email || !name) {
-      console.error('Incomplete user info')
+      console.error('Missing user data')
       return res
     }
 
     const db = await getDb()
-    const existing = await db.collection<{ _id: ObjectId }>('users').findOne({ email })
+    const existing = await db.collection('users').findOne({ email })
     let userId: ObjectId
+
     if (existing) {
       userId = existing._id
-      await db.collection('users').updateOne(
-        { _id: userId },
-        { $set: { name, avatar } }
-      )
+      await db.collection('users').updateOne({ _id: userId }, { $set: { name, avatar } })
     } else {
       const accountId = generateAccountId()
       const result = await db.collection('users').insertOne({ name, email, avatar, accountId })
       userId = result.insertedId
     }
 
+    // Create session
     const token = generateToken()
     await db.collection('sessions').insertOne({ token, userId })
-    res.headers.append('Set-Cookie', `session=${token}; Path=/; HttpOnly; SameSite=Lax`)
+
+    res.headers.append('Set-Cookie', `session=${token}; Path=/; HttpOnly; SameSite=Lax; Secure`)
   } catch (err) {
-    console.error('Google callback error:', err)
+    console.error('OAuth callback error:', err)
   }
 
   return res
