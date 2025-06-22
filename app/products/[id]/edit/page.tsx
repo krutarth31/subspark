@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import * as React from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -55,35 +55,36 @@ type Product = {
   licenseKeys?: string
 }
 
-export default function EditProductPage({ params }: { params: { id: string } }) {
+export default function EditProductPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
+  const { id } = React.use(params)
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [step, setStep] = useState(1)
-  const [type, setType] = useState("")
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
-  const [image, setImage] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
-  const [subProducts, setSubProducts] = useState<SubProduct[]>([])
-  const [serverId, setServerId] = useState("")
-  const [licenseKeys, setLicenseKeys] = useState("")
-  const [contentFile, setContentFile] = useState<File | null>(null)
-  const [existingFile, setExistingFile] = useState<string | null>(null)
-  const [existingImage, setExistingImage] = useState<string | null>(null)
-  const [discordStatus, setDiscordStatus] = useState<{ connected: boolean; guildId?: string; guildName?: string } | null>(null)
-  const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
-  const [discordLoading, setDiscordLoading] = useState<"connect" | "load" | null>(null)
-  const [status, setStatus] = useState<"draft" | "published">("draft")
-  const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [loading, setLoading] = React.useState(true)
+  const [step, setStep] = React.useState(1)
+  const [type, setType] = React.useState("")
+  const [name, setName] = React.useState("")
+  const [description, setDescription] = React.useState("")
+  const [image, setImage] = React.useState<File | null>(null)
+  const [preview, setPreview] = React.useState<string | null>(null)
+  const [subProducts, setSubProducts] = React.useState<SubProduct[]>([])
+  const [serverId, setServerId] = React.useState("")
+  const [licenseKeys, setLicenseKeys] = React.useState("")
+  const [contentFile, setContentFile] = React.useState<File | null>(null)
+  const [existingFile, setExistingFile] = React.useState<string | null>(null)
+  const [existingImage, setExistingImage] = React.useState<string | null>(null)
+  const [discordStatus, setDiscordStatus] = React.useState<{ connected: boolean; guildId?: string; guildName?: string } | null>(null)
+  const [roles, setRoles] = React.useState<{ id: string; name: string }[]>([])
+  const [discordLoading, setDiscordLoading] = React.useState<"connect" | "load" | null>(null)
+  const [status, setStatus] = React.useState<"draft" | "published">("draft")
+  const [saving, setSaving] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const [errors, setErrors] = React.useState<Record<string, string>>({})
 
   const help = (
     <p>Edit the product details and save your changes using the form.</p>
   )
 
-  useEffect(() => {
-    fetch(`/api/products/${params.id}`)
+  React.useEffect(() => {
+    fetch(`/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.product) {
@@ -124,9 +125,9 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [params.id])
+  }, [id])
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (image) {
       const url = URL.createObjectURL(image)
       setPreview(url)
@@ -135,7 +136,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     setPreview(null)
   }, [image])
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (step !== 2 || type !== "discord") return
     async function loadDiscord() {
       setDiscordLoading("load")
@@ -280,7 +281,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         licenseKeys,
         imageUrl,
       }
-      const res = await fetch(`/api/products/${params.id}`, {
+      const res = await fetch(`/api/products/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

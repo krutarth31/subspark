@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import * as React from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -38,11 +38,12 @@ interface Product {
   subProducts?: BillingOption[]
 }
 
-export default function BuyPage({ params }: { params: { id: string } }) {
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [paying, setPaying] = useState(false)
-  const [billing, setBilling] = useState<string>('')
+export default function BuyPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
+  const { id } = React.use(params)
+  const [product, setProduct] = React.useState<Product | null>(null)
+  const [loading, setLoading] = React.useState(true)
+  const [paying, setPaying] = React.useState(false)
+  const [billing, setBilling] = React.useState<string>('')
 
   const help = <p>Select a plan and proceed to checkout.</p>
 
@@ -52,8 +53,8 @@ export default function BuyPage({ params }: { params: { id: string } }) {
     return o.billing === 'recurring' && o.period ? `${base} / ${o.period}` : base
   }
 
-  useEffect(() => {
-    fetch(`/api/products/${params.id}`)
+  React.useEffect(() => {
+    fetch(`/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data.product)
@@ -68,7 +69,7 @@ export default function BuyPage({ params }: { params: { id: string } }) {
         toast.error('Failed to load product')
         setLoading(false)
       })
-  }, [params.id])
+  }, [id])
 
   async function checkout() {
     if (!product || paying) return
