@@ -118,7 +118,7 @@ export default function BuyPage({ params }: { params: { id: string } }) {
                 {product.subProducts.map((o, idx) => (
                   <Card
                     key={idx}
-                    className={`cursor-pointer sm:w-72${
+                    className={`cursor-pointer${
                       billing === (o.name || o.billing) ? ' ring-2 ring-primary' : ''
                     }`}
                     onClick={() => setBilling(o.name || o.billing)}

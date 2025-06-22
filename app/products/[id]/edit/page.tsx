@@ -374,7 +374,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 {subProducts.map((sub, i) => (
                   <div
                     key={i}
-                    className="rounded-lg border p-4 space-y-4 bg-muted/50 sm:w-72"
+                    className="rounded-lg border p-4 space-y-4 bg-muted/50"
                   >
                   <div className="flex justify-between items-center gap-2">
                     <Input
@@ -550,7 +550,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                   }`}
                 >
                   {subProducts.map((s, i) => (
-                    <Card key={i} className="sm:w-72">
+                    <Card key={i}>
                       <CardHeader className="space-y-1">
                         <CardTitle className="text-base">
                           {s.name || `Option ${i + 1}`}
