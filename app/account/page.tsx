@@ -3,6 +3,8 @@ import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Spinner } from "@/components/ui/spinner"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 interface User {
   name: string
@@ -35,6 +37,9 @@ export default function Page() {
               <p className="text-lg font-semibold">{user.name}</p>
               <p className="text-muted-foreground text-sm">{user.email}</p>
             </div>
+            <Button asChild className="mt-4">
+              <Link href="/account/edit">Edit Account</Link>
+            </Button>
           </div>
         ) : (
           <Spinner className="size-6" />
