@@ -15,6 +15,10 @@ export default function SubscriptionsPage() {
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
 
+  const help = (
+    <p>Assign Discord roles to each subscription product on this page.</p>
+  )
+
   useEffect(() => {
     async function load() {
       try {
@@ -107,7 +111,7 @@ export default function SubscriptionsPage() {
   const columns = getColumns(roles, updateRole, savingId)
 
   return (
-    <DashboardLayout title="Subscriptions">
+    <DashboardLayout title="Subscriptions" helpContent={help}>
       <div className="p-4 space-y-4">
         {loading ? (
           <div className="flex justify-center p-6">

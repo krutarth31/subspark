@@ -78,6 +78,10 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [error, setError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  const help = (
+    <p>Edit the product details and save your changes using the form.</p>
+  )
+
   useEffect(() => {
     fetch(`/api/products/${params.id}`)
       .then((res) => res.json())
@@ -297,7 +301,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
 
   if (loading)
     return (
-      <DashboardLayout title="Edit Product">
+      <DashboardLayout title="Edit Product" helpContent={help}>
         <div className="flex flex-1 items-center justify-center p-6">
           <Spinner className="size-6" />
         </div>
@@ -305,7 +309,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     )
 
   return (
-    <DashboardLayout title="Edit Product">
+    <DashboardLayout title="Edit Product" helpContent={help}>
       <div className="p-6 max-w-3xl mx-auto space-y-6">
         <ol className="flex items-center gap-2">
           {[1, 2, 3].map((n) => (

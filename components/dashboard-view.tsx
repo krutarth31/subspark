@@ -83,8 +83,15 @@ export default function DashboardView() {
     }
   }
 
+  const help = (
+    <p>
+      This dashboard shows your account status and key metrics. Use the sidebar
+      to navigate to other sections.
+    </p>
+  )
+
   return (
-    <DashboardLayout title={title}>
+    <DashboardLayout title={title} helpContent={help}>
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           {role === "seller" && (

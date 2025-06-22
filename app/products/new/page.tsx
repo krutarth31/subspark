@@ -67,6 +67,10 @@ export default function NewProductPage() {
   const [error, setError] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  const help = (
+    <p>Create a new product by completing the steps in this form.</p>
+  )
+
   useEffect(() => {
     if (image) {
       const url = URL.createObjectURL(image)
@@ -246,7 +250,7 @@ export default function NewProductPage() {
   }
 
   return (
-    <DashboardLayout title="New Product">
+    <DashboardLayout title="New Product" helpContent={help}>
       <div className="p-6 max-w-3xl mx-auto space-y-6">
         <ol className="flex items-center gap-2">
           {[1, 2, 3].map((n) => (
