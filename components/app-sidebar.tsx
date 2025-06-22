@@ -83,6 +83,11 @@ const sellerNav = [
     icon: IconFolder,
   },
   {
+    title: "Coupons",
+    url: "/coupons",
+    icon: IconFolder,
+  },
+  {
     title: "Settings",
     url: "/settings",
     icon: IconSettings,

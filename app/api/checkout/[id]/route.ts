@@ -42,6 +42,16 @@ export async function POST(
     }
     const body = await request.json().catch(() => null)
     const billing = body?.sub || product.billing
+    let stripeCouponId: string | undefined
+    if (body?.coupon) {
+      const coupon = await db
+        .collection<{ code: string; stripeCouponId: string; sellerId: ObjectId; active: boolean }>('coupons')
+        .findOne({ code: body.coupon as string, sellerId: product.userId, active: true })
+      if (!coupon) {
+        return NextResponse.json({ error: 'Invalid coupon' }, { status: 400 })
+      }
+      stripeCouponId = coupon.stripeCouponId
+    }
     const option = Array.isArray(product.subProducts)
       ? product.subProducts.find((o) =>
           o.name ? o.name === billing : o.billing === billing,
@@ -68,6 +78,7 @@ export async function POST(
         mode: option.billing === 'recurring' ? 'subscription' : 'payment',
         payment_method_types: ['card'],
         line_items: [{ price: option.stripePriceId!, quantity: 1 }],
+        ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
         success_url: `${origin}/products/${id}?success=1`,
         cancel_url: `${origin}/products/${id}?canceled=1`,
       },

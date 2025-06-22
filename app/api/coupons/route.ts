@@ -1,0 +1,96 @@
+import { NextResponse } from 'next/server'
+import { getDb } from '@/lib/mongo'
+import { cookies } from 'next/headers'
+import { ObjectId } from 'mongodb'
+import { z } from 'zod'
+import Stripe from 'stripe'
+
+let stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (stripe) return stripe
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  if (!secretKey) throw new Error('STRIPE_SECRET_KEY is not defined')
+  stripe = new Stripe(secretKey, { apiVersion: '2022-11-15' })
+  return stripe
+}
+
+const couponSchema = z.object({
+  code: z.string().min(3).max(40),
+  percentOff: z.number().int().positive().max(100)
+})
+
+export async function GET() {
+  try {
+    const db = await getDb()
+    const cookieStore = await cookies()
+    const token = cookieStore.get('session')?.value
+    if (!token) return NextResponse.json({ coupons: [] })
+    const session = await db
+      .collection<{ token: string; userId: ObjectId }>('sessions')
+      .findOne({ token })
+    if (!session) return NextResponse.json({ coupons: [] })
+    const seller = await db
+      .collection<{ _id: string }>('sellers')
+      .findOne({ userId: session.userId })
+    if (!seller) return NextResponse.json({ coupons: [] })
+    const coupons = await db
+      .collection<{ _id: ObjectId; code: string; percentOff: number; active: boolean }>('coupons')
+      .find({ sellerId: session.userId })
+      .toArray()
+    return NextResponse.json({ coupons })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json().catch(() => null)
+    const parsed = couponSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
+    }
+    const db = await getDb()
+    const cookieStore = await cookies()
+    const token = cookieStore.get('session')?.value
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const session = await db
+      .collection<{ token: string; userId: ObjectId }>('sessions')
+      .findOne({ token })
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const seller = await db
+      .collection<{ _id: string }>('sellers')
+      .findOne({ userId: session.userId })
+    if (!seller) return NextResponse.json({ error: 'Seller account not found' }, { status: 400 })
+    const existing = await db
+      .collection('coupons')
+      .findOne({ sellerId: session.userId, code: parsed.data.code })
+    if (existing) {
+      return NextResponse.json({ error: 'Coupon code already exists' }, { status: 400 })
+    }
+    let stripeCouponId: string | undefined
+    try {
+      const coupon = await getStripe().coupons.create(
+        { percent_off: parsed.data.percentOff, duration: 'once' },
+        { stripeAccount: seller._id }
+      )
+      stripeCouponId = coupon.id
+    } catch (err) {
+      console.error('Stripe coupon creation failed', err)
+      return NextResponse.json({ error: 'Stripe error' }, { status: 500 })
+    }
+    const result = await db.collection('coupons').insertOne({
+      sellerId: session.userId,
+      code: parsed.data.code,
+      percentOff: parsed.data.percentOff,
+      stripeCouponId,
+      active: true,
+      createdAt: new Date()
+    })
+    return NextResponse.json({ id: result.insertedId })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Failed to create coupon' }, { status: 500 })
+  }
+}

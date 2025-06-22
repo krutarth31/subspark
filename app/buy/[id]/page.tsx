@@ -44,6 +44,7 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
   const [loading, setLoading] = React.useState(true)
   const [paying, setPaying] = React.useState(false)
   const [billing, setBilling] = React.useState<string>('')
+  const [coupon, setCoupon] = React.useState('')
 
   const help = <p>Select a plan and proceed to checkout.</p>
 
@@ -80,7 +81,7 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
           const res = await fetch(`/api/checkout/${product._id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sub: billing }),
+            body: JSON.stringify({ sub: billing, coupon }),
           })
           const data = await res.json().catch(() => ({}))
           if (!res.ok || !data.url) throw new Error("Failed")
@@ -186,6 +187,15 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
                 </p>
               </>
             ) : null}
+            <div>
+              <label className="text-sm" htmlFor="coupon">Coupon Code</label>
+              <input
+                id="coupon"
+                value={coupon}
+                onChange={(e) => setCoupon(e.target.value)}
+                className="border mt-1 w-full rounded-md px-2 py-1 text-sm"
+              />
+            </div>
             <Button onClick={checkout} disabled={paying} className="w-full">
               {paying && <Spinner className="mr-2" />}
               {display.billing === 'free' ? 'Get Access' : 'Checkout'}
