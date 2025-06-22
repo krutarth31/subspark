@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/dashboard-layout'
 import { DataTable } from '@/components/ui/data-table'
-import { Input } from '@/components/ui/input'
 import { Spinner } from '@/components/ui/spinner'
 import { toast } from 'sonner'
 import { getColumns, SubscriptionProduct, Role } from './columns'
@@ -13,7 +12,6 @@ export default function SubscriptionsPage() {
   const [roles, setRoles] = useState<Role[]>([])
   const [guildId, setGuildId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [query, setQuery] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -101,28 +99,19 @@ export default function SubscriptionsPage() {
     }
   }
 
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(query.toLowerCase())
-  )
-
   const columns = getColumns(roles, updateRole, savingId)
 
   return (
     <DashboardLayout title="Subscriptions">
       <div className="p-4 space-y-4">
-        <Input
-          placeholder="Search subscriptions..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
         {loading ? (
           <div className="flex justify-center p-6">
             <Spinner className="size-6" />
           </div>
-        ) : filtered.length === 0 ? (
+        ) : products.length === 0 ? (
           <p>No products found.</p>
         ) : (
-          <DataTable columns={columns} data={filtered} />
+          <DataTable columns={columns} data={products} />
         )}
       </div>
     </DashboardLayout>
