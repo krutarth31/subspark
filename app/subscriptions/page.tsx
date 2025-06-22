@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
 import { getColumns, SubscriptionProduct, Role } from './columns'
+import { getCouponColumns, Coupon } from './coupon-columns'
 
 interface Coupon {
   _id: string
@@ -18,6 +19,7 @@ interface Coupon {
   percentOff: number
   active: boolean
   productId?: string
+  subIndex?: number
 }
 
 export default function SubscriptionsPage() {
@@ -31,9 +33,11 @@ export default function SubscriptionsPage() {
   const [couponCode, setCouponCode] = useState('')
   const [couponPercent, setCouponPercent] = useState('10')
   const [creating, setCreating] = useState(false)
-  const [allProducts, setAllProducts] = useState<{ _id: string; name: string }[]>([])
+  const [allProducts, setAllProducts] = useState<{ value: string; label: string }[]>([])
+  const [productMap, setProductMap] = useState<Record<string, string>>({})
   const [couponProduct, setCouponProduct] = useState<string>('')
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const help = (
     <p>Assign Discord roles to each subscription product on this page.</p>
@@ -57,10 +61,12 @@ export default function SubscriptionsPage() {
         setGuildName(statusData.guildName || null)
         setCoupons(Array.isArray(couponsData.coupons) ? couponsData.coupons : [])
         const list: SubscriptionProduct[] = []
-        const prodList: { _id: string; name: string }[] = []
+        const prodOpts: { value: string; label: string }[] = []
+        const map: Record<string, string> = {}
         if (Array.isArray(productsData.products)) {
           for (const p of productsData.products) {
-            prodList.push({ _id: p._id, name: p.name })
+            prodOpts.push({ value: p._id, label: p.name })
+            map[p._id] = p.name
             if (p.type !== 'discord') continue
             const subs: {
               name?: string
@@ -94,11 +100,15 @@ export default function SubscriptionsPage() {
                   roleId: s.roleId,
                 })
               }
+              const val = `${p._id}|${idx}`
+              prodOpts.push({ value: val, label: `${p.name} - ${s.name || s.billing}` })
+              map[val] = `${p.name} - ${s.name || s.billing}`
             })
           }
         }
         setProducts(list)
-        setAllProducts(prodList)
+        setAllProducts(prodOpts)
+        setProductMap(map)
       } finally {
         setLoading(false)
       }
@@ -137,13 +147,21 @@ export default function SubscriptionsPage() {
   async function createCoupon() {
     if (creating) return
     setCreating(true)
+    let productId: string | undefined
+    let subIndex: number | undefined
+    if (couponProduct) {
+      const parts = couponProduct.split('|')
+      productId = parts[0]
+      if (parts.length > 1) subIndex = Number(parts[1])
+    }
     const res = await fetch('/api/coupons', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         code: couponCode,
         percentOff: Number(couponPercent),
-        productId: couponProduct || undefined,
+        productId,
+        subIndex,
       })
     })
     if (res.ok) {
@@ -155,7 +173,8 @@ export default function SubscriptionsPage() {
           code: couponCode,
           percentOff: Number(couponPercent),
           active: true,
-          productId: couponProduct || undefined,
+          productId,
+          subIndex,
         },
       ])
       setCouponCode('')
@@ -185,7 +204,38 @@ export default function SubscriptionsPage() {
     setUpdatingId(null)
   }
 
+  async function deleteCoupon(id: string) {
+    if (deletingId) return
+    setDeletingId(id)
+    const res = await fetch('/api/coupons', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    })
+    if (res.ok) {
+      setCoupons((prev) => prev.filter((c) => c._id !== id))
+    } else {
+      const data = await res.json().catch(() => ({}))
+      toast.error(data.error || 'Failed to delete')
+    }
+    setDeletingId(null)
+  }
+
   const columns = getColumns(roles, updateRole, savingId)
+  const couponColumns = getCouponColumns(
+    (c) =>
+      c.productId
+        ? productMap[
+            typeof c.subIndex === 'number'
+              ? `${c.productId}|${c.subIndex}`
+              : c.productId
+          ] || 'All'
+        : 'All',
+    toggleCoupon,
+    updatingId,
+    deleteCoupon,
+    deletingId,
+  )
 
   return (
     <DashboardLayout title="Subscriptions" helpContent={help}>
@@ -218,7 +268,7 @@ export default function SubscriptionsPage() {
                   <SelectContent>
                     <SelectItem value="all">All products</SelectItem>
                     {allProducts.map((p) => (
-                      <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -228,39 +278,7 @@ export default function SubscriptionsPage() {
                   {creating && <Spinner className="mr-2" />}Create Coupon
                 </Button>
               </div>
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="text-left">
-                    <th className="px-2 py-1">Product</th>
-                    <th className="px-2 py-1">Code</th>
-                    <th className="px-2 py-1">Percent Off</th>
-                    <th className="px-2 py-1">Active</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {coupons.map((c) => (
-                    <tr key={c._id} className="border-t">
-                      <td className="px-2 py-1">
-                        {allProducts.find((p) => p._id === c.productId)?.name || 'All'}
-                      </td>
-                      <td className="px-2 py-1 font-mono">{c.code}</td>
-                      <td className="px-2 py-1">{c.percentOff}%</td>
-                      <td className="px-2 py-1">
-                        <Switch
-                          checked={c.active}
-                          onCheckedChange={(v) => toggleCoupon(c._id, v)}
-                          disabled={updatingId === c._id}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  {coupons.length === 0 && (
-                    <tr>
-                      <td className="px-2 py-4 text-center" colSpan={4}>No coupons yet.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              <DataTable columns={couponColumns} data={coupons} />
             </div>
           </>
         )}

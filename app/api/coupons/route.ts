@@ -18,6 +18,7 @@ const couponSchema = z.object({
   code: z.string().min(3).max(40),
   percentOff: z.number().int().positive().max(100),
   productId: z.string().optional(),
+  subIndex: z.number().int().nonnegative().optional(),
 })
 
 export async function GET() {
@@ -35,10 +36,25 @@ export async function GET() {
       .findOne({ userId: session.userId })
     if (!seller) return NextResponse.json({ coupons: [] })
     const coupons = await db
-      .collection<{ _id: ObjectId; code: string; percentOff: number; active: boolean; productId?: ObjectId }>('coupons')
+      .collection<{
+        _id: ObjectId
+        code: string
+        percentOff: number
+        active: boolean
+        productId?: ObjectId
+        subIndex?: number
+      }>('coupons')
       .find({ sellerId: session.userId })
       .toArray()
-    return NextResponse.json({ coupons })
+    const formatted = coupons.map((c) => ({
+      _id: c._id.toString(),
+      code: c.code,
+      percentOff: c.percentOff,
+      active: c.active,
+      productId: c.productId ? c.productId.toString() : undefined,
+      subIndex: c.subIndex,
+    }))
+    return NextResponse.json({ coupons: formatted })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Failed to fetch' }, { status: 500 })
@@ -85,12 +101,17 @@ export async function POST(request: Request) {
       sellerId: session.userId,
       code: parsed.data.code,
       percentOff: parsed.data.percentOff,
-      ...(parsed.data.productId ? { productId: new ObjectId(parsed.data.productId) } : {}),
+      ...(parsed.data.productId
+        ? { productId: new ObjectId(parsed.data.productId) }
+        : {}),
+      ...(typeof parsed.data.subIndex === 'number'
+        ? { subIndex: parsed.data.subIndex }
+        : {}),
       stripeCouponId,
       active: true,
       createdAt: new Date(),
     })
-    return NextResponse.json({ id: result.insertedId })
+    return NextResponse.json({ id: result.insertedId.toString() })
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Failed to create coupon' }, { status: 500 })
@@ -122,5 +143,32 @@ export async function PATCH(request: Request) {
   } catch (err) {
     console.error(err)
     return NextResponse.json({ error: 'Failed to update coupon' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body.id !== 'string') {
+      return NextResponse.json({ error: 'Invalid data' }, { status: 400 })
+    }
+    const db = await getDb()
+    const cookieStore = await cookies()
+    const token = cookieStore.get('session')?.value
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const session = await db
+      .collection<{ token: string; userId: ObjectId }>('sessions')
+      .findOne({ token })
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const result = await db
+      .collection('coupons')
+      .deleteOne({ _id: new ObjectId(body.id), sellerId: session.userId })
+    if (!result.deletedCount) {
+      return NextResponse.json({ error: 'Coupon not found' }, { status: 404 })
+    }
+    return NextResponse.json({ success: true })
+  } catch (err) {
+    console.error(err)
+    return NextResponse.json({ error: 'Failed to delete coupon' }, { status: 500 })
   }
 }

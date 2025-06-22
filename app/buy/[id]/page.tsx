@@ -44,6 +44,7 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
   const [loading, setLoading] = React.useState(true)
   const [paying, setPaying] = React.useState(false)
   const [billing, setBilling] = React.useState<string>('')
+  const [billingIndex, setBillingIndex] = React.useState<number>(0)
   const [coupon, setCoupon] = React.useState('')
 
   const help = <p>Select a plan and proceed to checkout.</p>
@@ -61,8 +62,10 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
         setProduct(data.product)
         if (data.product?.subProducts?.length) {
           setBilling(data.product.subProducts[0].name || data.product.subProducts[0].billing)
+          setBillingIndex(0)
         } else if (data.product) {
           setBilling(data.product.billing)
+          setBillingIndex(0)
         }
         setLoading(false)
       })
@@ -81,7 +84,7 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
           const res = await fetch(`/api/checkout/${product._id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sub: billing, coupon }),
+            body: JSON.stringify({ sub: billing, subIndex: billingIndex, coupon }),
           })
           const data = await res.json().catch(() => ({}))
           if (!res.ok || !data.url) throw new Error("Failed")
@@ -98,9 +101,11 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
     }
   }
 
-  const option = product?.subProducts?.find(
-    (o) => (o.name ? o.name === billing : o.billing === billing),
-  )
+  const option =
+    product?.subProducts?.[billingIndex] ??
+    product?.subProducts?.find((o) =>
+      o.name ? o.name === billing : o.billing === billing,
+    )
   const display: BillingOption = option || {
     billing: product?.billing,
     price: product?.price,
@@ -156,7 +161,10 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
                     className={`cursor-pointer${
                       billing === (o.name || o.billing) ? ' ring-2 ring-primary' : ''
                     }`}
-                    onClick={() => setBilling(o.name || o.billing)}
+                    onClick={() => {
+                      setBilling(o.name || o.billing)
+                      setBillingIndex(idx)
+                    }}
                   >
                     <CardHeader className="text-center space-y-1">
                       <CardTitle className="text-lg">

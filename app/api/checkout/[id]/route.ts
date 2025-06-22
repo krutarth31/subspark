@@ -42,15 +42,31 @@ export async function POST(
     }
     const body = await request.json().catch(() => null)
     const billing = body?.sub || product.billing
+    const subIndex: number | undefined =
+      typeof body?.subIndex === 'number' ? body.subIndex : undefined
     let stripeCouponId: string | undefined
     if (body?.coupon) {
+      const or: any[] = [
+        { productId: { $exists: false } },
+        { productId: product._id, subIndex: { $exists: false } },
+      ]
+      if (typeof subIndex === 'number') {
+        or.unshift({ productId: product._id, subIndex })
+      }
       const coupon = await db
-        .collection<{ code: string; stripeCouponId: string; sellerId: ObjectId; active: boolean; productId?: ObjectId }>('coupons')
+        .collection<{
+          code: string
+          stripeCouponId: string
+          sellerId: ObjectId
+          active: boolean
+          productId?: ObjectId
+          subIndex?: number
+        }>('coupons')
         .findOne({
           code: body.coupon as string,
           sellerId: product.userId,
           active: true,
-          $or: [{ productId: product._id }, { productId: { $exists: false } }],
+          $or: or,
         })
       if (!coupon) {
         return NextResponse.json({ error: 'Invalid coupon' }, { status: 400 })
@@ -58,9 +74,12 @@ export async function POST(
       stripeCouponId = coupon.stripeCouponId
     }
     const option = Array.isArray(product.subProducts)
-      ? product.subProducts.find((o) =>
-          o.name ? o.name === billing : o.billing === billing,
-        ) || product.subProducts[0]
+      ? typeof subIndex === 'number'
+        ? product.subProducts[subIndex]
+        :
+            product.subProducts.find((o) =>
+              o.name ? o.name === billing : o.billing === billing,
+            ) || product.subProducts[0]
       : { billing: product.billing, stripePriceId: product.stripePriceId }
     if (!option) {
       return NextResponse.json({ error: 'Billing option not found' }, { status: 400 })
