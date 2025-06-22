@@ -1,139 +1,286 @@
 "use client"
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import DashboardLayout from '@/components/dashboard-layout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Spinner } from '@/components/ui/spinner'
+import { useEffect, useState } from "react"
+import DashboardLayout from "@/components/dashboard-layout"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { Checkbox } from '@/components/ui/checkbox'
+  CheckIcon,
+  FileIcon,
+  KeyIcon,
+  PlusIcon,
+  ServerIcon,
+  XIcon,
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Spinner } from "@/components/ui/spinner"
+import { ServiceDescription } from "@/components/service-description"
 
-interface Product {
+const types = [
+  { id: "file", label: "File", icon: FileIcon },
+  { id: "discord", label: "Discord", icon: ServerIcon },
+  { id: "key", label: "License Key", icon: KeyIcon },
+]
+
+type SubProduct = {
   name: string
-  price: number
+  billing: string
+  price: string
   currency: string
-  billing: 'free' | 'one' | 'recurring'
+  period: string
+  roleId: string
+  service: string
+}
+
+type Product = {
+  _id: string
+  name: string
   description?: string
-  planDescription?: string
-  availableUnits?: number
-  unlimited?: boolean
-  expireDays?: number
-  period?: string
-  type: 'discord' | 'file' | 'key'
-  status: 'draft' | 'published'
+  type: string
+  status: "draft" | "published"
+  subProducts?: {
+    name?: string
+    billing: string
+    price?: number
+    currency: string
+    period?: string
+    roleId?: string
+    service?: string
+  }[]
   deliveryFile?: string
   serverId?: string
-  roleId?: string
   licenseKeys?: string
 }
 
 export default function EditProductPage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const [product, setProduct] = useState<Product | null>(null)
-  const [name, setName] = useState('')
-  const [price, setPrice] = useState('')
-  const [currency, setCurrency] = useState('USD')
-  const [billing, setBilling] = useState<'free' | 'one' | 'recurring'>('one')
-  const [description, setDescription] = useState('')
-  const [planDescription, setPlanDescription] = useState('')
-  const [autoExpire, setAutoExpire] = useState(false)
-  const [availableUnits, setAvailableUnits] = useState('')
-  const [unlimited, setUnlimited] = useState(false)
-  const [expireDays, setExpireDays] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [deliveryFile, setDeliveryFile] = useState('')
-  const [serverId, setServerId] = useState('')
-  const [roleId, setRoleId] = useState('')
-  const [licenseKeys, setLicenseKeys] = useState('')
-  const [period, setPeriod] = useState('month')
-  const [type, setType] = useState<'discord' | 'file' | 'key'>('discord')
-  const [status, setStatus] = useState<'draft' | 'published'>('draft')
-  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [step, setStep] = useState(1)
+  const [type, setType] = useState("")
+  const [name, setName] = useState("")
+  const [description, setDescription] = useState("")
+  const [image, setImage] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [subProducts, setSubProducts] = useState<SubProduct[]>([])
+  const [serverId, setServerId] = useState("")
+  const [licenseKeys, setLicenseKeys] = useState("")
+  const [contentFile, setContentFile] = useState<File | null>(null)
+  const [existingFile, setExistingFile] = useState<string | null>(null)
+  const [discordStatus, setDiscordStatus] = useState<{ connected: boolean; guildId?: string; guildName?: string } | null>(null)
+  const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
+  const [discordLoading, setDiscordLoading] = useState<"connect" | "load" | null>(null)
+  const [status, setStatus] = useState<"draft" | "published">("draft")
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     fetch(`/api/products/${params.id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.product) {
-          setProduct(data.product)
-          setName(data.product.name)
-          setPrice(String(data.product.price))
-          setCurrency(data.product.currency || 'USD')
-          setBilling(data.product.billing)
-          setDescription(data.product.description || '')
-          setPlanDescription(data.product.planDescription || '')
-          setAvailableUnits(data.product.availableUnits ? String(data.product.availableUnits) : '')
-          setUnlimited(Boolean(data.product.unlimited))
-          setAutoExpire(!!data.product.expireDays)
-          setExpireDays(data.product.expireDays ? String(data.product.expireDays) : '')
-          setDeliveryFile(data.product.deliveryFile || '')
-          setServerId(data.product.serverId || '')
-          setRoleId(data.product.roleId || '')
-          setLicenseKeys(data.product.licenseKeys || '')
-          setPeriod(data.product.period || 'month')
-          setType(data.product.type)
-          setStatus(data.product.status)
+          const p: Product = data.product
+          setName(p.name)
+          setDescription(p.description || "")
+          setType(p.type)
+          setStatus(p.status)
+          setSubProducts(
+            p.subProducts && p.subProducts.length > 0
+              ? p.subProducts.map((s) => ({
+                  name: s.name || "",
+                  billing: s.billing,
+                  price: s.price != null ? String(s.price) : "0",
+                  currency: s.currency || "USD",
+                  period: s.period || "month",
+                  roleId: s.roleId || "",
+                  service: s.service || "",
+                }))
+              : [
+                  {
+                    name: "Default",
+                    billing: p.billing || "one",
+                    price: String(p.price || 0),
+                    currency: p.currency || "USD",
+                    period: p.period || "month",
+                    roleId: p.roleId || "",
+                    service: p.planDescription || "",
+                  },
+                ]
+          )
+          setServerId(p.serverId || "")
+          setLicenseKeys(p.licenseKeys || "")
+          setExistingFile(p.deliveryFile || null)
         }
+        setLoading(false)
       })
-      .catch(() => setError('Failed to load product'))
+      .catch(() => setLoading(false))
   }, [params.id])
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    const priceNumber = billing === 'free' ? 0 : parseFloat(price)
-    if (isNaN(priceNumber)) {
-      setError('Invalid price')
-      return
+  useEffect(() => {
+    if (image) {
+      const url = URL.createObjectURL(image)
+      setPreview(url)
+      return () => URL.revokeObjectURL(url)
     }
-    setLoading(true)
-    let res: Response
-    try {
-      res = await fetch(`/api/products/${params.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          price: priceNumber,
-          currency,
-          billing,
-          period: billing === 'recurring' ? period : undefined,
-          planDescription,
-          availableUnits: unlimited ? null : availableUnits ? parseInt(availableUnits) : null,
-          unlimited,
-          expireDays: autoExpire && expireDays ? parseInt(expireDays) : null,
-          deliveryFile,
-          serverId,
-          roleId,
-          licenseKeys,
-          description,
-          type,
-          status,
-        }),
-      })
-    } catch {
-      setError('Network error')
-      setLoading(false)
-      return
+    setPreview(null)
+  }, [image])
+
+  useEffect(() => {
+    if (step !== 2 || type !== "discord") return
+    async function loadDiscord() {
+      setDiscordLoading("load")
+      try {
+        const statusRes = await fetch("/api/discord/status")
+        const statusData = await statusRes.json().catch(() => ({}))
+        setDiscordStatus(statusData)
+        if (statusData.connected) {
+          setServerId(statusData.guildId || "")
+          const rolesRes = await fetch("/api/discord/roles")
+          const rolesData = await rolesRes.json().catch(() => ({}))
+          setRoles(Array.isArray(rolesData.roles) ? rolesData.roles : [])
+        }
+      } finally {
+        setDiscordLoading(null)
+      }
     }
-    if (!res.ok) {
+    loadDiscord()
+  }, [step, type])
+
+  async function connectDiscord() {
+    if (discordLoading) return
+    setDiscordLoading("connect")
+    const res = await fetch("/api/discord/connect", { method: "POST" })
+    if (res.ok) {
       const data = await res.json().catch(() => ({}))
-      setError(data.error || 'Update failed')
-      setLoading(false)
-      return
+      if (data.url) {
+        window.location.href = data.url as string
+        return
+      }
     }
-    router.push('/products')
-    setLoading(false)
+    setDiscordLoading(null)
   }
 
-  if (!product)
+  function addSub() {
+    setSubProducts((subs) => [
+      ...subs,
+      {
+        name: "",
+        billing: "one",
+        price: "10",
+        currency: "USD",
+        period: "month",
+        roleId: "",
+        service: "",
+      },
+    ])
+  }
+
+  function updateSub(index: number, key: keyof SubProduct, value: string) {
+    if (key === "price") {
+      value = value.replace(/[^0-9.]/g, "")
+      const parts = value.split(".")
+      if (parts.length > 2) {
+        value = parts[0] + "." + parts.slice(1).join("")
+      }
+    }
+    setSubProducts((subs) => subs.map((s, i) => (i === index ? { ...s, [key]: value } : s)))
+  }
+
+  function removeSub(index: number) {
+    setSubProducts((subs) => subs.filter((_, i) => i !== index))
+  }
+
+  function validate(current: number): boolean {
+    const errs: Record<string, string> = {}
+    if (current === 1) {
+      if (!type) errs.type = "Select a type"
+      if (!name.trim()) errs.name = "Name is required"
+    }
+    if (current === 2) {
+      subProducts.forEach((s, i) => {
+        if (!s.name.trim()) errs[`name${i}`] = "Required"
+        if (s.billing !== "free") {
+          if (!s.price.trim() || !/^\d+(\.\d{1,2})?$/.test(s.price)) errs[`price${i}`] = "Invalid price"
+          if (!s.currency.trim()) errs[`currency${i}`] = "Currency"
+        }
+        if (s.billing === "recurring" && !s.period) errs[`period${i}`] = "Period"
+        if (type === "discord" && !s.roleId.trim()) errs[`role${i}`] = "Role required"
+      })
+      if (type === "file" && !contentFile && !existingFile) errs.file = "File required"
+      if (type === "key" && licenseKeys.trim().length === 0) errs.keys = "Provide keys"
+      if (type === "discord") {
+        if (!serverId.trim()) errs.server = "Connect server"
+      }
+    }
+    setErrors(errs)
+    return Object.keys(errs).length === 0
+  }
+
+  const nextDisabled = () => {
+    if (step === 1) return !type || name.trim().length === 0
+    if (step === 2) {
+      for (const s of subProducts) {
+        if (!s.name.trim()) return true
+        if (s.billing !== "free") {
+          if (!s.price.trim() || !/^\d+(\.\d{1,2})?$/.test(s.price)) return true
+          if (!s.currency.trim()) return true
+        }
+        if (s.billing === "recurring" && !s.period) return true
+        if (type === "discord" && !s.roleId.trim()) return true
+      }
+      if (type === "file" && !contentFile && !existingFile) return true
+      if (type === "key" && licenseKeys.trim().length === 0) return true
+      if (type === "discord" && !serverId.trim()) return true
+    }
+    return false
+  }
+
+  async function handleSave() {
+    if (!validate(2)) return
+    setSaving(true)
+    try {
+      const body = {
+        name,
+        description,
+        type,
+        status,
+        subProducts: subProducts.map((s) => ({
+          name: s.name,
+          billing: s.billing,
+          price: s.billing === "free" ? 0 : parseFloat(s.price),
+          currency: s.currency,
+          period: s.billing === "recurring" ? s.period : undefined,
+          roleId: s.roleId,
+          service: s.service,
+        })),
+        deliveryFile: contentFile ? contentFile.name : undefined,
+        serverId,
+        roleId: subProducts[0]?.roleId,
+        licenseKeys,
+      }
+      const res = await fetch(`/api/products/${params.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || "Failed to save")
+        setSaving(false)
+        return
+      }
+      router.push("/products")
+    } catch {
+      setError("Network error")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  if (loading)
     return (
       <DashboardLayout title="Edit Product">
         <div className="flex flex-1 items-center justify-center p-6">
@@ -144,157 +291,322 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
 
   return (
     <DashboardLayout title="Edit Product">
-      <form onSubmit={handleSubmit} className="p-4 space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="billing">Billing</Label>
-          <Select value={billing} onValueChange={(v) => setBilling(v as 'free' | 'one' | 'recurring')}>
-            <SelectTrigger id="billing" className="w-full">
-              <SelectValue placeholder="Select billing" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="free">Free</SelectItem>
-              <SelectItem value="one">One time</SelectItem>
-              <SelectItem value="recurring">Recurring</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {billing !== 'free' && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="price">Price</Label>
-              <Input id="price" value={price} onChange={(e) => setPrice(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="currency">Currency</Label>
-              <Input id="currency" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
-            </div>
-          </div>
+      <div className="p-6 max-w-3xl mx-auto space-y-6">
+        <ol className="flex items-center gap-2">
+          {[1, 2, 3].map((n) => (
+            <li key={n} className="flex flex-1 flex-col items-center">
+              <div className="flex items-center w-full">
+                <div
+                  className={`size-7 rounded-full border flex items-center justify-center font-medium ${
+                    step >= n ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground"
+                  }`}
+                >
+                  {step > n ? <CheckIcon className="size-4" /> : n}
+                </div>
+                {n < 3 && <div className={`h-px flex-1 ${step > n ? "bg-primary" : "bg-border"}`} />}
+              </div>
+            </li>
+          ))}
+        </ol>
+        {step === 1 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Product details</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Type</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {types.map((t) => {
+                    const Icon = t.icon
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setType(t.id)}
+                        className={`rounded-md border p-4 flex flex-col items-center gap-2 hover:bg-accent ${type === t.id ? "ring-2 ring-primary" : ""}`}
+                      >
+                        <Icon className="size-6" />
+                        <span>{t.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+                {errors.type && <p className="text-sm text-destructive">{errors.type}</p>}
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="desc">Description</Label>
+                <textarea
+                  id="desc"
+                  className="min-h-[100px] w-full rounded-md border px-3 py-1"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="img">Image</Label>
+                {preview && <img src={preview} alt="Preview" className="h-24 w-full rounded object-cover" />}
+                <Input id="img" type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} />
+              </div>
+            </CardContent>
+            <CardFooter className="justify-between">
+              <Button variant="outline" onClick={() => router.push("/products")}>Back</Button>
+              <Button onClick={() => { if (validate(1)) setStep(2) }} disabled={nextDisabled()}>Next</Button>
+            </CardFooter>
+          </Card>
         )}
-        <div className="space-y-2">
-          <Label htmlFor="available">Available units</Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="available"
-              value={availableUnits}
-              onChange={(e) => setAvailableUnits(e.target.value)}
-              disabled={unlimited}
-            />
-            <label className="flex items-center gap-1 text-sm">
-              <Checkbox
-                checked={unlimited}
-                onCheckedChange={(v) => setUnlimited(!!v)}
-              />
-              Unlimited
-            </label>
-          </div>
-        </div>
-        {billing !== 'recurring' && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="planDesc">Plan description</Label>
-              <textarea
-                id="planDesc"
-                className="min-h-[60px] w-full rounded border px-2 py-1"
-                value={planDescription}
-                onChange={(e) => setPlanDescription(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={autoExpire}
-                  onCheckedChange={(v) => setAutoExpire(!!v)}
-                />
-                Auto expire access
-              </label>
-              {autoExpire && (
-                <Input
-                  id="expire"
-                  value={expireDays}
-                  onChange={(e) => setExpireDays(e.target.value)}
-                  placeholder="Days"
-                />
+        {step === 2 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Sub-products & Delivery</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div
+                className={`grid gap-4 ${
+                  subProducts.length > 1
+                    ? `sm:grid-cols-2 ${
+                        subProducts.length > 2 ? 'md:grid-cols-3' : 'md:grid-cols-2'
+                      }`
+                    : ''
+                }`}
+              >
+                {subProducts.map((sub, i) => (
+                  <div
+                    key={i}
+                    className="rounded-lg border p-4 space-y-4 bg-muted/50"
+                  >
+                  <div className="flex justify-between items-center gap-2">
+                    <Input
+                      placeholder="Name"
+                      aria-invalid={Boolean(errors[`name${i}`])}
+                      value={sub.name}
+                      onChange={(e) => updateSub(i, "name", e.target.value)}
+                      className="flex-1"
+                    />
+                    {subProducts.length > 1 && (
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => removeSub(i)}
+                        aria-label="Remove option"
+                      >
+                        <XIcon className="size-4" />
+                      </Button>
+                    )}
+                  </div>
+                  {errors[`name${i}`] && <p className="text-sm text-destructive">{errors[`name${i}`]}</p>}
+                  <Select value={sub.billing} onValueChange={(v) => updateSub(i, "billing", v)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Billing" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="free">Free</SelectItem>
+                      <SelectItem value="one">One time</SelectItem>
+                      <SelectItem value="recurring">Recurring</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {sub.billing !== "free" && (
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Price</Label>
+                        <Input
+                          inputMode="decimal"
+                          pattern="^\d+(\.\d{1,2})?$"
+                          value={sub.price}
+                          aria-invalid={Boolean(errors[`price${i}`])}
+                          onChange={(e) => updateSub(i, 'price', e.target.value)}
+                        />
+                        {errors[`price${i}`] && <p className="text-sm text-destructive">{errors[`price${i}`]}</p>}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Currency</Label>
+                        <Input
+                          value={sub.currency}
+                          aria-invalid={Boolean(errors[`currency${i}`])}
+                          onChange={(e) => updateSub(i, "currency", e.target.value.toUpperCase())}
+                        />
+                        {errors[`currency${i}`] && <p className="text-sm text-destructive">{errors[`currency${i}`]}</p>}
+                      </div>
+                    </div>
+                  )}
+                  {sub.billing === "recurring" && (
+                    <div className="space-y-2">
+                      <Label>Subscription period</Label>
+                      <Select value={sub.period} onValueChange={(v) => updateSub(i, "period", v)}>
+                        <SelectTrigger className="w-full" aria-invalid={Boolean(errors[`period${i}`])}>
+                          <SelectValue placeholder="Select period" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="month">Monthly</SelectItem>
+                          <SelectItem value="year">Yearly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors[`period${i}`] && <p className="text-sm text-destructive">{errors[`period${i}`]}</p>}
+                    </div>
+                  )}
+                  {type === 'discord' && (
+                    <div className="space-y-2">
+                      <Label>Role</Label>
+                      <Select value={sub.roleId} onValueChange={(v) => updateSub(i, 'roleId', v)}>
+                        <SelectTrigger className="w-full" aria-invalid={Boolean(errors[`role${i}`])}>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {roles.map((r) => (
+                            <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors[`role${i}`] && <p className="text-sm text-destructive">{errors[`role${i}`]}</p>}
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <Label>Service details</Label>
+                    <textarea
+                      className="w-full rounded-md border px-3 py-1 min-h-[60px]"
+                      value={sub.service}
+                      onChange={(e) => updateSub(i, 'service', e.target.value)}
+                      placeholder="List features, one per line"
+                    />
+                  </div>
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addSub}
+                  className="col-span-full"
+                >
+                  <PlusIcon className="size-4" /> Add Option
+                </Button>
+              </div>
+
+              {type === 'file' && (
+                <div className="space-y-2">
+                  <Label htmlFor="file">Upload file</Label>
+                  <Input
+                    id="file"
+                    type="file"
+                    aria-invalid={Boolean(errors.file)}
+                    onChange={(e) => setContentFile(e.target.files?.[0] || null)}
+                  />
+                  {errors.file && <p className="text-sm text-destructive">{errors.file}</p>}
+                </div>
               )}
-            </div>
-          </>
+              {type === 'discord' && (
+                <div className="space-y-4">
+                  {!discordStatus?.connected ? (
+                    <div className="space-y-2">
+                      <p className="text-sm">Connect your Discord server to assign a role to buyers.</p>
+                      <Button type="button" onClick={connectDiscord} disabled={discordLoading === 'connect'}>
+                        {discordLoading === 'connect' && <Spinner className="mr-2" />}Connect Discord
+                      </Button>
+                      {errors.server && <p className="text-sm text-destructive">{errors.server}</p>}
+                    </div>
+                  ) : (
+                    <p className="text-sm">Connected to: {discordStatus.guildName || serverId}</p>
+                  )}
+                </div>
+              )}
+              {type === 'key' && (
+                <div className="space-y-2">
+                  <Label htmlFor="keys">License Keys (one per line)</Label>
+                  <textarea
+                    id="keys"
+                    className="w-full rounded-md border px-3 py-1 min-h-[100px]"
+                    value={licenseKeys}
+                    aria-invalid={Boolean(errors.keys)}
+                    onChange={(e) => setLicenseKeys(e.target.value)}
+                  />
+                  {errors.keys && <p className="text-sm text-destructive">{errors.keys}</p>}
+                </div>
+              )}
+            </CardContent>
+            <CardFooter className="justify-between">
+              <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
+              <Button onClick={() => { if (validate(2)) setStep(3) }} disabled={nextDisabled()}>Next</Button>
+            </CardFooter>
+          </Card>
         )}
-        {billing === 'recurring' && (
-          <div className="space-y-2">
-            <Label htmlFor="period">Subscription period</Label>
-            <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger id="period" className="w-full">
-                <SelectValue placeholder="Select period" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">Monthly</SelectItem>
-                <SelectItem value="year">Yearly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {step === 3 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Review</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+              <div>
+                <h3 className="font-medium">Details</h3>
+                <p>Name: {name}</p>
+                {description && <p>Description: {description}</p>}
+                <p>Type: {type}</p>
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-medium">Options</h3>
+                <div
+                  className={`grid gap-4 ${
+                    subProducts.length > 1
+                      ? `sm:grid-cols-2 ${
+                          subProducts.length > 2 ? 'md:grid-cols-3' : 'md:grid-cols-2'
+                        }`
+                      : ''
+                  }`}
+                >
+                  {subProducts.map((s, i) => (
+                    <Card key={i}>
+                      <CardHeader className="space-y-1">
+                        <CardTitle className="text-base">
+                          {s.name || `Option ${i + 1}`}
+                        </CardTitle>
+                        {s.service && (
+                          <CardDescription>
+                            <ServiceDescription text={s.service} />
+                          </CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-1">
+                        <p>
+                          {s.billing === 'free'
+                            ? 'Free'
+                            : `${s.price} ${s.currency} ${
+                                s.billing === 'recurring' ? `per ${s.period}` : ''
+                              }`}
+                        </p>
+                        {type === 'discord' && (
+                          <p className="text-xs text-muted-foreground">
+                            Role: {roles.find((r) => r.id === s.roleId)?.name || s.roleId}
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+              {type === 'file' && (contentFile || existingFile) && (
+                <p>File: {contentFile ? contentFile.name : existingFile}</p>
+              )}
+              {type === 'key' && <p>{licenseKeys.split('\n').filter(Boolean).length} keys</p>}
+              {type === 'discord' && discordStatus?.guildName && <p>Server: {discordStatus.guildName}</p>}
+            </CardContent>
+            <CardFooter className="justify-between gap-2">
+              <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+              <div className="flex items-center gap-2">
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={status === 'published'} onChange={(e) => setStatus(e.target.checked ? 'published' : 'draft')} />
+                  Publish now
+                </label>
+                <Button onClick={() => { if (validate(2)) handleSave() }} disabled={saving}>{saving && <Spinner className="mr-2" />}Save</Button>
+              </div>
+            </CardFooter>
+            {error && <p className="px-6 pb-4 text-sm text-destructive">{error}</p>}
+          </Card>
         )}
-        {type === 'file' && (
-          <div className="space-y-2">
-            <Label htmlFor="deliveryFile">File name</Label>
-            <Input id="deliveryFile" value={deliveryFile} onChange={(e) => setDeliveryFile(e.target.value)} />
-          </div>
-        )}
-        {type === 'discord' && (
-          <div className="space-y-2">
-            <Label htmlFor="serverId">Server ID</Label>
-            <Input id="serverId" value={serverId} onChange={(e) => setServerId(e.target.value)} />
-            <Label htmlFor="roleId">Role ID</Label>
-            <Input id="roleId" value={roleId} onChange={(e) => setRoleId(e.target.value)} />
-          </div>
-        )}
-        {type === 'key' && (
-          <div className="space-y-2">
-            <Label htmlFor="licenseKeys">License Keys</Label>
-            <textarea
-              id="licenseKeys"
-              className="min-h-[100px] w-full rounded border px-2 py-1"
-              value={licenseKeys}
-              onChange={(e) => setLicenseKeys(e.target.value)}
-            />
-          </div>
-        )}
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="type">Type</Label>
-          <Select value={type} onValueChange={(v) => setType(v as 'discord' | 'file' | 'key')}>
-            <SelectTrigger id="type" className="w-full">
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="discord">Discord</SelectItem>
-              <SelectItem value="file">File</SelectItem>
-              <SelectItem value="key">Key</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select value={status} onValueChange={(v) => setStatus(v as 'draft' | 'published')}>
-            <SelectTrigger id="status" className="w-full">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
-        <Button type="submit" disabled={loading}>
-          {loading && <Spinner className="mr-2" />}Save
-        </Button>
-      </form>
+      </div>
     </DashboardLayout>
   )
 }

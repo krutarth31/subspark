@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { ServiceDescription } from "@/components/service-description"
 
 interface Product {
   _id: string
@@ -25,11 +26,21 @@ interface Product {
   serverId?: string
   roleId?: string
   licenseKeys?: string
+  subProducts?: {
+    name?: string
+    billing: "free" | "one" | "recurring"
+    price?: number
+    currency: string
+    period?: string
+    service?: string
+  }[]
 }
 
 export default function ViewProductPage({ params }: { params: { id: string } }) {
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
+  const [guildName, setGuildName] = useState<string | null>(null)
+  const [roles, setRoles] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     fetch(`/api/products/${params.id}`)
@@ -40,6 +51,18 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
       })
       .catch(() => setLoading(false))
   }, [params.id])
+
+  useEffect(() => {
+    if (!product || product.type !== 'discord') return
+    fetch('/api/discord/status')
+      .then((res) => res.json())
+      .then((data) => setGuildName(data.guildName || null))
+      .catch(() => {})
+    fetch('/api/discord/roles')
+      .then((res) => res.json())
+      .then((data) => setRoles(Array.isArray(data.roles) ? data.roles : []))
+      .catch(() => {})
+  }, [product])
 
   if (loading)
     return (
@@ -56,12 +79,38 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
       <div className="p-4 space-y-2">
         <p><strong>Type:</strong> {product.type}</p>
         <p><strong>Status:</strong> {product.status}</p>
-        <p><strong>Billing:</strong> {product.billing}</p>
-        {product.billing !== 'free' && (
-          <p>
-            <strong>Price:</strong> {product.price.toFixed(2)} {product.currency}
-            {product.billing === 'recurring' ? ` / ${product.period}` : ''}
-          </p>
+        {product.subProducts && product.subProducts.length > 1 ? (
+          <div>
+            <p className="font-semibold">Sub-products:</p>
+            <ul className="list-disc list-inside space-y-2">
+              {product.subProducts.map((o, idx) => (
+                <li key={idx} className="space-y-1">
+                  <p className="font-medium">{o.name || `Option ${idx + 1}`}</p>
+                  {o.service && (
+                    <ServiceDescription className="text-muted-foreground" text={o.service} />
+                  )}
+                  <p>
+                    {o.billing === 'free'
+                      ? 'Free'
+                      : `${o.price?.toFixed(2)} ${o.currency}`}
+                    {o.billing === 'recurring' && o.period ? ` / ${o.period}` : ''}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : (
+          <>
+            <p>
+              <strong>Billing:</strong> {product.billing}
+            </p>
+            {product.billing !== 'free' && (
+              <p>
+                <strong>Price:</strong> {product.price.toFixed(2)} {product.currency}
+                {product.billing === 'recurring' ? ` / ${product.period}` : ''}
+              </p>
+            )}
+          </>
         )}
         <p>
           <strong>Units:</strong>{' '}
@@ -73,9 +122,23 @@ export default function ViewProductPage({ params }: { params: { id: string } }) 
           </p>
         )}
         {product.type === 'discord' && (
-          <p>
-            <strong>Discord:</strong> {product.serverId} / {product.roleId}
-          </p>
+          <div>
+            <p>
+              <strong>Discord:</strong> {guildName || product.serverId}
+            </p>
+            {product.subProducts && product.subProducts.length > 0 ? (
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                {product.subProducts.map((s, idx) => (
+                  <li key={idx}>
+                    {(s.name ? `${s.name}: ` : '') +
+                      (roles.find((r) => r.id === s.roleId)?.name || s.roleId || '-')}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="ml-4">{roles.find((r) => r.id === product.roleId)?.name || product.roleId}</p>
+            )}
+          </div>
         )}
         {product.type === 'key' && product.licenseKeys && (
           <p>
