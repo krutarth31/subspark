@@ -208,12 +208,15 @@ export default function SubscriptionsPage() {
                 <Label htmlFor="coupon-code">Code</Label>
                 <Input id="coupon-code" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
                 <Label htmlFor="coupon-product" className="mt-2">Product</Label>
-                <Select value={couponProduct} onValueChange={setCouponProduct}>
+                <Select
+                  value={couponProduct || 'all'}
+                  onValueChange={(v) => setCouponProduct(v === 'all' ? '' : v)}
+                >
                   <SelectTrigger id="coupon-product" className="w-full">
                     <SelectValue placeholder="All products" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">All products</SelectItem>
+                    <SelectItem value="all">All products</SelectItem>
                     {allProducts.map((p) => (
                       <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>
                     ))}
