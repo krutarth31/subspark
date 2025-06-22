@@ -110,11 +110,15 @@ export default function BuyPage({ params }: { params: { id: string } }) {
               )}
             </div>
             {product.subProducts && product.subProducts.length > 0 && (
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div
+                className={`grid gap-4 ${
+                  product.subProducts.length > 1 ? 'sm:grid-cols-2' : ''
+                }`}
+              >
                 {product.subProducts.map((o, idx) => (
                   <Card
                     key={idx}
-                    className={`cursor-pointer${
+                    className={`cursor-pointer sm:w-72${
                       billing === (o.name || o.billing) ? ' ring-2 ring-primary' : ''
                     }`}
                     onClick={() => setBilling(o.name || o.billing)}

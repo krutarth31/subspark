@@ -333,9 +333,16 @@ export default function NewProductPage() {
               <CardTitle>Sub-products & Delivery</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+              <div
+                className={`grid gap-4 ${
+                  subProducts.length > 1 ? 'sm:grid-cols-2 md:grid-cols-3' : ''
+                }`}
+              >
                 {subProducts.map((sub, i) => (
-                  <div key={i} className="rounded-lg border p-4 space-y-4 bg-muted/50">
+                  <div
+                    key={i}
+                    className="rounded-lg border p-4 space-y-4 bg-muted/50 sm:w-72"
+                  >
                   <div className="flex justify-between items-center gap-2">
                     <Input
                       placeholder="Name"
@@ -525,9 +532,13 @@ export default function NewProductPage() {
               </div>
               <div className="space-y-2">
                 <h3 className="font-medium">Options</h3>
-                <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                <div
+                  className={`grid gap-4 ${
+                    subProducts.length > 1 ? 'sm:grid-cols-2 md:grid-cols-3' : ''
+                  }`}
+                >
                   {subProducts.map((s, i) => (
-                    <Card key={i}>
+                    <Card key={i} className="sm:w-72">
                       <CardHeader className="space-y-1">
                         <CardTitle className="text-base">
                           {s.name || `Option ${i + 1}`}
