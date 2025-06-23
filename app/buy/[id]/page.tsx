@@ -15,6 +15,7 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import { ServiceDescription } from "@/components/service-description"
+import LoginRegister from "@/components/login-register"
 
 interface BillingOption {
   name?: string
@@ -49,6 +50,7 @@ export default function BuyPage() {
   const [billing, setBilling] = useState<string>("")
   const [billingIndex, setBillingIndex] = useState<number>(0)
   const [coupon, setCoupon] = useState("")
+  const [user, setUser] = useState<any | null | undefined>(undefined)
 
   const help = <p>Select a plan and proceed to checkout.</p>
 
@@ -57,6 +59,13 @@ export default function BuyPage() {
     const base = `${o.price?.toFixed(2)} ${o.currency}`
     return o.billing === "recurring" && o.period ? `${base} / ${o.period}` : base
   }
+
+  useEffect(() => {
+    fetch('/api/auth/user')
+      .then((res) => res.json())
+      .then((data) => setUser(data.user || null))
+      .catch(() => setUser(null))
+  }, [])
 
   useEffect(() => {
     if (!id) return
@@ -114,6 +123,26 @@ export default function BuyPage() {
     currency: product?.currency,
     period: product?.period,
     service: product?.planDescription,
+  }
+
+  if (user === undefined) {
+    return (
+      <DashboardLayout title="Checkout" helpContent={help}>
+        <div className="p-6 flex justify-center">
+          <Spinner className="size-6" />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (user === null) {
+    return (
+      <DashboardLayout title="Login" helpContent={help}>
+        <div className="p-6 flex justify-center">
+          <LoginRegister redirect={`/buy/${id}`} />
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
