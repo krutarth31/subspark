@@ -129,4 +129,5 @@ After completing the verification step the onboarding flow presents a
 subscription screen where sellers pay the platform fee. Clicking **Pay
 Subscription** creates a Stripe Checkout session via `/api/stripe/checkout` and
 redirects the seller to Stripe. When the checkout completes the webhook marks
-the seller account active and the user can continue to the dashboard.
+the seller account active and the user is redirected to the Products page to
+create listings.
