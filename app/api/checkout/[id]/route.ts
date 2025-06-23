@@ -100,9 +100,9 @@ export async function POST(
       )
     }
     const account = await getStripe().accounts.retrieve(seller._id)
-    if (!account.charges_enabled) {
+    if (account.capabilities?.card_payments !== 'active') {
       return NextResponse.json(
-        { error: 'Seller account not ready for charges' },
+        { error: 'Seller account not ready for card payments' },
         { status: 400 }
       )
     }
