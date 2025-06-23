@@ -148,6 +148,9 @@ export async function POST(
       },
       { stripeAccount: seller._id }
     )
+    await db
+      .collection('purchases')
+      .updateOne({ _id: purchaseRes.insertedId }, { $set: { sessionId: session.id } })
     return NextResponse.json({ url: session.url })
   } catch (err) {
     console.error(err)

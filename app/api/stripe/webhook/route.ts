@@ -52,11 +52,32 @@ export async function POST(request: Request) {
     if (session.metadata?.purchaseId) {
       try {
         const db = await getDb()
+        const update: any = { status: 'paid' }
+        if (session.invoice)
+          update.invoiceId =
+            typeof session.invoice === 'string'
+              ? session.invoice
+              : session.invoice.id
+        if (session.subscription)
+          update.subscriptionId =
+            typeof session.subscription === 'string'
+              ? session.subscription
+              : session.subscription.id
+        if (session.payment_intent)
+          update.paymentIntentId =
+            typeof session.payment_intent === 'string'
+              ? session.payment_intent
+              : session.payment_intent.id
+        if (session.customer)
+          update.customerId =
+            typeof session.customer === 'string'
+              ? session.customer
+              : session.customer.id
         await db
-          .collection<{ _id: ObjectId; status: string }>('purchases')
+          .collection('purchases')
           .updateOne(
             { _id: new ObjectId(session.metadata.purchaseId) },
-            { $set: { status: 'paid' } }
+            { $set: update }
           )
       } catch (err) {
         console.error('DB update failed', err)

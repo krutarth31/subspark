@@ -19,6 +19,11 @@ export async function GET() {
       productId: ObjectId
       status: string
       createdAt: Date
+      invoiceId?: string
+      subscriptionId?: string
+      paymentIntentId?: string
+      customerId?: string
+      sellerId: string
     }>('purchases')
     .aggregate([
       { $match: { userId: session.userId } },
@@ -37,6 +42,11 @@ export async function GET() {
           createdAt: 1,
           productId: 1,
           productName: '$product.name',
+          invoiceId: 1,
+          subscriptionId: 1,
+          paymentIntentId: 1,
+          customerId: 1,
+          sellerId: 1,
         },
       },
       { $sort: { createdAt: -1 } },
