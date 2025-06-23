@@ -5,6 +5,7 @@ import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Skeleton } from "@/components/ui/skeleton"
+import LoginRegister from "@/components/login-register"
 import { toast } from "sonner"
 import {
   Card,
@@ -42,6 +43,7 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
   const { id } = React.use(params)
   const [product, setProduct] = React.useState<Product | null>(null)
   const [loading, setLoading] = React.useState(true)
+  const [user, setUser] = React.useState<any | null | undefined>(undefined)
   const [paying, setPaying] = React.useState(false)
   const [billing, setBilling] = React.useState<string>('')
   const [billingIndex, setBillingIndex] = React.useState<number>(0)
@@ -54,6 +56,15 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
     const base = `${o.price?.toFixed(2)} ${o.currency}`
     return o.billing === 'recurring' && o.period ? `${base} / ${o.period}` : base
   }
+
+  React.useEffect(() => {
+    fetch('/api/auth/user')
+      .then((res) => res.json())
+      .then((data) => {
+        setUser(data.user)
+      })
+      .catch(() => setUser(null))
+  }, [])
 
   React.useEffect(() => {
     fetch(`/api/products/${id}`)
@@ -116,11 +127,20 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
 
   return (
     <DashboardLayout title="Checkout" helpContent={help}>
-      <div className="p-6 flex justify-center">
-        {loading ? (
-          <div className="w-full max-w-2xl space-y-4">
-            <Skeleton className="h-48 w-full" />
-            <div className="space-y-2 text-center">
+      {user === undefined ? (
+        <div className="flex justify-center p-6">
+          <Spinner className="size-6" />
+        </div>
+      ) : !user ? (
+        <div className="flex justify-center p-6">
+          <LoginRegister redirect={`/buy/${id}`} />
+        </div>
+      ) : (
+        <div className="p-6 flex justify-center">
+          {loading ? (
+            <div className="w-full max-w-2xl space-y-4">
+              <Skeleton className="h-48 w-full" />
+              <div className="space-y-2 text-center">
               <Skeleton className="h-6 w-1/3 mx-auto" />
               <Skeleton className="h-4 w-1/2 mx-auto" />
             </div>

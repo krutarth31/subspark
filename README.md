@@ -131,3 +131,8 @@ Subscription** creates a Stripe Checkout session via `/api/stripe/checkout` and
 redirects the seller to Stripe. When the checkout completes the webhook marks
 the seller account active and the user is redirected to the Products page to
 create listings.
+
+## Purchases
+
+Buyers must sign up before checking out. Completed purchases are listed on the
+`/purchases` page for easy access.

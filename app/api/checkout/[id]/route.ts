@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongo'
+import { cookies } from 'next/headers'
 import { ObjectId } from 'mongodb'
 import Stripe from 'stripe'
 
@@ -21,6 +22,18 @@ export async function POST(
   }).params
   try {
     const db = await getDb()
+    const cookieStore = cookies()
+    const token = cookieStore.get('session')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const sessionDoc = await db
+      .collection<{ token: string; userId: ObjectId }>('sessions')
+      .findOne({ token })
+    if (!sessionDoc) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    const userId = sessionDoc.userId
     const product = await db
       .collection<{
         _id: ObjectId
@@ -111,8 +124,15 @@ export async function POST(
       )
     }
     const { origin } = new URL(request.url)
+    const purchaseRes = await db.collection('purchases').insertOne({
+      userId,
+      productId: product._id,
+      sellerId: seller._id,
+      status: option.billing === 'free' ? 'paid' : 'pending',
+      createdAt: new Date(),
+    })
     if (option.billing === 'free') {
-      return NextResponse.json({ url: `${origin}/products/${id}?success=1` })
+      return NextResponse.json({ url: `${origin}/purchases?success=1` })
     }
     const session = await getStripe().checkout.sessions.create(
       {
@@ -120,8 +140,11 @@ export async function POST(
         payment_method_types: ['card'],
         line_items: [{ price: option.stripePriceId!, quantity: 1 }],
         ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
-        success_url: `${origin}/products/${id}?success=1`,
-        cancel_url: `${origin}/products/${id}?canceled=1`,
+        success_url: `${origin}/purchases?success=1`,
+        cancel_url: `${origin}/buy/${id}`,
+        metadata: {
+          purchaseId: purchaseRes.insertedId.toString(),
+        },
       },
       { stripeAccount: seller._id }
     )

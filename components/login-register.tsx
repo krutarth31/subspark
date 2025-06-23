@@ -6,7 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export default function LoginRegister() {
+export default function LoginRegister({
+  redirect = '/dashboard',
+}: {
+  redirect?: string
+}) {
   const [mode, setMode] = useState<"login" | "register">("login")
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -39,7 +43,7 @@ export default function LoginRegister() {
       setError(data.error || 'Registration failed')
       return
     }
-    router.push('/dashboard')
+    router.push(redirect)
   }
 
   async function handleLogin(e: FormEvent) {
@@ -54,7 +58,7 @@ export default function LoginRegister() {
       setError(data.error || 'Login failed')
       return
     }
-    router.push('/dashboard')
+    router.push(redirect)
   }
 
   return (
