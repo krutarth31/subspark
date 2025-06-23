@@ -101,6 +101,10 @@ export async function POST(
     }
     const account = await getStripe().accounts.retrieve(seller._id)
     if (account.capabilities?.card_payments !== 'active') {
+      // automatically request the capability so sellers can finish onboarding
+      await getStripe().accounts.update(seller._id, {
+        capabilities: { card_payments: { requested: true } },
+      })
       return NextResponse.json(
         { error: 'Seller account not ready for card payments' },
         { status: 400 }

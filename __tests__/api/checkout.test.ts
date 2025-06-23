@@ -5,11 +5,12 @@ import { getDb } from '@/lib/mongo'
 const mockRetrieve = jest
   .fn()
   .mockResolvedValue({ capabilities: { card_payments: 'active' } })
+const mockUpdate = jest.fn()
 
 jest.mock('stripe', () => {
   return jest.fn().mockImplementation(() => ({
     checkout: { sessions: { create: jest.fn() } },
-    accounts: { retrieve: mockRetrieve },
+    accounts: { retrieve: mockRetrieve, update: mockUpdate },
   }))
 })
 
@@ -88,5 +89,8 @@ describe('POST /api/checkout/[id]', () => {
     expect(res.status).toBe(400)
     const json = await res.json()
     expect(json.error).toMatch(/card payments/)
+    expect(mockUpdate).toHaveBeenCalledWith('acct_1', {
+      capabilities: { card_payments: { requested: true } },
+    })
   })
 })
