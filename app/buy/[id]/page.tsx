@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -15,7 +15,6 @@ import {
   CardDescription,
 } from "@/components/ui/card"
 import { ServiceDescription } from "@/components/service-description"
-import LoginRegister from "@/components/login-register"
 
 interface BillingOption {
   name?: string
@@ -44,6 +43,7 @@ interface Product {
 export default function BuyPage() {
   const params = useParams<{ id: string }>()
   const id = params?.id
+  const router = useRouter()
   const [product, setProduct] = useState<Product | null>(null)
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
@@ -66,6 +66,12 @@ export default function BuyPage() {
       .then((data) => setUser(data.user || null))
       .catch(() => setUser(null))
   }, [])
+
+  useEffect(() => {
+    if (user === null) {
+      router.replace(`/?redirect=/buy/${id}`)
+    }
+  }, [user, id, router])
 
   useEffect(() => {
     if (!id) return
@@ -139,7 +145,7 @@ export default function BuyPage() {
     return (
       <DashboardLayout title="Login" helpContent={help}>
         <div className="p-6 flex justify-center">
-          <LoginRegister redirect={`/buy/${id}`} />
+          <Spinner className="size-6" />
         </div>
       </DashboardLayout>
     )
