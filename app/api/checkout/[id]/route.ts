@@ -99,6 +99,13 @@ export async function POST(
         { status: 400 }
       )
     }
+    const account = await getStripe().accounts.retrieve(seller._id)
+    if (!account.charges_enabled) {
+      return NextResponse.json(
+        { error: 'Seller account not ready for charges' },
+        { status: 400 }
+      )
+    }
     const { origin } = new URL(request.url)
     if (option.billing === 'free') {
       return NextResponse.json({ url: `${origin}/products/${id}?success=1` })

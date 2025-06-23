@@ -5,6 +5,7 @@ import { getDb } from '@/lib/mongo'
 jest.mock('stripe', () => {
   return jest.fn().mockImplementation(() => ({
     checkout: { sessions: { create: jest.fn() } },
+    accounts: { retrieve: jest.fn().mockResolvedValue({ charges_enabled: true }) },
   }))
 })
 
