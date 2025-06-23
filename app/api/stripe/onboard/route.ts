@@ -29,7 +29,13 @@ export async function POST(request: Request) {
         { status: 500 }
       )
     }
-    const account = await stripe.accounts.create({ type: "express" })
+    const account = await stripe.accounts.create({
+      type: "express",
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+    })
     const db = await getDb().catch(() => null)
     if (db) {
       let userId: ObjectId | null = null
