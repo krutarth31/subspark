@@ -119,7 +119,9 @@ builders. Each step presents a full-width card guiding the user from connecting
 Stripe to paying the platform fee.
 
 New accounts are created with the `card_payments` and `transfers` capabilities
-requested so sellers can accept payments and receive payouts once verified.
+requested so sellers can accept payments and receive payouts once verified. The
+activation endpoint checks that `card_payments` is active, preventing sellers
+from going live until their Stripe account is fully enabled.
 
 ## Seller Subscription
 

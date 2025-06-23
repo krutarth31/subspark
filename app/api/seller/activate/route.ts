@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongo'
 import { cookies } from 'next/headers'
 import { ObjectId } from 'mongodb'
+import Stripe from 'stripe'
+
+let stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (stripe) return stripe
+  const secretKey = process.env.STRIPE_SECRET_KEY
+  if (!secretKey) throw new Error('STRIPE_SECRET_KEY is not defined')
+  stripe = new Stripe(secretKey, { apiVersion: '2022-11-15' })
+  return stripe
+}
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +39,13 @@ export async function POST(request: Request) {
       }
     } catch {
       // ignore
+    }
+    const account = await getStripe().accounts.retrieve(accountId)
+    if (account.capabilities?.card_payments !== 'active') {
+      return NextResponse.json(
+        { error: 'Enable card payments in Stripe before activating.' },
+        { status: 400 }
+      )
     }
     await db
       .collection<{ _id: string; active: boolean; userId?: ObjectId; name?: string; email?: string; accountId?: string }>('sellers')
