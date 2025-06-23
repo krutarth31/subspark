@@ -118,6 +118,9 @@ The seller onboarding uses a modern vertical stepper inspired by popular store
 builders. Each step presents a full-width card guiding the user from connecting
 Stripe to paying the platform fee.
 
+New accounts are created with the `card_payments` and `transfers` capabilities
+requested so sellers can accept payments and receive payouts once verified.
+
 ## Seller Subscription
 
 After completing the verification step the onboarding flow presents a
