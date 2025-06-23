@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Setup
+
+Install dependencies and prepare your environment:
+
+```bash
+npm install
+cp .env.example .env.local
+# edit .env.local with your real credentials
+```
+
 ## Getting Started
 
 First, run the development server:
@@ -82,6 +92,12 @@ Add Google OAuth credentials for sign in:
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 ```
+
+### Database Connection
+
+The app reuses a single MongoDB client across serverless function invocations to
+avoid exhausting connection limits. See [`lib/mongo.ts`](./lib/mongo.ts) for the
+implementation.
 
 ## Dashboard Roles
 
