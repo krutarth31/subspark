@@ -88,10 +88,16 @@ export async function POST(
       return NextResponse.json({ error: 'Billing option invalid' }, { status: 400 })
     }
     const seller = await db
-      .collection<{ _id: string }>('sellers')
+      .collection<{ _id: string; active?: boolean }>('sellers')
       .findOne({ userId: product.userId })
     if (!seller) {
       return NextResponse.json({ error: 'Seller not found' }, { status: 500 })
+    }
+    if (!seller.active) {
+      return NextResponse.json(
+        { error: 'Seller account inactive' },
+        { status: 400 }
+      )
     }
     const { origin } = new URL(request.url)
     if (option.billing === 'free') {
