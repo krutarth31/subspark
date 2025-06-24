@@ -24,6 +24,11 @@ export async function GET() {
       paymentIntentId?: string
       customerId?: string
       sellerId: string
+      refundRequest?: {
+        status: string
+        reason?: string
+        sellerReason?: string
+      }
     }>('purchases')
     .aggregate([
       { $match: { userId: session.userId } },
@@ -47,6 +52,7 @@ export async function GET() {
           paymentIntentId: 1,
           customerId: 1,
           sellerId: 1,
+          refundRequest: 1,
         },
       },
       { $sort: { createdAt: -1 } },

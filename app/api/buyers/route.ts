@@ -28,6 +28,11 @@ export async function GET() {
         subscriptionId?: string
         paymentIntentId?: string
         sellerId: string
+        refundRequest?: {
+          status: string
+          reason?: string
+          sellerReason?: string
+        }
       }>('purchases')
       .aggregate([
         { $match: { sellerId: seller._id } },
@@ -59,6 +64,7 @@ export async function GET() {
             sellerId: 1,
             productId: 1,
             userId: 1,
+            refundRequest: 1,
             productName: '$product.name',
             buyerName: '$user.name',
             buyerEmail: '$user.email',
@@ -80,6 +86,7 @@ export async function GET() {
       productName: p.productName,
       buyerName: p.buyerName,
       buyerEmail: p.buyerEmail,
+      refundRequest: p.refundRequest,
     }))
     return NextResponse.json({ buyers: formatted })
   } catch (err) {

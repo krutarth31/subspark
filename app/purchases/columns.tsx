@@ -22,6 +22,11 @@ export type Purchase = {
   paymentIntentId?: string
   customerId?: string
   sellerId: string
+  refundRequest?: {
+    status: string
+    reason?: string
+    sellerReason?: string
+  }
 }
 
 export function getColumns(onAction: (id: string, action: string) => void): ColumnDef<Purchase>[] {
@@ -62,7 +67,7 @@ export function getColumns(onAction: (id: string, action: string) => void): Colu
               {p.customerId && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "payment")}>Change Payment Method</DropdownMenuItem>
               )}
-              {p.paymentIntentId && (
+              {p.paymentIntentId && !p.refundRequest && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>Request Refund</DropdownMenuItem>
               )}
             </DropdownMenuContent>

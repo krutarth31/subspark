@@ -16,18 +16,42 @@ export default function BuyersPage() {
       .catch(() => setItems([]))
   }, [])
 
-  async function handleRefund(id: string) {
+  async function handleAction(id: string, action: string) {
     if (!items) return
-    await toast.promise(
-      (async () => {
-        const res = await fetch(`/api/purchases/${id}/refund`, { method: 'POST' })
-        if (!res.ok) throw new Error('Failed')
-        setItems((prev) =>
-          prev ? prev.map((p) => (p._id === id ? { ...p, status: 'refunded' } : p)) : prev
-        )
-      })(),
-      { loading: 'Refunding...', success: 'Refunded', error: 'Failed to refund' }
-    )
+    if (action === 'approve' || action === 'decline') {
+      const reason = action === 'decline' ? prompt('Reason for decline?') || '' : undefined
+      await toast.promise(
+        (async () => {
+          const res = await fetch(`/api/purchases/${id}/refund`, {
+            method: 'PATCH',
+            body: JSON.stringify({ action, reason }),
+          })
+          if (!res.ok) throw new Error('Failed')
+          setItems((prev) =>
+            prev
+              ? prev.map((p) =>
+                  p._id === id
+                    ? {
+                        ...p,
+                        status: action === 'approve' ? 'refunded' : p.status,
+                        refundRequest: {
+                          ...(p.refundRequest || {}),
+                          status: action === 'approve' ? 'approved' : 'declined',
+                          sellerReason: reason,
+                        },
+                      }
+                    : p
+                )
+              : prev
+          )
+        })(),
+        {
+          loading: action === 'approve' ? 'Refunding...' : 'Saving...',
+          success: action === 'approve' ? 'Refunded' : 'Declined',
+          error: 'Failed',
+        }
+      )
+    }
   }
 
   const help = <p>View your customers and refund purchases if needed.</p>
@@ -42,7 +66,7 @@ export default function BuyersPage() {
         ) : items.length === 0 ? (
           <p>No buyers found.</p>
         ) : (
-          <DataTable columns={getColumns(handleRefund)} data={items} />
+          <DataTable columns={getColumns(handleAction)} data={items} />
         )}
       </div>
     </DashboardLayout>

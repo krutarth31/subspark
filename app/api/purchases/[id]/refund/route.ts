@@ -13,40 +13,78 @@ function getStripe(): Stripe {
   return stripe
 }
 
-export async function POST(
-  request: Request,
-  ctx: { params: { id: string } } | { params: Promise<{ id: string }> }
-) {
+async function getContext(ctx: { params: { id: string } } | { params: Promise<{ id: string }> }) {
   const { id } = await (ctx as { params: { id: string } | Promise<{ id: string }> }).params
   const cookieStore = cookies()
   const token = cookieStore.get('session')?.value
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!token) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   const db = await getDb()
   const sessionDoc = await db
     .collection<{ token: string; userId: ObjectId }>('sessions')
     .findOne({ token })
-  if (!sessionDoc) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!sessionDoc)
+    return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   const purchase = await db
-    .collection<{ _id: ObjectId; userId: ObjectId; paymentIntentId?: string; sellerId: string }>('purchases')
+    .collection<{ _id: ObjectId; userId: ObjectId; paymentIntentId?: string; sellerId: string; refundRequest?: any }>('purchases')
     .findOne({ _id: new ObjectId(id) })
-  if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!purchase) return { error: NextResponse.json({ error: 'Not found' }, { status: 404 }) }
   const seller = await db
     .collection<{ _id: string; userId: ObjectId }>('sellers')
     .findOne({ userId: sessionDoc.userId })
-  const allowed =
-    purchase.userId.equals(sessionDoc.userId) || seller?._id === purchase.sellerId
-  if (!allowed) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (!purchase.paymentIntentId)
-    return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
-  try {
-    await getStripe().refunds.create(
-      { payment_intent: purchase.paymentIntentId },
-      { stripeAccount: purchase.sellerId }
+  const isBuyer = purchase.userId.equals(sessionDoc.userId)
+  const isSeller = seller?._id === purchase.sellerId
+  if (!isBuyer && !isSeller)
+    return { error: NextResponse.json({ error: 'Not found' }, { status: 404 }) }
+  return { db, purchase, isBuyer, isSeller }
+}
+
+export async function POST(request: Request, ctx: { params: { id: string } } | { params: Promise<{ id: string }> }) {
+  const ctxRes = await getContext(ctx)
+  if ('error' in ctxRes) return ctxRes.error
+  const { db, purchase, isBuyer } = ctxRes
+  if (!isBuyer)
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const body = await request.json().catch(() => ({}))
+  const reason = typeof body.reason === 'string' ? body.reason : ''
+  await db.collection('purchases').updateOne({ _id: purchase._id }, { $set: { refundRequest: { status: 'requested', reason } } })
+  return NextResponse.json({ ok: true })
+}
+
+export async function PATCH(request: Request, ctx: { params: { id: string } } | { params: Promise<{ id: string }> }) {
+  const ctxRes = await getContext(ctx)
+  if ('error' in ctxRes) return ctxRes.error
+  const { db, purchase, isSeller } = ctxRes
+  if (!isSeller)
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const body = await request.json().catch(() => ({}))
+  const action = body.action
+  if (purchase.refundRequest?.status !== 'requested')
+    return NextResponse.json({ error: 'No request' }, { status: 400 })
+  if (action === 'approve') {
+    if (!purchase.paymentIntentId)
+      return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
+    try {
+      await getStripe().refunds.create(
+        { payment_intent: purchase.paymentIntentId },
+        { stripeAccount: purchase.sellerId }
+      )
+      await db.collection('purchases').updateOne(
+        { _id: purchase._id },
+        { $set: { status: 'refunded', 'refundRequest.status': 'approved' } }
+      )
+      return NextResponse.json({ ok: true })
+    } catch (err) {
+      console.error(err)
+      return NextResponse.json({ error: 'Failed to refund' }, { status: 500 })
+    }
+  } else if (action === 'decline') {
+    const reason = typeof body.reason === 'string' ? body.reason : ''
+    await db.collection('purchases').updateOne(
+      { _id: purchase._id },
+      { $set: { 'refundRequest.status': 'declined', 'refundRequest.sellerReason': reason } }
     )
-    await db.collection('purchases').updateOne({ _id: purchase._id }, { $set: { status: 'refunded' } })
     return NextResponse.json({ ok: true })
-  } catch (err) {
-    console.error(err)
-    return NextResponse.json({ error: 'Failed to refund' }, { status: 500 })
+  } else {
+    return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
   }
 }

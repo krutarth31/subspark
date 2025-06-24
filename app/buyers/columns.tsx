@@ -19,10 +19,15 @@ export type BuyerPurchase = {
   status: string
   createdAt: string
   paymentIntentId?: string
+  refundRequest?: {
+    status: string
+    reason?: string
+    sellerReason?: string
+  }
 }
 
 export function getColumns(
-  onRefund: (id: string) => void,
+  onAction: (id: string, action: string) => void,
 ): ColumnDef<BuyerPurchase>[] {
   return [
     { accessorKey: "buyerName", header: "Name" },
@@ -49,9 +54,14 @@ export function getColumns(
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              {p.paymentIntentId && (
-                <DropdownMenuItem onClick={() => onRefund(p._id)}>
-                  Refund
+              {p.refundRequest?.status === 'requested' && (
+                <DropdownMenuItem onClick={() => onAction(p._id, 'approve')}>
+                  Approve Refund
+                </DropdownMenuItem>
+              )}
+              {p.refundRequest?.status === 'requested' && (
+                <DropdownMenuItem onClick={() => onAction(p._id, 'decline')}>
+                  Decline Refund
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

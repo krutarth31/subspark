@@ -53,12 +53,16 @@ export default function PurchasesPage() {
         break
       }
       case 'refund': {
+        const reason = prompt('Reason for refund?') || ''
         await toast.promise(
           (async () => {
-            const res = await fetch(`/api/purchases/${id}/refund`, { method: 'POST' })
+            const res = await fetch(`/api/purchases/${id}/refund`, {
+              method: 'POST',
+              body: JSON.stringify({ reason }),
+            })
             if (!res.ok) throw new Error('Failed')
             setItems((prev) =>
-              prev ? prev.map((p) => (p._id === id ? { ...p, status: 'refunded' } : p)) : prev
+              prev ? prev.map((p) => (p._id === id ? { ...p, refundRequest: { status: 'requested', reason }, status: 'refund_requested' } : p)) : prev
             )
           })(),
           { loading: 'Requesting refund...', success: 'Refund requested', error: 'Failed to refund' }
