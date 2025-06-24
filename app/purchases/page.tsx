@@ -1,8 +1,8 @@
-"use client"
-import { useEffect, useState, useRef } from 'react'
-import DashboardLayout from '@/components/dashboard-layout'
-import { Spinner } from '@/components/ui/spinner'
-import { DataTable } from '@/components/ui/data-table'
+"use client";
+import { useEffect, useState, useRef } from "react";
+import DashboardLayout from "@/components/dashboard-layout";
+import { Spinner } from "@/components/ui/spinner";
+import { DataTable } from "@/components/ui/data-table";
 import {
   Sheet,
   SheetContent,
@@ -11,129 +11,146 @@ import {
   SheetTitle,
   SheetDescription,
   SheetClose,
-} from '@/components/ui/sheet'
+} from "@/components/ui/sheet";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
-import { getColumns, Purchase } from './columns'
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { getColumns, Purchase } from "./columns";
 
 export default function PurchasesPage() {
-  const [items, setItems] = useState<Purchase[] | null>(null)
-  const [refundId, setRefundId] = useState<string | null>(null)
-  const [reasonType, setReasonType] = useState('')
-  const [reasonText, setReasonText] = useState('')
-  const prevStatuses = useRef<Record<string, string | undefined>>({})
+  const [items, setItems] = useState<Purchase[] | null>(null);
+  const [refundId, setRefundId] = useState<string | null>(null);
+  const [reasonType, setReasonType] = useState("");
+  const [reasonText, setReasonText] = useState("");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const prevStatuses = useRef<Record<string, string | undefined>>({});
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch('/api/purchases')
-      const data = await res.json().catch(() => ({}))
-      const purchases = (data.purchases || []) as Purchase[]
+      const res = await fetch("/api/purchases");
+      const data = await res.json().catch(() => ({}));
+      const purchases = (data.purchases || []) as Purchase[];
       purchases.forEach((p) => {
-        const status = p.refundRequest?.status
+        const status = p.refundRequest?.status;
         if (
           prevStatuses.current[p._id] &&
           prevStatuses.current[p._id] !== status &&
-          (status === 'approved' || status === 'declined')
+          (status === "approved" || status === "declined")
         ) {
-          toast.info(`Refund ${status} for ${p.productName}`)
+          toast.info(`Refund ${status} for ${p.productName}`);
         }
-        prevStatuses.current[p._id] = status
-      })
-      setItems(purchases)
-    }
-    load()
-    const t = setInterval(load, 20000)
-    return () => clearInterval(t)
-  }, [])
+        prevStatuses.current[p._id] = status;
+      });
+      setItems(purchases);
+    };
+    load();
+    const t = setInterval(load, 20000);
+    return () => clearInterval(t);
+  }, []);
 
   async function handleAction(id: string, action: string) {
-    if (!items) return
+    if (!items) return;
     switch (action) {
-      case 'invoice': {
-        const res = await fetch(`/api/purchases/${id}/invoice`)
-        const data = await res.json().catch(() => ({}))
+      case "invoice": {
+        const res = await fetch(`/api/purchases/${id}/invoice`);
+        const data = await res.json().catch(() => ({}));
         if (res.ok && data.url) {
-          window.open(data.url as string, '_blank')
+          window.open(data.url as string, "_blank");
         } else {
-          toast.error(data.error || 'Failed')
+          toast.error(data.error || "Failed");
         }
-        break
+        break;
       }
-      case 'cancel': {
+      case "cancel": {
         await toast.promise(
           (async () => {
-            const res = await fetch(`/api/purchases/${id}/cancel`, { method: 'POST' })
-            if (!res.ok) throw new Error('Failed')
+            const res = await fetch(`/api/purchases/${id}/cancel`, {
+              method: "POST",
+            });
+            if (!res.ok) throw new Error("Failed");
             setItems((prev) =>
-              prev ? prev.map((p) => (p._id === id ? { ...p, status: 'canceled' } : p)) : prev
-            )
+              prev
+                ? prev.map((p) =>
+                    p._id === id ? { ...p, status: "canceled" } : p,
+                  )
+                : prev,
+            );
           })(),
-          { loading: 'Canceling...', success: 'Canceled', error: 'Failed to cancel' }
-        )
-        break
+          {
+            loading: "Canceling...",
+            success: "Canceled",
+            error: "Failed to cancel",
+          },
+        );
+        break;
       }
-      case 'payment': {
-        const res = await fetch(`/api/purchases/${id}/payment-method`, { method: 'POST' })
-        const data = await res.json().catch(() => ({}))
+      case "payment": {
+        const res = await fetch(`/api/purchases/${id}/payment-method`, {
+          method: "POST",
+        });
+        const data = await res.json().catch(() => ({}));
         if (res.ok && data.url) {
-          window.location.href = data.url as string
+          window.location.href = data.url as string;
         } else {
-          toast.error(data.error || 'Failed')
+          toast.error(data.error || "Failed");
         }
-        break
+        break;
       }
-      case 'refund': {
-        setRefundId(id)
-        break
+      case "refund": {
+        setRefundId(id);
+        break;
       }
     }
   }
 
+  function toggleRow(id: string) {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
+
   async function submitRefund() {
-    if (!refundId) return
-    const reason = reasonType === 'other' ? reasonText : reasonType
-    setRefundId(null)
-    setReasonType('')
-    setReasonText('')
+    if (!refundId) return;
+    const reason = reasonType === "other" ? reasonText : reasonType;
+    setRefundId(null);
+    setReasonType("");
+    setReasonText("");
     await toast.promise(
       (async () => {
         const res = await fetch(`/api/purchases/${refundId}/refund`, {
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify({ reason }),
-        })
-        if (!res.ok) throw new Error('Failed')
+        });
+        if (!res.ok) throw new Error("Failed");
         setItems((prev) =>
           prev
             ? prev.map((p) =>
                 p._id === refundId
                   ? {
                       ...p,
-                      refundRequest: { status: 'requested', reason },
-                      status: 'refund_requested',
+                      refundRequest: { status: "requested", reason },
+                      status: "refund_requested",
                     }
                   : p,
               )
             : prev,
-        )
-        prevStatuses.current[refundId] = 'requested'
+        );
+        prevStatuses.current[refundId] = "requested";
       })(),
       {
-        loading: 'Requesting refund...',
-        success: 'Refund requested',
-        error: 'Failed to refund',
+        loading: "Requesting refund...",
+        success: "Refund requested",
+        error: "Failed to refund",
       },
-    )
+    );
   }
 
-  const help = <p>All products you have purchased will appear here.</p>
+  const help = <p>All products you have purchased will appear here.</p>;
 
   return (
     <DashboardLayout title="Purchases" helpContent={help}>
@@ -146,10 +163,11 @@ export default function PurchasesPage() {
           <p>No purchases found.</p>
         ) : (
           <DataTable
-            columns={getColumns(handleAction)}
+            columns={getColumns(handleAction, toggleRow, expanded)}
             data={items}
             renderSubRows={(row) => {
-              const p = row.original as Purchase
+              const p = row.original as Purchase;
+              if (!expanded[p._id]) return null;
               return (
                 <div className="p-4 text-sm text-muted-foreground grid grid-cols-2 gap-2">
                   {p.invoiceId && (
@@ -159,16 +177,22 @@ export default function PurchasesPage() {
                     <div className="col-span-1">Sub: {p.subscriptionId}</div>
                   )}
                   {p.paymentIntentId && (
-                    <div className="col-span-1">Payment: {p.paymentIntentId}</div>
+                    <div className="col-span-1">
+                      Payment: {p.paymentIntentId}
+                    </div>
                   )}
                   {p.refundRequest?.reason && (
-                    <div className="col-span-2">Reason: {p.refundRequest.reason}</div>
+                    <div className="col-span-2">
+                      Reason: {p.refundRequest.reason}
+                    </div>
                   )}
                   {p.refundRequest?.sellerReason && (
-                    <div className="col-span-2">Seller: {p.refundRequest.sellerReason}</div>
+                    <div className="col-span-2">
+                      Seller: {p.refundRequest.sellerReason}
+                    </div>
                   )}
                 </div>
-              )
+              );
             }}
           />
         )}
@@ -177,7 +201,9 @@ export default function PurchasesPage() {
         <SheetContent side="bottom" className="sm:max-w-md">
           <SheetHeader>
             <SheetTitle>Request Refund</SheetTitle>
-            <SheetDescription>Select a reason for your refund.</SheetDescription>
+            <SheetDescription>
+              Select a reason for your refund.
+            </SheetDescription>
           </SheetHeader>
           <div className="p-4 space-y-4">
             <div className="space-y-2">
@@ -187,14 +213,18 @@ export default function PurchasesPage() {
                   <SelectValue placeholder="Select reason" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="not_described">Not as described</SelectItem>
-                  <SelectItem value="accidental">Accidental purchase</SelectItem>
+                  <SelectItem value="not_described">
+                    Not as described
+                  </SelectItem>
+                  <SelectItem value="accidental">
+                    Accidental purchase
+                  </SelectItem>
                   <SelectItem value="quality">Poor quality</SelectItem>
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {reasonType === 'other' && (
+            {reasonType === "other" && (
               <div className="space-y-2">
                 <Label htmlFor="reason">Details</Label>
                 <textarea
@@ -207,7 +237,9 @@ export default function PurchasesPage() {
             )}
           </div>
           <SheetFooter>
-            <Button onClick={submitRefund} disabled={!reasonType}>Submit</Button>
+            <Button onClick={submitRefund} disabled={!reasonType}>
+              Submit
+            </Button>
             <SheetClose asChild>
               <Button variant="outline">Cancel</Button>
             </SheetClose>
@@ -215,5 +247,5 @@ export default function PurchasesPage() {
         </SheetContent>
       </Sheet>
     </DashboardLayout>
-  )
+  );
 }
