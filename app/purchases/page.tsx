@@ -145,7 +145,32 @@ export default function PurchasesPage() {
         ) : items.length === 0 ? (
           <p>No purchases found.</p>
         ) : (
-          <DataTable columns={getColumns(handleAction)} data={items} />
+          <DataTable
+            columns={getColumns(handleAction)}
+            data={items}
+            renderSubRows={(row) => {
+              const p = row.original as Purchase
+              return (
+                <div className="p-4 text-sm text-muted-foreground grid grid-cols-2 gap-2">
+                  {p.invoiceId && (
+                    <div className="col-span-1">Invoice: {p.invoiceId}</div>
+                  )}
+                  {p.subscriptionId && (
+                    <div className="col-span-1">Sub: {p.subscriptionId}</div>
+                  )}
+                  {p.paymentIntentId && (
+                    <div className="col-span-1">Payment: {p.paymentIntentId}</div>
+                  )}
+                  {p.refundRequest?.reason && (
+                    <div className="col-span-2">Reason: {p.refundRequest.reason}</div>
+                  )}
+                  {p.refundRequest?.sellerReason && (
+                    <div className="col-span-2">Seller: {p.refundRequest.sellerReason}</div>
+                  )}
+                </div>
+              )
+            }}
+          />
         )}
       </div>
       <Sheet open={!!refundId} onOpenChange={(o) => !o && setRefundId(null)}>

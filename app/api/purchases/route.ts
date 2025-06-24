@@ -46,6 +46,8 @@ export async function GET() {
           status: 1,
           createdAt: 1,
           productId: 1,
+          price: '$product.price',
+          currency: '$product.currency',
           productName: '$product.name',
           invoiceId: 1,
           subscriptionId: 1,

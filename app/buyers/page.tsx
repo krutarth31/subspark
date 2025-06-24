@@ -88,7 +88,26 @@ export default function BuyersPage() {
         ) : items.length === 0 ? (
           <p>No buyers found.</p>
         ) : (
-          <DataTable columns={getColumns(handleAction)} data={items} />
+          <DataTable
+            columns={getColumns(handleAction)}
+            data={items}
+            renderSubRows={(row) => {
+              const p = row.original as BuyerPurchase
+              return (
+                <div className="p-4 text-sm text-muted-foreground grid grid-cols-2 gap-2">
+                  {p.paymentIntentId && (
+                    <div className="col-span-1">Payment: {p.paymentIntentId}</div>
+                  )}
+                  {p.refundRequest?.reason && (
+                    <div className="col-span-2">Reason: {p.refundRequest.reason}</div>
+                  )}
+                  {p.refundRequest?.sellerReason && (
+                    <div className="col-span-2">Seller: {p.refundRequest.sellerReason}</div>
+                  )}
+                </div>
+              )
+            }}
+          />
         )}
       </div>
       <Sheet open={!!actionInfo} onOpenChange={(o) => !o && setActionInfo(null)}>

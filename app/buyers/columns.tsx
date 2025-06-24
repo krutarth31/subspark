@@ -1,7 +1,13 @@
 "use client"
 
+import React from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal } from "lucide-react"
+import {
+  IconCircleCheckFilled,
+  IconCircleXFilled,
+  IconClock,
+} from "@tabler/icons-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -10,12 +16,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
 
 export type BuyerPurchase = {
   _id: string
   buyerName: string
   buyerEmail: string
   productName: string
+  price?: number
+  currency?: string
   status: string
   createdAt: string
   paymentIntentId?: string
@@ -34,6 +43,21 @@ export function getColumns(
     { accessorKey: "buyerEmail", header: "Email" },
     { accessorKey: "productName", header: "Product" },
     {
+      accessorKey: "price",
+      header: () => <div className="text-right">Price</div>,
+      cell: ({ row }) => {
+        const price = row.original.price
+        const currency = row.original.currency
+        return price != null ? (
+          <div className="text-right">
+            {price.toFixed(2)} {currency}
+          </div>
+        ) : (
+          "-"
+        )
+      },
+    },
+    {
       accessorKey: "createdAt",
       header: "Date",
       cell: ({ row }) =>
@@ -44,10 +68,24 @@ export function getColumns(
       header: "Status",
       cell: ({ row }) => {
         const p = row.original
-        if (p.refundRequest?.status === 'requested') return 'Refund requested'
-        if (p.refundRequest?.status === 'declined') return 'Refund declined'
-        if (p.refundRequest?.status === 'approved') return 'Refunded'
-        return row.getValue("status") as string
+        let label = row.getValue<string>("status")
+        let icon: React.ReactNode = null
+        if (p.refundRequest?.status === 'requested') {
+          label = 'Refund requested'
+          icon = <IconClock className="text-yellow-500" />
+        } else if (p.refundRequest?.status === 'declined') {
+          label = 'Refund declined'
+          icon = <IconCircleXFilled className="text-red-500" />
+        } else if (p.refundRequest?.status === 'approved') {
+          label = 'Refunded'
+          icon = <IconCircleCheckFilled className="text-green-500" />
+        }
+        return (
+          <Badge variant="outline" className="px-1.5 text-muted-foreground">
+            {icon}
+            {label}
+          </Badge>
+        )
       },
     },
     {
