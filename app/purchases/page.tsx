@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useNotifications } from "@/hooks/use-notifications";
 import { getColumns, Purchase } from "./columns";
 
 export default function PurchasesPage() {
@@ -31,6 +32,7 @@ export default function PurchasesPage() {
   const [reasonText, setReasonText] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const prevStatuses = useRef<Record<string, string | undefined>>({});
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     const load = async () => {
@@ -44,7 +46,7 @@ export default function PurchasesPage() {
           prevStatuses.current[p._id] !== status &&
           (status === "approved" || status === "declined")
         ) {
-          toast.info(`Refund ${status} for ${p.productName}`);
+          addNotification(`Refund ${status} for ${p.productName}`);
         }
         prevStatuses.current[p._id] = status;
       });

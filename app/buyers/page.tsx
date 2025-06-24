@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useNotifications } from "@/hooks/use-notifications";
 import { getColumns, BuyerPurchase } from "./columns";
 
 export default function BuyersPage() {
@@ -25,6 +26,7 @@ export default function BuyersPage() {
   const [declineReason, setDeclineReason] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const prevStatuses = useRef<Record<string, string | undefined>>({});
+  const { addNotification } = useNotifications();
 
   useEffect(() => {
     const load = async () => {
@@ -38,7 +40,7 @@ export default function BuyersPage() {
           prevStatuses.current[b._id] !== status &&
           status === "requested"
         ) {
-          toast.info(`Refund requested for ${b.productName}`);
+          addNotification(`Refund requested for ${b.productName}`);
         }
         prevStatuses.current[b._id] = status;
       });
@@ -54,6 +56,14 @@ export default function BuyersPage() {
 
     if (action === "approve" || action === "decline") {
       setActionInfo({ id, type: action });
+    } else if (action === "invoice") {
+      const res = await fetch(`/api/purchases/${id}/invoice`);
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        window.open(data.url as string, "_blank");
+      } else {
+        toast.error(data.error || "Failed");
+      }
     }
   }
 

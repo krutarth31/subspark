@@ -27,6 +27,7 @@ export type BuyerPurchase = {
   currency?: string;
   status: string;
   createdAt: string;
+  invoiceId?: string;
   paymentIntentId?: string;
   refundRequest?: {
     status: string;
@@ -132,6 +133,11 @@ export function getColumns(
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              {p.invoiceId && (
+                <DropdownMenuItem onClick={() => onAction(p._id, "invoice")}>
+                  Download Invoice
+                </DropdownMenuItem>
+              )}
               {p.refundRequest?.status === "requested" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "approve")}>
                   Approve Refund

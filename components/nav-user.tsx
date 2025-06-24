@@ -98,9 +98,11 @@ export function NavUser({
                   Billing
                 </a>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconNotification />
-                Notifications
+              <DropdownMenuItem asChild>
+                <a href="/notifications" className="flex items-center gap-2">
+                  <IconNotification />
+                  Notifications
+                </a>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />

@@ -33,8 +33,15 @@ export async function GET(
       invoiceId?: string
       sellerId: string
     }>('purchases')
-    .findOne({ _id: new ObjectId(id), userId: sessionDoc.userId })
+    .findOne({ _id: new ObjectId(id) })
   if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const seller = await db
+    .collection<{ _id: string; userId: ObjectId }>('sellers')
+    .findOne({ userId: sessionDoc.userId })
+  const isBuyer = purchase.userId.equals(sessionDoc.userId)
+  const isSeller = seller?._id === purchase.sellerId
+  if (!isBuyer && !isSeller)
+    return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (!purchase.invoiceId)
     return NextResponse.json({ error: 'No invoice' }, { status: 404 })
   try {
