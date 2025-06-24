@@ -64,6 +64,8 @@ export default function BuyersPage() {
       } else {
         toast.error(data.error || "Failed");
       }
+    } else if (action === "refund") {
+      setActionInfo({ id, type: "refund" });
     }
   }
 
@@ -91,15 +93,21 @@ export default function BuyersPage() {
                 p._id === id
                   ? {
                       ...p,
-                      status: type === "approve" ? "refunded" : p.status,
-                      refundRequest: {
-                        ...(p.refundRequest || {}),
-                        status: type === "approve" ? "approved" : "declined",
-                        sellerReason:
-                          type === "decline"
-                            ? declineReason
-                            : p.refundRequest?.sellerReason,
-                      },
+                      status:
+                        type === "approve" || type === "refund"
+                          ? "refunded"
+                          : p.status,
+                      refundRequest:
+                        type === "decline"
+                          ? {
+                              ...(p.refundRequest || {}),
+                              status: "declined",
+                              sellerReason: declineReason,
+                            }
+                          : {
+                              ...(p.refundRequest || {}),
+                              status: "approved",
+                            },
                     }
                   : p,
               )
@@ -107,8 +115,8 @@ export default function BuyersPage() {
         );
       })(),
       {
-        loading: type === "approve" ? "Refunding..." : "Saving...",
-        success: type === "approve" ? "Refunded" : "Declined",
+        loading: type === "decline" ? "Saving..." : "Refunding...",
+        success: type === "decline" ? "Declined" : "Refunded",
         error: "Failed",
       },
     );

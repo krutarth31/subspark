@@ -90,4 +90,40 @@ describe('refund routes', () => {
       { $set: { status: 'refunded', 'refundRequest.status': 'approved' } }
     )
   })
+
+  it('refunds without request as seller', async () => {
+    const session = { token: 't', userId: new ObjectId('507f191e810c19729de860af') }
+    const purchase = {
+      _id: new ObjectId('507f191e810c19729de860b0'),
+      userId: new ObjectId('507f191e810c19729de860b1'),
+      sellerId: 'acct_1',
+      paymentIntentId: 'pi_1',
+      status: 'paid',
+    }
+    const updateOne = jest.fn()
+    mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
+    mockGetDb.mockResolvedValue({
+      collection: (name: string) => {
+        if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
+        if (name === 'purchases')
+          return { findOne: jest.fn().mockResolvedValue(purchase), updateOne }
+        if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue({ _id: 'acct_1' }) }
+        return { findOne: jest.fn() }
+      },
+    })
+
+    const req = new Request('http://localhost', { method: 'PATCH', body: JSON.stringify({ action: 'refund' }) })
+    const res = await PATCH(req, { params: { id: purchase._id.toString() } })
+    expect(res.status).toBe(200)
+    expect(mockRefund).toHaveBeenCalled()
+    expect(updateOne).toHaveBeenCalledWith(
+      { _id: purchase._id },
+      {
+        $set: {
+          status: 'refunded',
+          'refundRequest.status': 'approved',
+        },
+      }
+    )
+  })
 })

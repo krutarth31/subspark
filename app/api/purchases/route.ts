@@ -12,7 +12,7 @@ export async function GET() {
     .collection<{ token: string; userId: ObjectId }>('sessions')
     .findOne({ token })
   if (!session) return NextResponse.json({ purchases: [] })
-  const purchases = await db
+  const rawPurchases = await db
     .collection<{
       _id: ObjectId
       userId: ObjectId
@@ -60,5 +60,12 @@ export async function GET() {
       { $sort: { createdAt: -1 } },
     ])
     .toArray()
+  const purchases = rawPurchases.map((p) => ({
+    ...p,
+    _id: p._id.toString(),
+    productId: p.productId.toString(),
+    userId: p.userId.toString(),
+    createdAt: p.createdAt.toISOString(),
+  }))
   return NextResponse.json({ purchases })
 }

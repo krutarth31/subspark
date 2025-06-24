@@ -66,9 +66,9 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const body = await request.json().catch(() => ({}))
   const action = body.action
-  if (purchase.refundRequest?.status !== 'requested')
-    return NextResponse.json({ error: 'No request' }, { status: 400 })
   if (action === 'approve') {
+    if (purchase.refundRequest?.status !== 'requested')
+      return NextResponse.json({ error: 'No request' }, { status: 400 })
     if (!purchase.paymentIntentId)
       return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
     try {
@@ -79,6 +79,28 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
       await db.collection('purchases').updateOne(
         { _id: purchase._id },
         { $set: { status: 'refunded', 'refundRequest.status': 'approved' } }
+      )
+      return NextResponse.json({ ok: true })
+    } catch (err) {
+      console.error(err)
+      return NextResponse.json({ error: 'Failed to refund' }, { status: 500 })
+    }
+  } else if (action === 'refund') {
+    if (!purchase.paymentIntentId)
+      return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
+    try {
+      await getStripe().refunds.create(
+        { payment_intent: purchase.paymentIntentId },
+        { stripeAccount: purchase.sellerId }
+      )
+      await db.collection('purchases').updateOne(
+        { _id: purchase._id },
+        {
+          $set: {
+            status: 'refunded',
+            'refundRequest.status': 'approved',
+          },
+        }
       )
       return NextResponse.json({ ok: true })
     } catch (err) {

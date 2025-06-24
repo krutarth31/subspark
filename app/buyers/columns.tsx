@@ -138,6 +138,11 @@ export function getColumns(
                   Download Invoice
                 </DropdownMenuItem>
               )}
+              {p.paymentIntentId && p.status === "paid" && (
+                <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>
+                  Refund Purchase
+                </DropdownMenuItem>
+              )}
               {p.refundRequest?.status === "requested" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "approve")}>
                   Approve Refund
