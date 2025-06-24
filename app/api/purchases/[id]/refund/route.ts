@@ -28,8 +28,14 @@ export async function POST(
   if (!sessionDoc) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const purchase = await db
     .collection<{ _id: ObjectId; userId: ObjectId; paymentIntentId?: string; sellerId: string }>('purchases')
-    .findOne({ _id: new ObjectId(id), userId: sessionDoc.userId })
+    .findOne({ _id: new ObjectId(id) })
   if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  const seller = await db
+    .collection<{ _id: string; userId: ObjectId }>('sellers')
+    .findOne({ userId: sessionDoc.userId })
+  const allowed =
+    purchase.userId.equals(sessionDoc.userId) || seller?._id === purchase.sellerId
+  if (!allowed) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (!purchase.paymentIntentId)
     return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
   try {
