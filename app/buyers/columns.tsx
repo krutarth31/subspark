@@ -39,7 +39,17 @@ export function getColumns(
       cell: ({ row }) =>
         new Date(row.getValue<string>("createdAt")).toLocaleDateString(),
     },
-    { accessorKey: "status", header: "Status" },
+    {
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => {
+        const p = row.original
+        if (p.refundRequest?.status === 'requested') return 'Refund requested'
+        if (p.refundRequest?.status === 'declined') return 'Refund declined'
+        if (p.refundRequest?.status === 'approved') return 'Refunded'
+        return row.getValue("status") as string
+      },
+    },
     {
       id: "actions",
       cell: ({ row }) => {

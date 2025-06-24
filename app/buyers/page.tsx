@@ -3,11 +3,23 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/dashboard-layout'
 import { DataTable } from '@/components/ui/data-table'
 import { Spinner } from '@/components/ui/spinner'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetClose,
+} from '@/components/ui/sheet'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { getColumns, BuyerPurchase } from './columns'
 
 export default function BuyersPage() {
   const [items, setItems] = useState<BuyerPurchase[] | null>(null)
+  const [actionInfo, setActionInfo] = useState<{ id: string; type: 'approve' | 'decline' } | null>(null)
+  const [declineReason, setDeclineReason] = useState('')
 
   useEffect(() => {
     fetch('/api/buyers')
@@ -18,40 +30,50 @@ export default function BuyersPage() {
 
   async function handleAction(id: string, action: string) {
     if (!items) return
+
     if (action === 'approve' || action === 'decline') {
-      const reason = action === 'decline' ? prompt('Reason for decline?') || '' : undefined
-      await toast.promise(
-        (async () => {
-          const res = await fetch(`/api/purchases/${id}/refund`, {
-            method: 'PATCH',
-            body: JSON.stringify({ action, reason }),
-          })
-          if (!res.ok) throw new Error('Failed')
-          setItems((prev) =>
-            prev
-              ? prev.map((p) =>
-                  p._id === id
-                    ? {
-                        ...p,
-                        status: action === 'approve' ? 'refunded' : p.status,
-                        refundRequest: {
-                          ...(p.refundRequest || {}),
-                          status: action === 'approve' ? 'approved' : 'declined',
-                          sellerReason: reason,
-                        },
-                      }
-                    : p
-                )
-              : prev
-          )
-        })(),
-        {
-          loading: action === 'approve' ? 'Refunding...' : 'Saving...',
-          success: action === 'approve' ? 'Refunded' : 'Declined',
-          error: 'Failed',
-        }
-      )
+      setActionInfo({ id, type: action })
     }
+  }
+
+  async function submitAction() {
+    if (!actionInfo) return
+    const { id, type } = actionInfo
+    const body: Record<string, string> = { action: type }
+    if (type === 'decline') body.reason = declineReason
+    setActionInfo(null)
+    setDeclineReason('')
+    await toast.promise(
+      (async () => {
+        const res = await fetch(`/api/purchases/${id}/refund`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        })
+        if (!res.ok) throw new Error('Failed')
+        setItems((prev) =>
+          prev
+            ? prev.map((p) =>
+                p._id === id
+                  ? {
+                      ...p,
+                      status: type === 'approve' ? 'refunded' : p.status,
+                      refundRequest: {
+                        ...(p.refundRequest || {}),
+                        status: type === 'approve' ? 'approved' : 'declined',
+                        sellerReason: type === 'decline' ? declineReason : p.refundRequest?.sellerReason,
+                      },
+                    }
+                  : p,
+              )
+            : prev,
+        )
+      })(),
+      {
+        loading: type === 'approve' ? 'Refunding...' : 'Saving...',
+        success: type === 'approve' ? 'Refunded' : 'Declined',
+        error: 'Failed',
+      },
+    )
   }
 
   const help = <p>View your customers and refund purchases if needed.</p>
@@ -69,6 +91,32 @@ export default function BuyersPage() {
           <DataTable columns={getColumns(handleAction)} data={items} />
         )}
       </div>
+      <Sheet open={!!actionInfo} onOpenChange={(o) => !o && setActionInfo(null)}>
+        <SheetContent side="right" className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>
+              {actionInfo?.type === 'approve' ? 'Approve Refund' : 'Decline Refund'}
+            </SheetTitle>
+          </SheetHeader>
+          {actionInfo?.type === 'decline' && (
+            <div className="p-4 space-y-2">
+              <Label htmlFor="decline">Reason</Label>
+              <textarea
+                id="decline"
+                className="min-h-[80px] w-full rounded-md border px-3 py-1"
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+              />
+            </div>
+          )}
+          <SheetFooter>
+            <Button onClick={submitAction}>Submit</Button>
+            <SheetClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </DashboardLayout>
   )
 }

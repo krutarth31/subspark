@@ -50,7 +50,12 @@ describe('refund routes', () => {
     expect(res.status).toBe(200)
     expect(updateOne).toHaveBeenCalledWith(
       { _id: purchase._id },
-      { $set: { refundRequest: { status: 'requested', reason: 'bad' } } }
+      {
+        $set: {
+          status: 'refund_requested',
+          refundRequest: { status: 'requested', reason: 'bad' },
+        },
+      },
     )
   })
 

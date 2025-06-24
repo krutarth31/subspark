@@ -46,7 +46,15 @@ export async function POST(request: Request, ctx: { params: { id: string } } | {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   const body = await request.json().catch(() => ({}))
   const reason = typeof body.reason === 'string' ? body.reason : ''
-  await db.collection('purchases').updateOne({ _id: purchase._id }, { $set: { refundRequest: { status: 'requested', reason } } })
+  await db.collection('purchases').updateOne(
+    { _id: purchase._id },
+    {
+      $set: {
+        status: 'refund_requested',
+        refundRequest: { status: 'requested', reason },
+      },
+    },
+  )
   return NextResponse.json({ ok: true })
 }
 

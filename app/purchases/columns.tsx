@@ -43,6 +43,13 @@ export function getColumns(onAction: (id: string, action: string) => void): Colu
     {
       accessorKey: "status",
       header: "Status",
+      cell: ({ row }) => {
+        const p = row.original
+        if (p.refundRequest?.status === 'requested') return 'Refund requested'
+        if (p.refundRequest?.status === 'declined') return 'Refund declined'
+        if (p.refundRequest?.status === 'approved') return 'Refunded'
+        return row.getValue("status") as string
+      },
     },
     {
       id: "actions",
