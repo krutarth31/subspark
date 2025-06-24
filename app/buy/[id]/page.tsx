@@ -1,6 +1,7 @@
 "use client"
 
-import * as React from "react"
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -36,26 +37,44 @@ interface Product {
   period?: string
   stripePriceId?: string
   subProducts?: BillingOption[]
+  planDescription?: string
 }
 
-export default function BuyPage({ params }: { params: { id: string } | Promise<{ id: string }> }) {
-  const { id } = React.use(params)
-  const [product, setProduct] = React.useState<Product | null>(null)
-  const [loading, setLoading] = React.useState(true)
-  const [paying, setPaying] = React.useState(false)
-  const [billing, setBilling] = React.useState<string>('')
-  const [billingIndex, setBillingIndex] = React.useState<number>(0)
-  const [coupon, setCoupon] = React.useState('')
+export default function BuyPage() {
+  const params = useParams<{ id: string }>()
+  const id = params?.id
+  const router = useRouter()
+  const [product, setProduct] = useState<Product | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [paying, setPaying] = useState(false)
+  const [billing, setBilling] = useState<string>("")
+  const [billingIndex, setBillingIndex] = useState<number>(0)
+  const [coupon, setCoupon] = useState("")
+  const [user, setUser] = useState<any | null | undefined>(undefined)
 
   const help = <p>Select a plan and proceed to checkout.</p>
 
   function formatOption(o: BillingOption) {
-    if (o.billing === 'free') return 'Free'
+    if (o.billing === "free") return "Free"
     const base = `${o.price?.toFixed(2)} ${o.currency}`
-    return o.billing === 'recurring' && o.period ? `${base} / ${o.period}` : base
+    return o.billing === "recurring" && o.period ? `${base} / ${o.period}` : base
   }
 
-  React.useEffect(() => {
+  useEffect(() => {
+    fetch('/api/auth/user')
+      .then((res) => res.json())
+      .then((data) => setUser(data.user || null))
+      .catch(() => setUser(null))
+  }, [])
+
+  useEffect(() => {
+    if (user === null) {
+      router.replace(`/?redirect=/buy/${id}`)
+    }
+  }, [user, id, router])
+
+  useEffect(() => {
+    if (!id) return
     fetch(`/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
@@ -70,7 +89,7 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
         setLoading(false)
       })
       .catch(() => {
-        toast.error('Failed to load product')
+        toast.error("Failed to load product")
         setLoading(false)
       })
   }, [id])
@@ -94,7 +113,7 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
           loading: "Creating checkout...",
           success: "Redirecting...",
           error: "Checkout failed",
-        },
+        }
       )
     } finally {
       setPaying(false)
@@ -103,15 +122,33 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
 
   const option =
     product?.subProducts?.[billingIndex] ??
-    product?.subProducts?.find((o) =>
-      o.name ? o.name === billing : o.billing === billing,
-    )
+    product?.subProducts?.find((o) => (o.name ? o.name === billing : o.billing === billing))
   const display: BillingOption = option || {
     billing: product?.billing,
     price: product?.price,
     currency: product?.currency,
     period: product?.period,
     service: product?.planDescription,
+  }
+
+  if (user === undefined) {
+    return (
+      <DashboardLayout title="Checkout" helpContent={help}>
+        <div className="p-6 flex justify-center">
+          <Spinner className="size-6" />
+        </div>
+      </DashboardLayout>
+    )
+  }
+
+  if (user === null) {
+    return (
+      <DashboardLayout title="Login" helpContent={help}>
+        <div className="p-6 flex justify-center">
+          <Spinner className="size-6" />
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (
@@ -144,22 +181,17 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
             <div className="text-center space-y-1">
               <h2 className="text-2xl font-bold">{product.name}</h2>
               {product.description && (
-                <p className="text-sm text-muted-foreground">
-                  {product.description}
-                </p>
+                <p className="text-sm text-muted-foreground">{product.description}</p>
               )}
             </div>
             {product.subProducts && product.subProducts.length > 0 && (
-              <div
-                className={`grid gap-4 ${
-                  product.subProducts.length > 1 ? 'sm:grid-cols-2' : ''
-                }`}
+              <div className={`grid gap-4 ${product.subProducts.length > 1 ? "sm:grid-cols-2" : ""}`}
               >
                 {product.subProducts.map((o, idx) => (
                   <Card
                     key={idx}
                     className={`cursor-pointer${
-                      billing === (o.name || o.billing) ? ' ring-2 ring-primary' : ''
+                      billing === (o.name || o.billing) ? " ring-2 ring-primary" : ""
                     }`}
                     onClick={() => {
                       setBilling(o.name || o.billing)
@@ -167,9 +199,7 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
                     }}
                   >
                     <CardHeader className="text-center space-y-1">
-                      <CardTitle className="text-lg">
-                        {o.name || `Option ${idx + 1}`}
-                      </CardTitle>
+                      <CardTitle className="text-lg">{o.name || `Option ${idx + 1}`}</CardTitle>
                       {o.service && (
                         <CardDescription>
                           <ServiceDescription text={o.service} />
@@ -190,13 +220,13 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
                     <ServiceDescription text={display.service} />
                   </div>
                 )}
-                <p className="text-center text-2xl font-semibold">
-                  {formatOption(display)}
-                </p>
+                <p className="text-center text-2xl font-semibold">{formatOption(display)}</p>
               </>
             ) : null}
             <div>
-              <label className="text-sm" htmlFor="coupon">Coupon Code</label>
+              <label className="text-sm" htmlFor="coupon">
+                Coupon Code
+              </label>
               <input
                 id="coupon"
                 value={coupon}
@@ -206,7 +236,7 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
             </div>
             <Button onClick={checkout} disabled={paying} className="w-full">
               {paying && <Spinner className="mr-2" />}
-              {display.billing === 'free' ? 'Get Access' : 'Checkout'}
+              {display.billing === "free" ? "Get Access" : "Checkout"}
             </Button>
           </div>
         )}
@@ -214,3 +244,4 @@ export default function BuyPage({ params }: { params: { id: string } | Promise<{
     </DashboardLayout>
   )
 }
+

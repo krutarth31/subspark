@@ -14,13 +14,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useUserRole } from "@/hooks/use-user-role"
 
@@ -28,11 +21,6 @@ export default function OnboardingFlow() {
   const [step, setStep] = useState(1)
   const [name, setName] = useState("")
   const [bio, setBio] = useState("")
-  const [productName, setProductName] = useState("")
-  const [productPrice, setProductPrice] = useState("")
-  const [productDesc, setProductDesc] = useState("")
-  const [productType, setProductType] = useState<'discord' | 'file' | 'key'>('discord')
-  const [productStatus, setProductStatus] = useState<'draft' | 'published'>('draft')
   const [avatar, setAvatar] = useState<File | null>(null)
   const [banner, setBanner] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
@@ -59,7 +47,7 @@ export default function OnboardingFlow() {
         if (data.accountId) setAccountId(data.accountId)
         if (data.active) {
           setActive(true)
-          setStep(6)
+          setStep(5)
           setRole('seller')
         }
       })
@@ -118,7 +106,6 @@ export default function OnboardingFlow() {
   const stepsList = [
     "Connect Stripe",
     "Set up profile",
-    "Add product",
     "Verify & accept",
     "Pay subscription",
     "Finish",
@@ -220,96 +207,9 @@ export default function OnboardingFlow() {
     content = (
       <Card className={cardClass} asChild>
         <form
-          onSubmit={async (e) => {
-            e.preventDefault()
-            const price = parseFloat(productPrice)
-            if (isNaN(price)) {
-              setError('Invalid price')
-              return
-            }
-            setLoading(true)
-            setError(null)
-            const res = await fetch('/api/products', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                name: productName,
-                price,
-                description: productDesc,
-                type: productType,
-                status: productStatus,
-              }),
-            })
-            if (!res.ok) {
-              const data = await res.json().catch(() => ({}))
-              setError(data.error || 'Failed to save product')
-              setLoading(false)
-              return
-            }
-            setLoading(false)
-            setStep(4)
-          }}
-          className="space-y-4"
-        >
-          <CardHeader className="text-center">
-            <CardTitle>Add your first product</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="pname">Product Name</Label>
-              <Input id="pname" value={productName} onChange={(e) => setProductName(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pprice">Price</Label>
-              <Input id="pprice" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pdesc">Description</Label>
-              <Input id="pdesc" value={productDesc} onChange={(e) => setProductDesc(e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ptype">Type</Label>
-              <Select value={productType} onValueChange={(v) => setProductType(v as 'discord' | 'file' | 'key')}>
-                <SelectTrigger id="ptype" className="w-full">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="discord">Discord</SelectItem>
-                  <SelectItem value="file">File</SelectItem>
-                  <SelectItem value="key">Key</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pstatus">Status</Label>
-              <Select value={productStatus} onValueChange={(v) => setProductStatus(v as 'draft' | 'published')}>
-                <SelectTrigger id="pstatus" className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="published">Published</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading && <Spinner className="mr-2" />}
-              {loading ? 'Saving...' : 'Save and Continue'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
-    )
-  } else if (step === 4) {
-    content = (
-      <Card className={cardClass} asChild>
-        <form
           onSubmit={(e) => {
             e.preventDefault()
-            setStep(5)
+            setStep(4)
           }}
           className="space-y-4"
         >
@@ -372,7 +272,7 @@ export default function OnboardingFlow() {
         </form>
       </Card>
     )
-  } else if (step === 5) {
+  } else if (step === 4) {
     content = (
       <Card className={cardClass}>
         <CardHeader className="text-center">
@@ -426,7 +326,7 @@ export default function OnboardingFlow() {
           </CardTitle>
           <CardDescription>
             {active
-              ? "You're all set. Start selling from your dashboard."
+              ? "You're all set. Add your products to start selling."
               : "Complete payment to activate your account."}
           </CardDescription>
         </CardHeader>
@@ -435,13 +335,13 @@ export default function OnboardingFlow() {
             <Button
               onClick={() => {
                 setRole("seller")
-                window.location.href = "/dashboard"
+                window.location.href = "/products"
               }}
             >
-              Go to Dashboard
+              Go to Products
             </Button>
           ) : (
-            <Button onClick={() => setStep(5)}>Back to Payment</Button>
+            <Button onClick={() => setStep(4)}>Back to Payment</Button>
           )}
         </CardFooter>
       </Card>

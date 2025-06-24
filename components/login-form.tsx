@@ -12,8 +12,9 @@ import { Spinner } from "@/components/ui/spinner"
 
 export function LoginForm({
   className,
+  redirect = "/dashboard",
   ...props
-}: React.ComponentProps<"div">) {
+}: React.ComponentProps<"div"> & { redirect?: string }) {
   const [mode, setMode] =
     useState<"login" | "register" | "reset">("login")
   const [name, setName] = useState("")
@@ -60,7 +61,7 @@ export function LoginForm({
       setMessage("If an account exists, a reset link has been sent")
       setMode("login")
     } else {
-      router.push("/dashboard")
+      router.push(redirect)
     }
     setLoading(false)
   }

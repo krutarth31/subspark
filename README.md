@@ -119,7 +119,9 @@ builders. Each step presents a full-width card guiding the user from connecting
 Stripe to paying the platform fee.
 
 New accounts are created with the `card_payments` and `transfers` capabilities
-requested so sellers can accept payments and receive payouts once verified.
+requested so sellers can accept payments and receive payouts once verified. The
+activation endpoint checks that `card_payments` is active, preventing sellers
+from going live until their Stripe account is fully enabled.
 
 ## Seller Subscription
 
@@ -127,4 +129,10 @@ After completing the verification step the onboarding flow presents a
 subscription screen where sellers pay the platform fee. Clicking **Pay
 Subscription** creates a Stripe Checkout session via `/api/stripe/checkout` and
 redirects the seller to Stripe. When the checkout completes the webhook marks
-the seller account active and the user can continue to the dashboard.
+the seller account active and the user is redirected to the Products page to
+create listings.
+
+## Purchases
+
+Buyers must sign up before checking out. Completed purchases are listed on the
+`/purchases` page for easy access.

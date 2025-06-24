@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { getDb } from '@/lib/mongo'
+import { ObjectId } from 'mongodb'
 
 let stripe: Stripe | null = null
 function getStripe(): Stripe {
@@ -48,6 +49,40 @@ export async function POST(request: Request) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session
     const accountId = session.metadata?.accountId
+    if (session.metadata?.purchaseId) {
+      try {
+        const db = await getDb()
+        const update: any = { status: 'paid' }
+        if (session.invoice)
+          update.invoiceId =
+            typeof session.invoice === 'string'
+              ? session.invoice
+              : session.invoice.id
+        if (session.subscription)
+          update.subscriptionId =
+            typeof session.subscription === 'string'
+              ? session.subscription
+              : session.subscription.id
+        if (session.payment_intent)
+          update.paymentIntentId =
+            typeof session.payment_intent === 'string'
+              ? session.payment_intent
+              : session.payment_intent.id
+        if (session.customer)
+          update.customerId =
+            typeof session.customer === 'string'
+              ? session.customer
+              : session.customer.id
+        await db
+          .collection('purchases')
+          .updateOne(
+            { _id: new ObjectId(session.metadata.purchaseId) },
+            { $set: update }
+          )
+      } catch (err) {
+        console.error('DB update failed', err)
+      }
+    }
     if (accountId) {
       try {
         const db = await getDb()
