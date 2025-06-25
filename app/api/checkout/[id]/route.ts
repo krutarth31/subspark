@@ -22,7 +22,7 @@ export async function POST(
   }).params
   try {
     const db = await getDb()
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get('session')?.value
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

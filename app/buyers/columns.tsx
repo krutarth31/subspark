@@ -18,19 +18,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
-export type Purchase = {
+export type BuyerPurchase = {
   _id: string;
-  productId: string;
+  buyerName: string;
+  buyerEmail: string;
   productName: string;
   price?: number;
   currency?: string;
   status: string;
   createdAt: string;
   invoiceId?: string;
-  subscriptionId?: string;
   paymentIntentId?: string;
-  customerId?: string;
-  sellerId: string;
   refundRequest?: {
     status: string;
     reason?: string;
@@ -42,7 +40,7 @@ export function getColumns(
   onAction: (id: string, action: string) => void,
   onToggle?: (id: string) => void,
   expanded?: Record<string, boolean>,
-): ColumnDef<Purchase>[] {
+): ColumnDef<BuyerPurchase>[] {
   return [
     {
       id: "expand",
@@ -50,8 +48,6 @@ export function getColumns(
       cell: ({ row }) => {
         const p = row.original;
         const show =
-          p.invoiceId ||
-          p.subscriptionId ||
           p.paymentIntentId ||
           p.refundRequest?.reason ||
           p.refundRequest?.sellerReason;
@@ -74,10 +70,9 @@ export function getColumns(
         );
       },
     },
-    {
-      accessorKey: "productName",
-      header: "Product",
-    },
+    { accessorKey: "buyerName", header: "Name" },
+    { accessorKey: "buyerEmail", header: "Email" },
+    { accessorKey: "productName", header: "Product" },
     {
       accessorKey: "price",
       header: () => <div className="text-right">Price</div>,
@@ -143,19 +138,19 @@ export function getColumns(
                   Download Invoice
                 </DropdownMenuItem>
               )}
-              {p.subscriptionId && p.status !== "canceled" && (
-                <DropdownMenuItem onClick={() => onAction(p._id, "cancel")}>
-                  Cancel Subscription
-                </DropdownMenuItem>
-              )}
-              {p.customerId && (
-                <DropdownMenuItem onClick={() => onAction(p._id, "payment")}>
-                  Change Payment Method
-                </DropdownMenuItem>
-              )}
-              {p.paymentIntentId && !p.refundRequest && (
+              {p.paymentIntentId && p.status === "paid" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>
-                  Request Refund
+                  Refund Purchase
+                </DropdownMenuItem>
+              )}
+              {p.refundRequest?.status === "requested" && (
+                <DropdownMenuItem onClick={() => onAction(p._id, "approve")}>
+                  Approve Refund
+                </DropdownMenuItem>
+              )}
+              {p.refundRequest?.status === "requested" && (
+                <DropdownMenuItem onClick={() => onAction(p._id, "decline")}>
+                  Decline Refund
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

@@ -11,7 +11,7 @@ interface DiscordRole {
 export async function GET() {
   try {
     const db = await getDb()
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const sessionToken = cookieStore.get('session')?.value
 
     if (!sessionToken) {
