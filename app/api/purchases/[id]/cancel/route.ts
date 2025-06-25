@@ -18,7 +18,7 @@ export async function POST(
   ctx: { params: { id: string } } | { params: Promise<{ id: string }> }
 ) {
   const { id } = await (ctx as { params: { id: string } | Promise<{ id: string }> }).params
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const token = cookieStore.get('session')?.value
   if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const db = await getDb()

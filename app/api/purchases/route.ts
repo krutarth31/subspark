@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb'
 
 export async function GET() {
   const db = await getDb()
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
   const token = cookieStore.get('session')?.value
   if (!token) return NextResponse.json({ purchases: [] })
   const session = await db
@@ -64,7 +64,6 @@ export async function GET() {
     ...p,
     _id: p._id.toString(),
     productId: p.productId.toString(),
-    userId: p.userId.toString(),
     createdAt: p.createdAt.toISOString(),
   }))
   return NextResponse.json({ purchases })
