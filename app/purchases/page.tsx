@@ -61,11 +61,15 @@ export default function PurchasesPage() {
     if (!items) return;
     switch (action) {
       case "invoice": {
+        // Open a blank tab immediately so popup blockers allow navigation
+        const newTab = window.open("", "_blank");
         const res = await fetch(`/api/purchases/${id}/invoice`);
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.url) {
-          window.open(data.url as string, "_blank");
+          if (newTab) newTab.location.href = data.url as string;
+          else window.location.href = data.url as string;
         } else {
+          if (newTab) newTab.close();
           toast.error(data.error || "Failed");
         }
         break;
