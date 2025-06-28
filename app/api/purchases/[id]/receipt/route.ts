@@ -31,6 +31,7 @@ export async function GET(
       _id: ObjectId
       userId: ObjectId
       paymentIntentId?: string
+      invoiceId?: string
       sellerId: string
     }>('purchases')
     .findOne({ _id: new ObjectId(id) })
@@ -42,13 +43,30 @@ export async function GET(
   const isSeller = seller?._id === purchase.sellerId
   if (!isBuyer && !isSeller)
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (!purchase.paymentIntentId)
+  let intentId = purchase.paymentIntentId
+  if (!intentId && purchase.invoiceId) {
+    try {
+      const invoice = await getStripe().invoices.retrieve(purchase.invoiceId, {
+        stripeAccount: purchase.sellerId,
+      })
+      intentId = typeof invoice.payment_intent === 'string'
+        ? invoice.payment_intent
+        : invoice.payment_intent?.id
+      if (intentId) {
+        await db
+          .collection('purchases')
+          .updateOne({ _id: purchase._id }, { $set: { paymentIntentId: intentId } })
+      }
+    } catch (err) {
+      console.error(err)
+    }
+  }
+  if (!intentId)
     return NextResponse.json({ error: 'No payment' }, { status: 404 })
   try {
-    const intent = await getStripe().paymentIntents.retrieve(
-      purchase.paymentIntentId,
-      { stripeAccount: purchase.sellerId }
-    )
+    const intent = await getStripe().paymentIntents.retrieve(intentId, {
+      stripeAccount: purchase.sellerId,
+    })
     const charge = intent.charges.data[0]
     const url = (charge as Stripe.Charge | undefined)?.receipt_url
     if (!url) throw new Error('Missing receipt')
