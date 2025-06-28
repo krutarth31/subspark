@@ -49,10 +49,11 @@ describe('GET /api/purchases/[id]/receipt', () => {
     const json = await res.json()
     expect(res.status).toBe(200)
     expect(json.url).toBe('url')
-    expect(mockRetrievePI).toHaveBeenCalledWith('pi_1', {
-      stripeAccount: 'acct_1',
-      expand: ['charges'],
-    })
+    expect(mockRetrievePI).toHaveBeenCalledWith(
+      'pi_1',
+      { expand: ['charges'] },
+      { stripeAccount: 'acct_1' },
+    )
   })
 
   it('allows seller to download receipt', async () => {
@@ -78,10 +79,11 @@ describe('GET /api/purchases/[id]/receipt', () => {
     const json = await res.json()
     expect(res.status).toBe(200)
     expect(json.url).toBe('url')
-    expect(mockRetrievePI).toHaveBeenCalledWith('pi_2', {
-      stripeAccount: 'acct_1',
-      expand: ['charges'],
-    })
+    expect(mockRetrievePI).toHaveBeenCalledWith(
+      'pi_2',
+      { expand: ['charges'] },
+      { stripeAccount: 'acct_1' },
+    )
   })
 
   it('falls back to invoice if payment intent missing', async () => {
@@ -109,9 +111,10 @@ describe('GET /api/purchases/[id]/receipt', () => {
     expect(res.status).toBe(200)
     expect(json.url).toBe('url')
     expect(mockRetrieveInvoice).toHaveBeenCalledWith('in_1', { stripeAccount: 'acct_1' })
-    expect(mockRetrievePI).toHaveBeenCalledWith('pi_3', {
-      stripeAccount: 'acct_1',
-      expand: ['charges'],
-    })
+    expect(mockRetrievePI).toHaveBeenCalledWith(
+      'pi_3',
+      { expand: ['charges'] },
+      { stripeAccount: 'acct_1' },
+    )
   })
 })

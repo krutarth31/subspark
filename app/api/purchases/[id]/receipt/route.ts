@@ -64,10 +64,11 @@ export async function GET(
   if (!intentId)
     return NextResponse.json({ error: 'No payment' }, { status: 404 })
   try {
-    const intent = await getStripe().paymentIntents.retrieve(intentId, {
-      stripeAccount: purchase.sellerId,
-      expand: ['charges'],
-    })
+    const intent = await getStripe().paymentIntents.retrieve(
+      intentId,
+      { expand: ['charges'] },
+      { stripeAccount: purchase.sellerId },
+    )
     const charge = intent.charges?.data?.[0]
     const url = (charge as Stripe.Charge | undefined)?.receipt_url
     if (!url) throw new Error('Missing receipt')
