@@ -60,10 +60,10 @@ export default function PurchasesPage() {
   async function handleAction(id: string, action: string) {
     if (!items) return;
     switch (action) {
-      case "invoice": {
+      case "receipt": {
         // Open a blank tab immediately so popup blockers allow navigation
         const newTab = window.open("", "_blank");
-        const res = await fetch(`/api/purchases/${id}/invoice`);
+        const res = await fetch(`/api/purchases/${id}/receipt`);
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.url) {
           if (newTab) newTab.location.href = data.url as string;
@@ -176,16 +176,11 @@ export default function PurchasesPage() {
               if (!expanded[p._id]) return null;
               return (
                 <div className="p-4 text-sm text-muted-foreground grid grid-cols-2 gap-2">
-                  {p.invoiceId && (
-                    <div className="col-span-1">Invoice: {p.invoiceId}</div>
+                  {p.paymentIntentId && (
+                    <div className="col-span-1">Receipt: {p.paymentIntentId}</div>
                   )}
                   {p.subscriptionId && (
                     <div className="col-span-1">Sub: {p.subscriptionId}</div>
-                  )}
-                  {p.paymentIntentId && (
-                    <div className="col-span-1">
-                      Payment: {p.paymentIntentId}
-                    </div>
                   )}
                   {p.refundRequest?.reason && (
                     <div className="col-span-2">

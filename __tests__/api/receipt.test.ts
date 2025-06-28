@@ -1,4 +1,4 @@
-import { GET } from '@/app/api/purchases/[id]/invoice/route'
+import { GET } from '@/app/api/purchases/[id]/receipt/route'
 import { getDb } from '@/lib/mongo'
 import { ObjectId } from 'mongodb'
 
@@ -10,7 +10,7 @@ const mockRetrieve = jest.fn()
 
 jest.mock('stripe', () => {
   return jest.fn().mockImplementation(() => ({
-    invoices: { retrieve: mockRetrieve },
+    paymentIntents: { retrieve: mockRetrieve },
   }))
 })
 
@@ -18,21 +18,21 @@ jest.mock('next/headers', () => ({
   cookies: () => mockCookies(),
 }))
 
-describe('GET /api/purchases/[id]/invoice', () => {
+describe('GET /api/purchases/[id]/receipt', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     process.env.STRIPE_SECRET_KEY = 'sk_test'
   })
 
-  it('allows buyer to download invoice', async () => {
+  it('allows buyer to download receipt', async () => {
     const session = { token: 't', userId: new ObjectId('507f191e810c19729de860fa') }
     const purchase = {
       _id: new ObjectId('507f191e810c19729de860fb'),
       userId: session.userId,
-      invoiceId: 'in_1',
+      paymentIntentId: 'pi_1',
       sellerId: 'acct_1',
     }
-    mockRetrieve.mockResolvedValue({ invoice_pdf: 'url' })
+    mockRetrieve.mockResolvedValue({ charges: { data: [{ receipt_url: 'url' }] } })
     mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
     mockGetDb.mockResolvedValue({
       collection: (name: string) => {
@@ -47,18 +47,18 @@ describe('GET /api/purchases/[id]/invoice', () => {
     const json = await res.json()
     expect(res.status).toBe(200)
     expect(json.url).toBe('url')
-    expect(mockRetrieve).toHaveBeenCalledWith('in_1', { stripeAccount: 'acct_1' })
+    expect(mockRetrieve).toHaveBeenCalledWith('pi_1', { stripeAccount: 'acct_1' })
   })
 
-  it('allows seller to download invoice', async () => {
+  it('allows seller to download receipt', async () => {
     const session = { token: 't', userId: new ObjectId('507f191e810c19729de860fc') }
     const purchase = {
       _id: new ObjectId('507f191e810c19729de860fd'),
       userId: new ObjectId('507f191e810c19729de860fe'),
-      invoiceId: 'in_2',
+      paymentIntentId: 'pi_2',
       sellerId: 'acct_1',
     }
-    mockRetrieve.mockResolvedValue({ invoice_pdf: 'url' })
+    mockRetrieve.mockResolvedValue({ charges: { data: [{ receipt_url: 'url' }] } })
     mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
     mockGetDb.mockResolvedValue({
       collection: (name: string) => {
@@ -73,6 +73,6 @@ describe('GET /api/purchases/[id]/invoice', () => {
     const json = await res.json()
     expect(res.status).toBe(200)
     expect(json.url).toBe('url')
-    expect(mockRetrieve).toHaveBeenCalledWith('in_2', { stripeAccount: 'acct_1' })
+    expect(mockRetrieve).toHaveBeenCalledWith('pi_2', { stripeAccount: 'acct_1' })
   })
 })

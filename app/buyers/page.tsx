@@ -56,10 +56,10 @@ export default function BuyersPage() {
 
     if (action === "approve" || action === "decline") {
       setActionInfo({ id, type: action });
-    } else if (action === "invoice") {
+    } else if (action === "receipt") {
       // Open a blank tab immediately so popup blockers allow navigation
       const newTab = window.open("", "_blank");
-      const res = await fetch(`/api/purchases/${id}/invoice`);
+      const res = await fetch(`/api/purchases/${id}/receipt`);
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.url) {
         if (newTab) newTab.location.href = data.url as string;

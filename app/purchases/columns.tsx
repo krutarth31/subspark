@@ -26,7 +26,6 @@ export type Purchase = {
   currency?: string;
   status: string;
   createdAt: string;
-  invoiceId?: string;
   subscriptionId?: string;
   paymentIntentId?: string;
   customerId?: string;
@@ -50,9 +49,8 @@ export function getColumns(
       cell: ({ row }) => {
         const p = row.original;
         const show =
-          p.invoiceId ||
-          p.subscriptionId ||
           p.paymentIntentId ||
+          p.subscriptionId ||
           p.refundRequest?.reason ||
           p.refundRequest?.sellerReason;
         if (!show) return null;
@@ -139,10 +137,10 @@ export function getColumns(
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => onAction(p._id, "invoice")}
-                disabled={!p.invoiceId}
+                onClick={() => onAction(p._id, "receipt")}
+                disabled={!p.paymentIntentId}
               >
-                Download Invoice
+                Download Receipt
               </DropdownMenuItem>
               {p.subscriptionId && p.status !== "canceled" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "cancel")}>

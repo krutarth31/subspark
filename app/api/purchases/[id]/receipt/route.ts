@@ -30,7 +30,7 @@ export async function GET(
     .collection<{
       _id: ObjectId
       userId: ObjectId
-      invoiceId?: string
+      paymentIntentId?: string
       sellerId: string
     }>('purchases')
     .findOne({ _id: new ObjectId(id) })
@@ -42,15 +42,19 @@ export async function GET(
   const isSeller = seller?._id === purchase.sellerId
   if (!isBuyer && !isSeller)
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
-  if (!purchase.invoiceId)
-    return NextResponse.json({ error: 'No invoice' }, { status: 404 })
+  if (!purchase.paymentIntentId)
+    return NextResponse.json({ error: 'No payment' }, { status: 404 })
   try {
-    const invoice = await getStripe().invoices.retrieve(purchase.invoiceId, {
-      stripeAccount: purchase.sellerId,
-    })
-    return NextResponse.json({ url: invoice.invoice_pdf })
+    const intent = await getStripe().paymentIntents.retrieve(
+      purchase.paymentIntentId,
+      { stripeAccount: purchase.sellerId }
+    )
+    const charge = intent.charges.data[0]
+    const url = (charge as Stripe.Charge | undefined)?.receipt_url
+    if (!url) throw new Error('Missing receipt')
+    return NextResponse.json({ url })
   } catch (err) {
     console.error(err)
-    return NextResponse.json({ error: 'Failed to fetch invoice' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch receipt' }, { status: 500 })
   }
 }
