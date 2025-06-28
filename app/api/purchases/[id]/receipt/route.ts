@@ -66,8 +66,9 @@ export async function GET(
   try {
     const intent = await getStripe().paymentIntents.retrieve(intentId, {
       stripeAccount: purchase.sellerId,
+      expand: ['charges'],
     })
-    const charge = intent.charges.data[0]
+    const charge = intent.charges?.data?.[0]
     const url = (charge as Stripe.Charge | undefined)?.receipt_url
     if (!url) throw new Error('Missing receipt')
     return NextResponse.json({ url })
