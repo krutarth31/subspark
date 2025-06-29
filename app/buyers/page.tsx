@@ -28,16 +28,20 @@ export default function BuyersPage() {
   const { addNotification } = useNotifications();
 
   useEffect(() => {
+    const base = process.env.NEXT_PUBLIC_BACKEND_URL || "";
     const load = async () => {
-      const res = await fetch("/api/buyers");
+      const res = await fetch(`${base}/api/buyers`);
       const data = await res.json().catch(() => ({}));
       setItems((data.buyers || []) as BuyerPurchase[]);
     };
     load();
 
-    const proto = window.location.protocol === "https:" ? "wss" : "ws";
-    const url = `${proto}://${window.location.host}/api/buyers/ws`;
-    const ws = new WebSocket(url);
+    const wsBase = base
+      ? base.replace(/^http/, "ws")
+      : `${window.location.protocol === "https:" ? "wss" : "ws"}://${
+          window.location.host
+        }`;
+    const ws = new WebSocket(`${wsBase}/api/buyers/ws`);
 
     ws.onmessage = (ev) => {
       try {
