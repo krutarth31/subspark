@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useContext,
+} from "react";
 import { toast } from "sonner";
 
 export type Notification = {
@@ -10,7 +16,22 @@ export type Notification = {
   read: boolean;
 };
 
-export function useNotifications() {
+type NotificationsContextValue = {
+  notifications: Notification[];
+  addNotification: (message: string) => void;
+  markAllRead: () => void;
+  unreadCount: number;
+};
+
+const NotificationsContext = React.createContext<NotificationsContextValue | undefined>(
+  undefined,
+);
+
+export function NotificationsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Load from localStorage
@@ -50,5 +71,24 @@ export function useNotifications() {
     [notifications],
   );
 
-  return { notifications, addNotification, markAllRead, unreadCount };
+  const value = useMemo(
+    () => ({ notifications, addNotification, markAllRead, unreadCount }),
+    [notifications, addNotification, markAllRead, unreadCount],
+  );
+
+  return (
+    <NotificationsContext.Provider value={value}>
+      {children}
+    </NotificationsContext.Provider>
+  );
+}
+
+export function useNotifications() {
+  const ctx = useContext(NotificationsContext);
+  if (!ctx) {
+    throw new Error(
+      "useNotifications must be used within NotificationsProvider",
+    );
+  }
+  return ctx;
 }
