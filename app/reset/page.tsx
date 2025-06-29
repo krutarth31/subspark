@@ -3,6 +3,7 @@ import { useState, FormEvent } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { apiFetch } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { HelpButton } from "@/components/help-button";
@@ -27,7 +28,7 @@ export default function ResetPage() {
     }
     setError("");
     setLoading(true);
-    const res = await fetch("/api/auth/reset", {
+    const res = await apiFetch("/api/auth/reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, password }),

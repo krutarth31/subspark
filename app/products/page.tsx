@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/dashboard-layout'
 import { DataTable } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
+import { apiFetch } from '@/lib/api-client'
 import {
   Table,
   TableBody,
@@ -23,7 +24,7 @@ export default function ProductsPage() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    fetch('/api/products')
+    apiFetch('/api/products')
       .then((res) => res.json())
       .then((data) => {
         setProducts(data.products || [])
@@ -36,7 +37,7 @@ export default function ProductsPage() {
   function archiveProduct(id: string) {
     if (archivingId) return
     setArchivingId(id)
-    fetch(`/api/products/${id}`, { method: 'DELETE' })
+    apiFetch(`/api/products/${id}`, { method: 'DELETE' })
       .then(() => {
         setProducts((prev) => prev.filter((p) => p._id !== id))
       })

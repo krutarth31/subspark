@@ -13,6 +13,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar"
+import { apiFetch } from "@/lib/api-client"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -117,7 +118,7 @@ export function NavUser({
               onClick={async () => {
                 if (logoutLoading) return
                 setLogoutLoading(true)
-                await fetch('/api/auth/logout', { method: 'POST' })
+                await apiFetch('/api/auth/logout', { method: 'POST' })
                 window.location.href = '/'
               }}
             >

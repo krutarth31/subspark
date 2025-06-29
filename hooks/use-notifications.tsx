@@ -8,6 +8,7 @@ import React, {
   useContext,
 } from "react";
 import { toast } from "sonner";
+import { apiWsUrl } from "@/lib/api-client";
 import { useUserRole } from "@/hooks/use-user-role";
 
 export type Notification = {
@@ -77,13 +78,7 @@ export function NotificationsProvider({
   useEffect(() => {
     if (role !== "seller") return;
 
-    const base = process.env.NEXT_PUBLIC_BACKEND_URL || "";
-    const wsBase = base
-      ? base.replace(/^http/, "ws")
-      : `${window.location.protocol === "https:" ? "wss" : "ws"}://${
-          window.location.host
-        }`;
-    const ws = new WebSocket(`${wsBase}/api/buyers/ws`);
+    const ws = new WebSocket(apiWsUrl('/api/buyers/ws'));
 
     ws.onmessage = (ev) => {
       try {

@@ -5,6 +5,7 @@ import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
 import { useUserRole } from "@/hooks/use-user-role"
+import { apiFetch } from "@/lib/api-client"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { useEffect, useState } from "react"
@@ -21,7 +22,7 @@ export default function DashboardView() {
 
   useEffect(() => {
     if (role !== "seller") return
-    fetch("/api/seller/status")
+    apiFetch("/api/seller/status")
         .then(async (res) => {
           if (!res.ok) {
             const msg = await res.text()
@@ -45,7 +46,7 @@ export default function DashboardView() {
   async function startStripe() {
     if (stripeLoading) return
     setStripeLoading(true)
-    const res = await fetch("/api/stripe/onboard", { method: "POST" })
+    const res = await apiFetch("/api/stripe/onboard", { method: "POST" })
     if (!res.ok) {
       alert("Failed to start onboarding")
       setStripeLoading(false)
@@ -65,7 +66,7 @@ export default function DashboardView() {
   async function resumeStripe() {
     if (!accountId || stripeLoading) return
     setStripeLoading(true)
-    const res = await fetch("/api/stripe/verify", {
+    const res = await apiFetch("/api/stripe/verify", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accountId }),

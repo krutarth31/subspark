@@ -17,6 +17,7 @@ import {
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import { useUserRole } from "@/hooks/use-user-role"
+import { apiFetch } from "@/lib/api-client"
 import {
   Sidebar,
   SidebarContent,
@@ -104,7 +105,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { setRole } = useUserRole()
 
   React.useEffect(() => {
-    fetch('/api/auth/user')
+    apiFetch('/api/auth/user')
       .then((res) => res.json())
       .then((data) => {
         if (data.user) {
@@ -123,7 +124,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }, [setRole])
 
   React.useEffect(() => {
-    fetch('/api/seller/status')
+    apiFetch('/api/seller/status')
       .then((res) => res.json())
       .then((data) => {
         if (data.active) {

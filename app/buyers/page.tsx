@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNotifications } from "@/hooks/use-notifications";
+import { apiFetch, apiWsUrl } from "@/lib/api-client";
 import { getColumns, BuyerPurchase } from "./columns";
 
 export default function BuyersPage() {
@@ -28,20 +29,14 @@ export default function BuyersPage() {
   const { addNotification } = useNotifications();
 
   useEffect(() => {
-    const base = process.env.NEXT_PUBLIC_BACKEND_URL || "";
     const load = async () => {
-      const res = await fetch(`${base}/api/buyers`);
+      const res = await apiFetch('/api/buyers');
       const data = await res.json().catch(() => ({}));
       setItems((data.buyers || []) as BuyerPurchase[]);
     };
     load();
 
-    const wsBase = base
-      ? base.replace(/^http/, "ws")
-      : `${window.location.protocol === "https:" ? "wss" : "ws"}://${
-          window.location.host
-        }`;
-    const ws = new WebSocket(`${wsBase}/api/buyers/ws`);
+    const ws = new WebSocket(apiWsUrl('/api/buyers/ws'));
 
     ws.onmessage = (ev) => {
       try {

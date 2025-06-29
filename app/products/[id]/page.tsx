@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/dashboard-layout"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { ServiceDescription } from "@/components/service-description"
+import { apiFetch } from "@/lib/api-client"
 
 interface Product {
   _id: string
@@ -45,7 +46,7 @@ export default function ViewProductPage({ params }: { params: { id: string } | P
   const [roles, setRoles] = React.useState<{ id: string; name: string }[]>([])
 
   React.useEffect(() => {
-    fetch(`/api/products/${id}`)
+    apiFetch(`/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data.product)
@@ -56,11 +57,11 @@ export default function ViewProductPage({ params }: { params: { id: string } | P
 
   React.useEffect(() => {
     if (!product || product.type !== 'discord') return
-    fetch('/api/discord/status')
+    apiFetch('/api/discord/status')
       .then((res) => res.json())
       .then((data) => setGuildName(data.guildName || null))
       .catch(() => {})
-    fetch('/api/discord/roles')
+    apiFetch('/api/discord/roles')
       .then((res) => res.json())
       .then((data) => setRoles(Array.isArray(data.roles) ? data.roles : []))
       .catch(() => {})

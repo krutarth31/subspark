@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useUserRole } from "@/hooks/use-user-role"
+import { apiFetch } from "@/lib/api-client"
 
 export default function OnboardingFlow() {
   const [step, setStep] = useState(1)
@@ -35,7 +36,7 @@ export default function OnboardingFlow() {
     "backdrop-blur-md shadow-lg border border-zinc-200/60 bg-white/70 text-zinc-900 dark:border-white/20 dark:bg-white/5 dark:text-white"
 
   useEffect(() => {
-    fetch('/api/seller/status')
+    apiFetch('/api/seller/status')
       .then(async (res) => {
         if (!res.ok) {
           const msg = await res.text()
@@ -83,7 +84,7 @@ export default function OnboardingFlow() {
     try {
       setLoading(true)
       setError(null)
-      const res = await fetch("/api/stripe/onboard", { method: "POST" })
+      const res = await apiFetch("/api/stripe/onboard", { method: "POST" })
       if (!res.ok) {
         const msg = await res.text()
         throw new Error(msg || `Request failed: ${res.status}`)
@@ -229,7 +230,7 @@ export default function OnboardingFlow() {
                 setLoading(true)
                 try {
                   setError(null)
-                  const res = await fetch("/api/stripe/verify", {
+                  const res = await apiFetch("/api/stripe/verify", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ accountId }),
@@ -288,7 +289,7 @@ export default function OnboardingFlow() {
               if (!accountId) return
               setLoading(true)
               try {
-                const res = await fetch('/api/stripe/checkout', {
+                const res = await apiFetch('/api/stripe/checkout', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ accountId }),

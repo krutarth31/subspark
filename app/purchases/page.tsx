@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import DashboardLayout from "@/components/dashboard-layout";
 import { Spinner } from "@/components/ui/spinner";
 import { DataTable } from "@/components/ui/data-table";
+import { apiFetch } from "@/lib/api-client";
 import {
   Sheet,
   SheetContent,
@@ -36,7 +37,7 @@ export default function PurchasesPage() {
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch("/api/purchases");
+      const res = await apiFetch("/api/purchases");
       const data = await res.json().catch(() => ({}));
       const purchases = (data.purchases || []) as Purchase[];
       purchases.forEach((p) => {
@@ -63,7 +64,7 @@ export default function PurchasesPage() {
       case "receipt": {
         // Open a blank tab immediately so popup blockers allow navigation
         const newTab = window.open("", "_blank");
-        const res = await fetch(`/api/purchases/${id}/receipt`);
+        const res = await apiFetch(`/api/purchases/${id}/receipt`);
         const data = await res.json().catch(() => ({}));
         if (res.ok && data.url) {
           if (newTab) newTab.location.href = data.url as string;
@@ -77,7 +78,7 @@ export default function PurchasesPage() {
       case "cancel": {
         await toast.promise(
           (async () => {
-            const res = await fetch(`/api/purchases/${id}/cancel`, {
+            const res = await apiFetch(`/api/purchases/${id}/cancel`, {
               method: "POST",
             });
             if (!res.ok) throw new Error("Failed");
@@ -98,7 +99,7 @@ export default function PurchasesPage() {
         break;
       }
       case "payment": {
-        const res = await fetch(`/api/purchases/${id}/payment-method`, {
+        const res = await apiFetch(`/api/purchases/${id}/payment-method`, {
           method: "POST",
         });
         const data = await res.json().catch(() => ({}));
@@ -128,7 +129,7 @@ export default function PurchasesPage() {
     setReasonText("");
     await toast.promise(
       (async () => {
-        const res = await fetch(`/api/purchases/${refundId}/refund`, {
+        const res = await apiFetch(`/api/purchases/${refundId}/refund`, {
           method: "POST",
           body: JSON.stringify({ reason }),
         });
