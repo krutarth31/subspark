@@ -138,3 +138,5 @@ Buyers must sign up before checking out. Completed purchases are listed on the
 `/purchases` page for easy access.
 Sellers can also purchase products from other sellers. When logged in as a seller,
 the sidebar includes a Purchases link so you can access all buyer features.
+Use the **Change Payment Method** action on your purchases to manage saved cards
+through Stripe's billing portal.
