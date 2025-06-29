@@ -140,3 +140,5 @@ Sellers can also purchase products from other sellers. When logged in as a selle
 the sidebar includes a Purchases link so you can access all buyer features.
 Use the **Change Payment Method** action on your purchases to manage saved cards
 through Stripe's billing portal.
+Set `STRIPE_PORTAL_CONFIG_ID` in `.env.local` with your billing portal configuration
+ID so the portal session can be created successfully.

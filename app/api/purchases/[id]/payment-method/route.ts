@@ -38,6 +38,9 @@ export async function POST(
       {
         customer: purchase.customerId,
         return_url: `${origin}/purchases`,
+        ...(process.env.STRIPE_PORTAL_CONFIG_ID
+          ? { configuration: process.env.STRIPE_PORTAL_CONFIG_ID }
+          : {}),
       },
       { stripeAccount: purchase.sellerId }
     )
