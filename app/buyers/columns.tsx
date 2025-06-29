@@ -49,6 +49,7 @@ export function getColumns(
         const p = row.original;
         const show =
           p.paymentIntentId ||
+          p.invoiceId ||
           p.refundRequest?.reason ||
           p.refundRequest?.sellerReason;
         if (!show) return null;
@@ -139,7 +140,7 @@ export function getColumns(
               >
                 Download Receipt
               </DropdownMenuItem>
-              {p.paymentIntentId && p.status === "paid" && (
+              {(p.paymentIntentId || p.invoiceId) && p.status === "paid" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>
                   Refund Purchase
                 </DropdownMenuItem>

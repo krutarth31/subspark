@@ -13,6 +13,36 @@ function getStripe(): Stripe {
   return stripe
 }
 
+async function getPaymentIntentId(
+  purchase: {
+    _id: ObjectId
+    paymentIntentId?: string
+    invoiceId?: string
+    sellerId: string
+  },
+  db: Awaited<ReturnType<typeof getDb>>,
+) {
+  let intentId = purchase.paymentIntentId
+  if (!intentId && purchase.invoiceId) {
+    const invoice = await getStripe().invoices.retrieve(
+      purchase.invoiceId,
+      { stripeAccount: purchase.sellerId },
+    )
+    if (invoice.payment_intent) {
+      intentId =
+        typeof invoice.payment_intent === 'string'
+          ? invoice.payment_intent
+          : invoice.payment_intent.id
+      if (intentId) {
+        await db
+          .collection('purchases')
+          .updateOne({ _id: purchase._id }, { $set: { paymentIntentId: intentId } })
+      }
+    }
+  }
+  return intentId
+}
+
 async function getContext(ctx: { params: { id: string } } | { params: Promise<{ id: string }> }) {
   const { id } = await (ctx as { params: { id: string } | Promise<{ id: string }> }).params
   const cookieStore = await cookies()
@@ -25,7 +55,14 @@ async function getContext(ctx: { params: { id: string } } | { params: Promise<{ 
   if (!sessionDoc)
     return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) }
   const purchase = await db
-    .collection<{ _id: ObjectId; userId: ObjectId; paymentIntentId?: string; sellerId: string; refundRequest?: any }>('purchases')
+    .collection<{
+      _id: ObjectId
+      userId: ObjectId
+      paymentIntentId?: string
+      invoiceId?: string
+      sellerId: string
+      refundRequest?: any
+    }>('purchases')
     .findOne({ _id: new ObjectId(id) })
   if (!purchase) return { error: NextResponse.json({ error: 'Not found' }, { status: 404 }) }
   const seller = await db
@@ -69,11 +106,18 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
   if (action === 'approve') {
     if (purchase.refundRequest?.status !== 'requested')
       return NextResponse.json({ error: 'No request' }, { status: 400 })
-    if (!purchase.paymentIntentId)
+    let intentId: string | undefined
+    try {
+      intentId = await getPaymentIntentId(purchase, db)
+    } catch (err) {
+      console.error(err)
+      return NextResponse.json({ error: 'Failed to retrieve invoice' }, { status: 500 })
+    }
+    if (!intentId)
       return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
     try {
       await getStripe().refunds.create(
-        { payment_intent: purchase.paymentIntentId },
+        { payment_intent: intentId },
         { stripeAccount: purchase.sellerId }
       )
       await db.collection('purchases').updateOne(
@@ -86,11 +130,18 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
       return NextResponse.json({ error: 'Failed to refund' }, { status: 500 })
     }
   } else if (action === 'refund') {
-    if (!purchase.paymentIntentId)
+    let intentId: string | undefined
+    try {
+      intentId = await getPaymentIntentId(purchase, db)
+    } catch (err) {
+      console.error(err)
+      return NextResponse.json({ error: 'Failed to retrieve invoice' }, { status: 500 })
+    }
+    if (!intentId)
       return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
     try {
       await getStripe().refunds.create(
-        { payment_intent: purchase.paymentIntentId },
+        { payment_intent: intentId },
         { stripeAccount: purchase.sellerId }
       )
       await db.collection('purchases').updateOne(

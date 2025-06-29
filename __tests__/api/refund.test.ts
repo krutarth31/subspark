@@ -7,10 +7,12 @@ jest.mock('@/lib/mongo')
 const mockGetDb = getDb as jest.Mock
 const mockCookies = jest.fn()
 const mockRefund = jest.fn()
+const mockRetrieveInvoice = jest.fn()
 
 jest.mock('stripe', () => {
   return jest.fn().mockImplementation(() => ({
     refunds: { create: mockRefund },
+    invoices: { retrieve: mockRetrieveInvoice },
   }))
 })
 
@@ -124,6 +126,47 @@ describe('refund routes', () => {
           'refundRequest.status': 'approved',
         },
       }
+    )
+  })
+
+  it('refunds using invoice when paymentIntent missing', async () => {
+    const session = { token: 't', userId: new ObjectId('507f191e810c19729de86100') }
+    const purchase = {
+      _id: new ObjectId('507f191e810c19729de86101'),
+      userId: new ObjectId('507f191e810c19729de86102'),
+      sellerId: 'acct_1',
+      invoiceId: 'in_1',
+      status: 'paid',
+    }
+    const updateOne = jest.fn()
+    mockRetrieveInvoice.mockResolvedValue({ payment_intent: 'pi_sub' })
+    mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
+    mockGetDb.mockResolvedValue({
+      collection: (name: string) => {
+        if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
+        if (name === 'purchases')
+          return { findOne: jest.fn().mockResolvedValue(purchase), updateOne }
+        if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue({ _id: 'acct_1' }) }
+        return { findOne: jest.fn() }
+      },
+    })
+
+    const req = new Request('http://localhost', { method: 'PATCH', body: JSON.stringify({ action: 'refund' }) })
+    const res = await PATCH(req, { params: { id: purchase._id.toString() } })
+    expect(res.status).toBe(200)
+    expect(mockRetrieveInvoice).toHaveBeenCalledWith('in_1', { stripeAccount: 'acct_1' })
+    expect(mockRefund).toHaveBeenCalledWith(
+      { payment_intent: 'pi_sub' },
+      { stripeAccount: 'acct_1' },
+    )
+    expect(updateOne).toHaveBeenCalledWith(
+      { _id: purchase._id },
+      {
+        $set: {
+          status: 'refunded',
+          'refundRequest.status': 'approved',
+        },
+      },
     )
   })
 })

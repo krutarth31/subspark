@@ -51,6 +51,7 @@ export function getColumns(
         const p = row.original;
         const show =
           p.paymentIntentId ||
+          p.invoiceId ||
           p.subscriptionId ||
           p.refundRequest?.reason ||
           p.refundRequest?.sellerReason;
@@ -153,7 +154,7 @@ export function getColumns(
                   Change Payment Method
                 </DropdownMenuItem>
               )}
-              {p.paymentIntentId && !p.refundRequest && (
+              {(p.paymentIntentId || p.invoiceId) && !p.refundRequest && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>
                   Request Refund
                 </DropdownMenuItem>
