@@ -1,16 +1,12 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getDb } from '@/lib/mongo'
 import { ObjectId } from 'mongodb'
 
-export const runtime = 'node'
+export const runtime = 'nodejs'
 
 export async function GET(req: NextRequest) {
-  const upgrade = (req as any).nextUpgrade?.()
-  if (!upgrade || !upgrade.socket) {
-    return new Response('WebSocket upgrade failed', { status: 400 })
-  }
-  const { socket, response } = upgrade
+  const { socket, response } = NextResponse.upgrade(req)
 
   const cookieStore = cookies()
   const token = cookieStore.get('session')?.value

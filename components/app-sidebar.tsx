@@ -98,7 +98,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [user, setUser] = React.useState({
     name: "User",
     email: "user@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    avatar: "/vercel.svg",
   })
   const [isSeller, setIsSeller] = React.useState<boolean | null>(null)
   const { setRole } = useUserRole()

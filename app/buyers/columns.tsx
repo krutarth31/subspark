@@ -70,7 +70,7 @@ export function getColumns(
         );
       },
     },
-    { accessorKey: "buyerName", header: "Name" },
+    { accessorKey: "buyerName", id: "name", header: "Name" },
     { accessorKey: "buyerEmail", header: "Email" },
     { accessorKey: "productName", header: "Product" },
     {
