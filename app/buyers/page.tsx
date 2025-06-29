@@ -3,14 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import DashboardLayout from "@/components/dashboard-layout";
 import { DataTable } from "@/components/ui/data-table";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetFooter,
-  SheetClose,
-} from "@/components/ui/sheet";
+import { Popover, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
@@ -167,20 +160,19 @@ export default function BuyersPage() {
           />
         )}
       </div>
-      <Sheet
-        open={!!actionInfo}
-        onOpenChange={(o) => !o && setActionInfo(null)}
-      >
-        <SheetContent side="right" className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>
+      <Popover open={!!actionInfo} onOpenChange={(o) => !o && setActionInfo(null)}>
+        <PopoverContent className="sm:max-w-md w-80 fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="space-y-2 mb-4">
+            <h3 className="text-base font-semibold">
               {actionInfo?.type === "approve"
                 ? "Approve Refund"
+                : actionInfo?.type === "refund"
+                ? "Refund Purchase"
                 : "Decline Refund"}
-            </SheetTitle>
-          </SheetHeader>
+            </h3>
+          </div>
           {actionInfo?.type === "decline" && (
-            <div className="p-4 space-y-2">
+            <div className="space-y-2 mb-4">
               <Label htmlFor="decline">Reason</Label>
               <textarea
                 id="decline"
@@ -190,14 +182,14 @@ export default function BuyersPage() {
               />
             </div>
           )}
-          <SheetFooter>
+          <div className="flex gap-2 justify-end">
             <Button onClick={submitAction}>Submit</Button>
-            <SheetClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </SheetClose>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+            <Button variant="outline" onClick={() => setActionInfo(null)}>
+              Cancel
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
     </DashboardLayout>
   );
 }

@@ -3,15 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import DashboardLayout from "@/components/dashboard-layout";
 import { Spinner } from "@/components/ui/spinner";
 import { DataTable } from "@/components/ui/data-table";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetFooter,
-  SheetTitle,
-  SheetDescription,
-  SheetClose,
-} from "@/components/ui/sheet";
+import { Popover, PopoverContent } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -198,15 +190,15 @@ export default function PurchasesPage() {
           />
         )}
       </div>
-      <Sheet open={!!refundId} onOpenChange={(o) => !o && setRefundId(null)}>
-        <SheetContent side="bottom" className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Request Refund</SheetTitle>
-            <SheetDescription>
+      <Popover open={!!refundId} onOpenChange={(o) => !o && setRefundId(null)}>
+        <PopoverContent className="sm:max-w-md w-80 fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+          <div className="space-y-2 mb-4">
+            <h3 className="text-base font-semibold">Request Refund</h3>
+            <p className="text-sm text-muted-foreground">
               Select a reason for your refund.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="p-4 space-y-4">
+            </p>
+          </div>
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label>Reason</Label>
               <Select value={reasonType} onValueChange={setReasonType}>
@@ -237,16 +229,16 @@ export default function PurchasesPage() {
               </div>
             )}
           </div>
-          <SheetFooter>
+          <div className="mt-4 flex gap-2 justify-end">
             <Button onClick={submitRefund} disabled={!reasonType}>
               Submit
             </Button>
-            <SheetClose asChild>
-              <Button variant="outline">Cancel</Button>
-            </SheetClose>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+            <Button variant="outline" onClick={() => setRefundId(null)}>
+              Cancel
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
     </DashboardLayout>
   );
 }
