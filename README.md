@@ -24,6 +24,15 @@ pnpm dev
 bun dev
 ```
 
+Start the backend API server in a separate terminal:
+
+```bash
+npm run server
+```
+
+Set `NEXT_PUBLIC_BACKEND_URL` in `.env.local` to the server URL so the frontend
+fetches APIs from the backend.
+
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
@@ -63,6 +72,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_your_key
 STRIPE_WEBHOOK_SECRET=whsec_your_secret
 MONGODB_URI=mongodb://localhost:27017/yourdb
 STRIPE_PRICE_ID=price_12345
+NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
 
 # Webhooks are required so seller accounts become active.
 # For local development you can forward events with:

@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { apiFetch } from "@/lib/api-client"
 import { Spinner } from "@/components/ui/spinner"
 import { useRouter } from "next/navigation"
 
@@ -27,7 +28,7 @@ export default function EditAccountPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    fetch("/api/auth/user")
+    apiFetch("/api/auth/user")
       .then((res) => res.json())
       .then((data) => {
         if (data.user) {
@@ -66,18 +67,18 @@ export default function EditAccountPage() {
       if (avatar instanceof File) {
         const form = new FormData()
         form.append("file", avatar)
-        const upload = await fetch("/api/upload-image", { method: "POST", body: form })
+        const upload = await apiFetch("/api/upload-image", { method: "POST", body: form })
         const data = await upload.json().catch(() => ({}))
         if (data.url) avatarUrl = data.url as string
       }
       if (banner instanceof File) {
         const form = new FormData()
         form.append("file", banner)
-        const upload = await fetch("/api/upload-image", { method: "POST", body: form })
+        const upload = await apiFetch("/api/upload-image", { method: "POST", body: form })
         const data = await upload.json().catch(() => ({}))
         if (data.url) bannerUrl = data.url as string
       }
-      const res = await fetch("/api/account/update", {
+      const res = await apiFetch("/api/account/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, avatar: avatarUrl, banner: bannerUrl, bio }),

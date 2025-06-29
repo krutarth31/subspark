@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
+import { apiFetch } from "@/lib/api-client"
 
 export function LoginForm({
   className,
@@ -197,7 +198,7 @@ export function LoginForm({
                 Continue with Apple
               </Button>
               <Button variant="outline" type="button" className="w-full" onClick={async () => {
-                const res = await fetch('/api/auth/google/start', { method: 'POST' })
+                const res = await apiFetch('/api/auth/google/start', { method: 'POST' })
                 if (res.ok) {
                   const data = await res.json().catch(() => ({}))
                   if (data.url) window.location.href = data.url as string

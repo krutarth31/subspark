@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Spinner } from "@/components/ui/spinner"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { apiFetch } from "@/lib/api-client"
 
 interface User {
   name: string
@@ -16,7 +17,7 @@ export default function Page() {
   const [user, setUser] = useState<User | null>(null)
 
   useEffect(() => {
-    fetch("/api/auth/user")
+    apiFetch("/api/auth/user")
       .then((res) => res.json())
       .then((data) => {
         if (data.user) setUser(data.user)

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { apiFetch } from "@/lib/api-client"
 
 export default function LoginRegister({
   redirect = '/dashboard',
@@ -33,7 +34,7 @@ export default function LoginRegister({
       setError("Passwords do not match")
       return
     }
-    const res = await fetch('/api/auth/register', {
+    const res = await apiFetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password })
@@ -48,7 +49,7 @@ export default function LoginRegister({
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault()
-    const res = await fetch('/api/auth/login', {
+    const res = await apiFetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })

@@ -7,6 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { apiFetch } from "@/lib/api-client";
 import {
   Select,
   SelectContent,
@@ -50,10 +51,10 @@ export default function SubscriptionsPage() {
       try {
         const [rolesRes, productsRes, statusRes, couponsRes] =
           await Promise.all([
-            fetch("/api/discord/roles"),
-            fetch("/api/products"),
-            fetch("/api/discord/status"),
-            fetch("/api/coupons"),
+            apiFetch("/api/discord/roles"),
+            apiFetch("/api/products"),
+            apiFetch("/api/discord/status"),
+            apiFetch("/api/coupons"),
           ]);
         const rolesData = await rolesRes.json().catch(() => ({}));
         const productsData = await productsRes.json().catch(() => ({}));
@@ -131,7 +132,7 @@ export default function SubscriptionsPage() {
     setSavingId(`${id}-${index}`);
     await toast.promise(
       (async () => {
-        const res = await fetch(`/api/products/${id}`, {
+        const res = await apiFetch(`/api/products/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ roleId, serverId: guildId, subIndex: index }),
@@ -165,7 +166,7 @@ export default function SubscriptionsPage() {
     if (couponSubIndex) {
       subIndex = Number(couponSubIndex);
     }
-    const res = await fetch("/api/coupons", {
+    const res = await apiFetch("/api/coupons", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -202,7 +203,7 @@ export default function SubscriptionsPage() {
   async function toggleCoupon(id: string, active: boolean) {
     if (updatingId) return;
     setUpdatingId(id);
-    const res = await fetch("/api/coupons", {
+    const res = await apiFetch("/api/coupons", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, active }),
@@ -221,7 +222,7 @@ export default function SubscriptionsPage() {
   async function deleteCoupon(id: string) {
     if (deletingId) return;
     setDeletingId(id);
-    const res = await fetch("/api/coupons", {
+    const res = await apiFetch("/api/coupons", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -249,7 +250,7 @@ export default function SubscriptionsPage() {
       body.productId = ""
       body.subIndex = null
     }
-    const res = await fetch("/api/coupons", {
+    const res = await apiFetch("/api/coupons", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

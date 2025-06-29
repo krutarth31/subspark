@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard-layout";
 import { DataTable } from "@/components/ui/data-table";
 import { Spinner } from "@/components/ui/spinner";
@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNotifications } from "@/hooks/use-notifications";
+import { apiFetch, apiWsUrl } from "@/lib/api-client";
 import { getColumns, BuyerPurchase } from "./columns";
 
 export default function BuyersPage() {
@@ -25,30 +26,48 @@ export default function BuyersPage() {
   } | null>(null);
   const [declineReason, setDeclineReason] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const prevStatuses = useRef<Record<string, string | undefined>>({});
   const { addNotification } = useNotifications();
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch("/api/buyers");
+      const res = await apiFetch('/api/buyers');
       const data = await res.json().catch(() => ({}));
-      const buyers = (data.buyers || []) as BuyerPurchase[];
-      buyers.forEach((b) => {
-        const status = b.refundRequest?.status;
-        if (
-          prevStatuses.current[b._id] &&
-          prevStatuses.current[b._id] !== status &&
-          status === "requested"
-        ) {
-          addNotification(`Refund requested for ${b.productName}`);
-        }
-        prevStatuses.current[b._id] = status;
-      });
-      setItems(buyers);
+      setItems((data.buyers || []) as BuyerPurchase[]);
     };
     load();
-    const t = setInterval(load, 20000);
-    return () => clearInterval(t);
+
+    const ws = new WebSocket(apiWsUrl('/api/buyers/ws'));
+
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "update" && msg.purchase) {
+          const p = msg.purchase as BuyerPurchase;
+          setItems((prev) => {
+            if (!prev) return [p];
+            const idx = prev.findIndex((i) => i._id === p._id);
+            if (idx === -1) return [p, ...prev];
+            const copy = [...prev];
+            copy[idx] = p;
+            return copy;
+          });
+          if (msg.event === "purchase") {
+            addNotification(
+              `New purchase of ${p.productName} by ${p.buyerName || p.buyerEmail}`,
+            );
+          }
+          if (msg.event === "refund_requested") {
+            addNotification(`Refund requested for ${p.productName}`);
+          }
+        }
+      } catch (_) {
+        // ignore malformed messages
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
   }, []);
 
   async function handleAction(id: string, action: string) {
@@ -56,18 +75,6 @@ export default function BuyersPage() {
 
     if (action === "approve" || action === "decline") {
       setActionInfo({ id, type: action });
-    } else if (action === "receipt") {
-      // Open a blank tab immediately so popup blockers allow navigation
-      const newTab = window.open("", "_blank");
-      const res = await fetch(`/api/purchases/${id}/receipt`);
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && data.url) {
-        if (newTab) newTab.location.href = data.url as string;
-        else window.location.href = data.url as string;
-      } else {
-        if (newTab) newTab.close();
-        toast.error(data.error || "Failed");
-      }
     } else if (action === "refund") {
       setActionInfo({ id, type: "refund" });
     }

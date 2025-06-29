@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { apiFetch } from "@/lib/api-client"
 import { IconBrandDiscord } from "@tabler/icons-react"
 
 interface DiscordStatus {
@@ -25,7 +26,7 @@ export default function IntegrationPage() {
   >(null)
 
   useEffect(() => {
-    fetch("/api/discord/status")
+    apiFetch("/api/discord/status")
       .then((res) => res.json())
       .then((data) => setStatus(data))
       .catch(() => {})
@@ -34,7 +35,7 @@ export default function IntegrationPage() {
   async function connectDiscord() {
     if (loading) return
     setLoading('connect')
-    const res = await fetch("/api/discord/connect", { method: "POST" })
+    const res = await apiFetch("/api/discord/connect", { method: "POST" })
     if (res.ok) {
       const data = await res.json()
       if (data.url) {
@@ -48,7 +49,7 @@ export default function IntegrationPage() {
   async function disconnectDiscord() {
     if (loading) return
     setLoading('disconnect')
-    await fetch("/api/discord/disconnect", { method: "POST" })
+    await apiFetch("/api/discord/disconnect", { method: "POST" })
     setStatus({ connected: false })
     setLoading(null)
   }

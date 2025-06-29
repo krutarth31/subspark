@@ -3,9 +3,13 @@
 import DashboardLayout from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { useNotifications } from "@/hooks/use-notifications";
+import { useEffect } from "react";
 
 export default function NotificationsPage() {
   const { notifications, markAllRead } = useNotifications();
+  useEffect(() => {
+    markAllRead();
+  }, [markAllRead]);
   const help = <p>View recent notifications.</p>;
   return (
     <DashboardLayout title="Notifications" helpContent={help}>

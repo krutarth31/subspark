@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { UserRoleProvider } from "@/hooks/use-user-role";
+import { NotificationsProvider } from "@/hooks/use-notifications";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = Geist({
@@ -28,7 +29,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <UserRoleProvider>{children}</UserRoleProvider>
+          <UserRoleProvider>
+            <NotificationsProvider>{children}</NotificationsProvider>
+          </UserRoleProvider>
         </ThemeProvider>
       </body>
     </html>

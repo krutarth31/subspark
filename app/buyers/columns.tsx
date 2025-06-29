@@ -70,7 +70,7 @@ export function getColumns(
         );
       },
     },
-    { accessorKey: "buyerName", header: "Name" },
+    { accessorKey: "buyerName", id: "name", header: "Name" },
     { accessorKey: "buyerEmail", header: "Email" },
     { accessorKey: "productName", header: "Product" },
     {
@@ -133,12 +133,6 @@ export function getColumns(
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => onAction(p._id, "receipt")}
-                disabled={!p.paymentIntentId && !p.invoiceId}
-              >
-                Download Receipt
-              </DropdownMenuItem>
               {p.paymentIntentId && p.status === "paid" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>
                   Refund Purchase

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { apiFetch } from "@/lib/api-client"
 import {
   Card,
   CardContent,
@@ -61,7 +62,7 @@ export default function BuyPage() {
   }
 
   useEffect(() => {
-    fetch('/api/auth/user')
+    apiFetch('/api/auth/user')
       .then((res) => res.json())
       .then((data) => setUser(data.user || null))
       .catch(() => setUser(null))
@@ -75,7 +76,7 @@ export default function BuyPage() {
 
   useEffect(() => {
     if (!id) return
-    fetch(`/api/products/${id}`)
+    apiFetch(`/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data.product)
@@ -100,7 +101,7 @@ export default function BuyPage() {
     try {
       await toast.promise(
         (async () => {
-          const res = await fetch(`/api/checkout/${product._id}`, {
+          const res = await apiFetch(`/api/checkout/${product._id}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ sub: billing, subIndex: billingIndex, coupon }),

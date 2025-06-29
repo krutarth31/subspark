@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { apiFetch } from "@/lib/api-client"
 import {
   CheckIcon,
   FileIcon,
@@ -84,7 +85,7 @@ export default function EditProductPage({ params }: { params: { id: string } | P
   )
 
   React.useEffect(() => {
-    fetch(`/api/products/${id}`)
+    apiFetch(`/api/products/${id}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.product) {
@@ -141,12 +142,12 @@ export default function EditProductPage({ params }: { params: { id: string } | P
     async function loadDiscord() {
       setDiscordLoading("load")
       try {
-        const statusRes = await fetch("/api/discord/status")
+        const statusRes = await apiFetch("/api/discord/status")
         const statusData = await statusRes.json().catch(() => ({}))
         setDiscordStatus(statusData)
         if (statusData.connected) {
           setServerId(statusData.guildId || "")
-          const rolesRes = await fetch("/api/discord/roles")
+          const rolesRes = await apiFetch("/api/discord/roles")
           const rolesData = await rolesRes.json().catch(() => ({}))
           setRoles(Array.isArray(rolesData.roles) ? rolesData.roles : [])
         }
@@ -160,7 +161,7 @@ export default function EditProductPage({ params }: { params: { id: string } | P
   async function connectDiscord() {
     if (discordLoading) return
     setDiscordLoading("connect")
-    const res = await fetch("/api/discord/connect", { method: "POST" })
+    const res = await apiFetch("/api/discord/connect", { method: "POST" })
     if (res.ok) {
       const data = await res.json().catch(() => ({}))
       if (data.url) {
@@ -254,7 +255,7 @@ export default function EditProductPage({ params }: { params: { id: string } | P
       if (image) {
         const form = new FormData()
         form.append('file', image)
-        const upload = await fetch('/api/upload-image', {
+        const upload = await apiFetch('/api/upload-image', {
           method: 'POST',
           body: form,
         })
@@ -281,7 +282,7 @@ export default function EditProductPage({ params }: { params: { id: string } | P
         licenseKeys,
         imageUrl,
       }
-      const res = await fetch(`/api/products/${id}`, {
+      const res = await apiFetch(`/api/products/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
