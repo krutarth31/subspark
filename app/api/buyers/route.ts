@@ -93,10 +93,11 @@ export async function GET() {
       let priceId: string | undefined
       if (p.subscriptionId) {
         try {
-          const sub = await getStripe().subscriptions.retrieve(p.subscriptionId, {
-            stripeAccount: p.sellerId,
-            expand: ['items'],
-          })
+          const sub = await getStripe().subscriptions.retrieve(
+            p.subscriptionId,
+            { expand: ['items'] },
+            { stripeAccount: p.sellerId },
+          )
           priceId = sub.items.data[0]?.price?.id
           if (sub.current_period_end)
             nextDueDate = new Date(sub.current_period_end * 1000).toISOString()
@@ -105,10 +106,11 @@ export async function GET() {
         }
       } else if (p.invoiceId) {
         try {
-          const inv = await getStripe().invoices.retrieve(p.invoiceId, {
-            stripeAccount: p.sellerId,
-            expand: ['lines'],
-          })
+          const inv = await getStripe().invoices.retrieve(
+            p.invoiceId,
+            { expand: ['lines'] },
+            { stripeAccount: p.sellerId },
+          )
           const price = inv.lines?.data?.[0]?.price
           if (price)
             priceId = typeof price === 'string' ? price : (price as any).id
