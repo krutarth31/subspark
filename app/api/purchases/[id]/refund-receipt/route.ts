@@ -15,10 +15,10 @@ function getStripe(): Stripe {
 
 export async function GET(
   request: Request,
-  ctx: { params: { id: string } },
+  ctx: { params: { id: string } } | { params: Promise<{ id: string }> },
 ) {
-  const { id } = ctx.params
-  const cookieStore = cookies()
+  const { id } = await (ctx as { params: { id: string } | Promise<{ id: string }> }).params
+  const cookieStore = await cookies()
   const token = cookieStore.get('session')?.value
   if (!token) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
