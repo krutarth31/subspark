@@ -26,9 +26,11 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuBadge,
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useState } from "react"
+import { useNotifications } from "@/hooks/use-notifications"
 
 export function NavUser({
   user,
@@ -41,6 +43,7 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const [logoutLoading, setLogoutLoading] = useState(false)
+  const { unreadCount } = useNotifications()
 
   return (
     <SidebarMenu>
@@ -102,6 +105,9 @@ export function NavUser({
                 <a href="/notifications" className="flex items-center gap-2">
                   <IconNotification />
                   Notifications
+                  {unreadCount > 0 && (
+                    <SidebarMenuBadge className="ml-auto">{unreadCount}</SidebarMenuBadge>
+                  )}
                 </a>
               </DropdownMenuItem>
             </DropdownMenuGroup>
