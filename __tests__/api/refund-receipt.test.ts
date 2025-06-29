@@ -34,12 +34,13 @@ describe('GET /api/purchases/[id]/refund-receipt', () => {
       paymentIntentId: 'pi_1',
       sellerId: 'acct_1',
     }
+    const updateOne = jest.fn()
     mockRefundsList.mockResolvedValue({ data: [{ receipt_url: 'url' }] })
     mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
     mockGetDb.mockResolvedValue({
       collection: (name: string) => {
         if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
-        if (name === 'purchases') return { findOne: jest.fn().mockResolvedValue(purchase) }
+        if (name === 'purchases') return { findOne: jest.fn().mockResolvedValue(purchase), updateOne }
         if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue(null) }
         return { findOne: jest.fn() }
       },
@@ -53,6 +54,32 @@ describe('GET /api/purchases/[id]/refund-receipt', () => {
       { payment_intent: 'pi_1', limit: 1 },
       { stripeAccount: 'acct_1' },
     )
+  })
+
+  it('returns stored refund receipt when available', async () => {
+    const session = { token: 't', userId: new ObjectId('507f191e810c19729de86114') }
+    const purchase = {
+      _id: new ObjectId('507f191e810c19729de86115'),
+      userId: session.userId,
+      paymentIntentId: 'pi_2',
+      sellerId: 'acct_1',
+      refundReceiptUrl: 'saved',
+    }
+    mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
+    mockGetDb.mockResolvedValue({
+      collection: (name: string) => {
+        if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
+        if (name === 'purchases') return { findOne: jest.fn().mockResolvedValue(purchase) }
+        if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue(null) }
+        return { findOne: jest.fn() }
+      },
+    })
+
+    const res = await GET(new Request('http://localhost'), { params: { id: purchase._id.toString() } })
+    const json = await res.json()
+    expect(res.status).toBe(200)
+    expect(json.url).toBe('saved')
+    expect(mockRefundsList).not.toHaveBeenCalled()
   })
 
   it('falls back to invoice when payment intent missing', async () => {

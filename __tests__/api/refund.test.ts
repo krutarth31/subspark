@@ -72,6 +72,7 @@ describe('refund routes', () => {
       refundRequest: { status: 'requested', reason: 'bad' },
     }
     const updateOne = jest.fn()
+    mockRefund.mockResolvedValue({ receipt_url: 'url' })
     mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
     mockGetDb.mockResolvedValue({
       collection: (name: string) => {
@@ -89,7 +90,13 @@ describe('refund routes', () => {
     expect(mockRefund).toHaveBeenCalled()
     expect(updateOne).toHaveBeenCalledWith(
       { _id: purchase._id },
-      { $set: { status: 'refunded', 'refundRequest.status': 'approved' } }
+      {
+        $set: {
+          status: 'refunded',
+          'refundRequest.status': 'approved',
+          refundReceiptUrl: 'url',
+        },
+      }
     )
   })
 
@@ -103,6 +110,7 @@ describe('refund routes', () => {
       status: 'paid',
     }
     const updateOne = jest.fn()
+    mockRefund.mockResolvedValue({ receipt_url: 'url' })
     mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
     mockGetDb.mockResolvedValue({
       collection: (name: string) => {
@@ -124,6 +132,7 @@ describe('refund routes', () => {
         $set: {
           status: 'refunded',
           'refundRequest.status': 'approved',
+          refundReceiptUrl: 'url',
         },
       }
     )
@@ -139,6 +148,7 @@ describe('refund routes', () => {
       status: 'paid',
     }
     const updateOne = jest.fn()
+    mockRefund.mockResolvedValue({ receipt_url: 'url' })
     mockRetrieveInvoice.mockResolvedValue({ payment_intent: 'pi_sub' })
     mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
     mockGetDb.mockResolvedValue({
@@ -165,6 +175,7 @@ describe('refund routes', () => {
         $set: {
           status: 'refunded',
           'refundRequest.status': 'approved',
+          refundReceiptUrl: 'url',
         },
       },
     )

@@ -54,6 +54,10 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
+  if (purchase.refundReceiptUrl) {
+    return NextResponse.json({ url: purchase.refundReceiptUrl })
+  }
+
   let intentId = purchase.paymentIntentId
   if (!intentId && purchase.invoiceId) {
     try {
@@ -91,6 +95,9 @@ export async function GET(
     if (!refund || !refund.receipt_url) {
       return NextResponse.json({ error: 'Refund receipt unavailable' }, { status: 404 })
     }
+    await db
+      .collection('purchases')
+      .updateOne({ _id: purchase._id }, { $set: { refundReceiptUrl: refund.receipt_url } })
     return NextResponse.json({ url: refund.receipt_url })
   } catch (err) {
     console.error(err)

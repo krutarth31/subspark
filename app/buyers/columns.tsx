@@ -29,6 +29,7 @@ export type BuyerPurchase = {
   createdAt: string;
   invoiceId?: string;
   paymentIntentId?: string;
+  refundReceiptUrl?: string;
   refundRequest?: {
     status: string;
     reason?: string;

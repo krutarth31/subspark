@@ -31,6 +31,7 @@ export type Purchase = {
   paymentIntentId?: string;
   customerId?: string;
   sellerId: string;
+  refundReceiptUrl?: string;
   refundRequest?: {
     status: string;
     reason?: string;

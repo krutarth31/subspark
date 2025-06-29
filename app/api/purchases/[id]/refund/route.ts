@@ -116,13 +116,19 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
     if (!intentId)
       return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
     try {
-      await getStripe().refunds.create(
+      const refund = await getStripe().refunds.create(
         { payment_intent: intentId },
         { stripeAccount: purchase.sellerId }
       )
       await db.collection('purchases').updateOne(
         { _id: purchase._id },
-        { $set: { status: 'refunded', 'refundRequest.status': 'approved' } }
+        {
+          $set: {
+            status: 'refunded',
+            'refundRequest.status': 'approved',
+            refundReceiptUrl: refund.receipt_url,
+          },
+        }
       )
       return NextResponse.json({ ok: true })
     } catch (err) {
@@ -140,7 +146,7 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
     if (!intentId)
       return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
     try {
-      await getStripe().refunds.create(
+      const refund = await getStripe().refunds.create(
         { payment_intent: intentId },
         { stripeAccount: purchase.sellerId }
       )
@@ -150,6 +156,7 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
           $set: {
             status: 'refunded',
             'refundRequest.status': 'approved',
+            refundReceiptUrl: refund.receipt_url,
           },
         }
       )
