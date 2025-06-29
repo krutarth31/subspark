@@ -83,6 +83,11 @@ const sellerNav = [
     icon: IconFileAi,
   },
   {
+    title: "Purchases",
+    url: "/purchases",
+    icon: IconFolder,
+  },
+  {
     title: "Subscriptions",
     url: "/subscriptions",
     icon: IconFolder,

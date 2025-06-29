@@ -56,6 +56,31 @@ describe('GET /api/purchases/[id]/receipt', () => {
     )
   })
 
+  it('allows seller-buyer to download receipt', async () => {
+    const session = { token: 't', userId: new ObjectId('507f191e810c19729de86110') }
+    const purchase = {
+      _id: new ObjectId('507f191e810c19729de86111'),
+      userId: session.userId,
+      paymentIntentId: 'pi_5',
+      sellerId: 'acct_other',
+    }
+    mockRetrievePI.mockResolvedValue({ charges: { data: [{ receipt_url: 'url2' }] } })
+    mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
+    mockGetDb.mockResolvedValue({
+      collection: (name: string) => {
+        if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
+        if (name === 'purchases') return { findOne: jest.fn().mockResolvedValue(purchase) }
+        if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue({ _id: 'acct_self' }) }
+        return { findOne: jest.fn() }
+      },
+    })
+
+    const res = await GET(new Request('http://localhost'), { params: { id: purchase._id.toString() } })
+    const json = await res.json()
+    expect(res.status).toBe(200)
+    expect(json.url).toBe('url2')
+  })
+
   it('rejects seller receipt download', async () => {
     const session = { token: 't', userId: new ObjectId('507f191e810c19729de860fc') }
     const purchase = {
