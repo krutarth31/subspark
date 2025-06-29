@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "server": "ts-node-esm backend/server.ts"
+    "server": "ts-node --compiler-options '{\"module\":\"CommonJS\"}' backend/server.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
