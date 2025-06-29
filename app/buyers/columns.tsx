@@ -134,12 +134,6 @@ export function getColumns(
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => onAction(p._id, "receipt")}
-                disabled={!p.paymentIntentId && !p.invoiceId}
-              >
-                Download Receipt
-              </DropdownMenuItem>
               {(p.paymentIntentId || p.invoiceId) && p.status === "paid" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>
                   Refund Purchase
