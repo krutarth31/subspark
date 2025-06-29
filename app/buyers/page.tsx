@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard-layout";
 import { DataTable } from "@/components/ui/data-table";
 import { Spinner } from "@/components/ui/spinner";
@@ -25,37 +25,50 @@ export default function BuyersPage() {
   } | null>(null);
   const [declineReason, setDeclineReason] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const prevStatuses = useRef<Record<string, string | undefined>>({});
-  const prevIds = useRef<Set<string>>(new Set());
   const { addNotification } = useNotifications();
 
   useEffect(() => {
     const load = async () => {
       const res = await fetch("/api/buyers");
       const data = await res.json().catch(() => ({}));
-      const buyers = (data.buyers || []) as BuyerPurchase[];
-      buyers.forEach((b) => {
-        if (prevIds.current.size > 0 && !prevIds.current.has(b._id)) {
-          addNotification(
-            `New purchase of ${b.productName} by ${b.buyerName || b.buyerEmail}`,
-          );
-        }
-        prevIds.current.add(b._id);
-        const status = b.refundRequest?.status;
-        if (
-          prevStatuses.current[b._id] &&
-          prevStatuses.current[b._id] !== status &&
-          status === "requested"
-        ) {
-          addNotification(`Refund requested for ${b.productName}`);
-        }
-        prevStatuses.current[b._id] = status;
-      });
-      setItems(buyers);
+      setItems((data.buyers || []) as BuyerPurchase[]);
     };
     load();
-    const t = setInterval(load, 20000);
-    return () => clearInterval(t);
+
+    const proto = window.location.protocol === "https:" ? "wss" : "ws";
+    const url = `${proto}://${window.location.host}/api/buyers/ws`;
+    const ws = new WebSocket(url);
+
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "update" && msg.purchase) {
+          const p = msg.purchase as BuyerPurchase;
+          setItems((prev) => {
+            if (!prev) return [p];
+            const idx = prev.findIndex((i) => i._id === p._id);
+            if (idx === -1) return [p, ...prev];
+            const copy = [...prev];
+            copy[idx] = p;
+            return copy;
+          });
+          if (msg.event === "purchase") {
+            addNotification(
+              `New purchase of ${p.productName} by ${p.buyerName || p.buyerEmail}`,
+            );
+          }
+          if (msg.event === "refund_requested") {
+            addNotification(`Refund requested for ${p.productName}`);
+          }
+        }
+      } catch (_) {
+        // ignore malformed messages
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
   }, []);
 
   async function handleAction(id: string, action: string) {

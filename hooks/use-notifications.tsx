@@ -6,7 +6,6 @@ import React, {
   useMemo,
   useCallback,
   useContext,
-  useRef,
 } from "react";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/use-user-role";
@@ -74,44 +73,33 @@ export function NotificationsProvider({
   );
 
   const { role } = useUserRole();
-  const prevIds = useRef<Set<string>>(new Set());
-  const prevStatuses = useRef<Record<string, string | undefined>>({});
 
   useEffect(() => {
     if (role !== "seller") return;
 
-    const load = async () => {
-      const res = await fetch("/api/buyers");
-      const data = await res.json().catch(() => ({}));
-      const buyers = (data.buyers || []) as Array<{
-        _id: string;
-        productName: string;
-        buyerName?: string;
-        buyerEmail?: string;
-        refundRequest?: { status: string };
-      }>;
-      buyers.forEach((b) => {
-        if (prevIds.current.size > 0 && !prevIds.current.has(b._id)) {
-          addNotification(
-            `New purchase of ${b.productName} by ${b.buyerName || b.buyerEmail}`,
-          );
+    const proto = window.location.protocol === "https:" ? "wss" : "ws";
+    const url = `${proto}://${window.location.host}/api/buyers/ws`;
+    const ws = new WebSocket(url);
+
+    ws.onmessage = (ev) => {
+      try {
+        const msg = JSON.parse(ev.data);
+        if (msg.type === "purchase") {
+          const p = msg.purchase as { productName: string; buyerName?: string; buyerEmail?: string };
+          addNotification(`New purchase of ${p.productName} by ${p.buyerName || p.buyerEmail}`);
         }
-        prevIds.current.add(b._id);
-        const status = b.refundRequest?.status;
-        if (
-          prevStatuses.current[b._id] &&
-          prevStatuses.current[b._id] !== status &&
-          status === "requested"
-        ) {
-          addNotification(`Refund requested for ${b.productName}`);
+        if (msg.type === "refund_requested") {
+          const p = msg.purchase as { productName: string };
+          addNotification(`Refund requested for ${p.productName}`);
         }
-        prevStatuses.current[b._id] = status;
-      });
+      } catch (_) {
+        // ignore malformed messages
+      }
     };
 
-    load();
-    const t = setInterval(load, 20000);
-    return () => clearInterval(t);
+    return () => {
+      ws.close();
+    };
   }, [role, addNotification]);
 
   const value = useMemo(
