@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 
 export type Notification = {
@@ -30,7 +30,7 @@ export function useNotifications() {
     localStorage.setItem("notifications", JSON.stringify(notifications));
   }, [notifications]);
 
-  function addNotification(message: string) {
+  const addNotification = useCallback((message: string) => {
     const n: Notification = {
       id: Date.now().toString(),
       message,
@@ -39,11 +39,11 @@ export function useNotifications() {
     };
     setNotifications((prev) => [n, ...prev]);
     toast(message);
-  }
+  }, []);
 
-  function markAllRead() {
+  const markAllRead = useCallback(() => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }
+  }, []);
 
   const unreadCount = useMemo(
     () => notifications.filter((n) => !n.read).length,
