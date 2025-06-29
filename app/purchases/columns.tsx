@@ -144,6 +144,11 @@ export function getColumns(
               >
                 Download Receipt
               </DropdownMenuItem>
+              {p.status === "refunded" && (p.paymentIntentId || p.invoiceId) && (
+                <DropdownMenuItem onClick={() => onAction(p._id, "refundReceipt")}> 
+                  Refund Receipt
+                </DropdownMenuItem>
+              )}
               {p.subscriptionId && p.status !== "canceled" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "cancel")}>
                   Cancel Subscription

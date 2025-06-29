@@ -66,6 +66,19 @@ export default function PurchasesPage() {
         }
         break;
       }
+      case "refundReceipt": {
+        const newTab = window.open("", "_blank");
+        const res = await fetch(`/api/purchases/${id}/refund-receipt`);
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.url) {
+          if (newTab) newTab.location.href = data.url as string;
+          else window.location.href = data.url as string;
+        } else {
+          if (newTab) newTab.close();
+          toast.error(data.error || "Failed");
+        }
+        break;
+      }
       case "cancel": {
         await toast.promise(
           (async () => {
