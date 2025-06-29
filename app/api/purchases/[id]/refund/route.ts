@@ -126,7 +126,6 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
           $set: {
             status: 'refunded',
             'refundRequest.status': 'approved',
-            refundReceiptUrl: refund.receipt_url,
           },
         }
       )
@@ -156,7 +155,6 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
           $set: {
             status: 'refunded',
             'refundRequest.status': 'approved',
-            refundReceiptUrl: refund.receipt_url,
           },
         }
       )

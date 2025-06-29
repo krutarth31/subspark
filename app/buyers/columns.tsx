@@ -29,7 +29,6 @@ export type BuyerPurchase = {
   createdAt: string;
   invoiceId?: string;
   paymentIntentId?: string;
-  refundReceiptUrl?: string;
   refundRequest?: {
     status: string;
     reason?: string;
@@ -141,11 +140,6 @@ export function getColumns(
               >
                 Download Receipt
               </DropdownMenuItem>
-              {p.status === "refunded" && (p.paymentIntentId || p.invoiceId) && (
-                <DropdownMenuItem onClick={() => onAction(p._id, "refundReceipt")}> 
-                  Refund Receipt
-                </DropdownMenuItem>
-              )}
               {(p.paymentIntentId || p.invoiceId) && p.status === "paid" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>
                   Refund Purchase

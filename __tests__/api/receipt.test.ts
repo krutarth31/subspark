@@ -56,7 +56,7 @@ describe('GET /api/purchases/[id]/receipt', () => {
     )
   })
 
-  it('allows seller to download receipt', async () => {
+  it('rejects seller receipt download', async () => {
     const session = { token: 't', userId: new ObjectId('507f191e810c19729de860fc') }
     const purchase = {
       _id: new ObjectId('507f191e810c19729de860fd'),
@@ -76,14 +76,7 @@ describe('GET /api/purchases/[id]/receipt', () => {
     })
 
     const res = await GET(new Request('http://localhost'), { params: { id: purchase._id.toString() } })
-    const json = await res.json()
-    expect(res.status).toBe(200)
-    expect(json.url).toBe('url')
-    expect(mockRetrievePI).toHaveBeenCalledWith(
-      'pi_2',
-      { expand: ['charges'] },
-      { stripeAccount: 'acct_1' },
-    )
+    expect(res.status).toBe(404)
   })
 
   it('falls back to invoice if payment intent missing', async () => {

@@ -52,15 +52,9 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
-  // Find seller (if user is the seller)
-  const seller = await db
-    .collection<{ _id: string; userId: ObjectId }>('sellers')
-    .findOne({ userId: sessionDoc.userId })
-
   const isBuyer = purchase.userId.equals(sessionDoc.userId)
-  const isSeller = seller?._id === purchase.sellerId
 
-  if (!isBuyer && !isSeller) {
+  if (!isBuyer) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 

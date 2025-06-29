@@ -94,7 +94,6 @@ describe('refund routes', () => {
         $set: {
           status: 'refunded',
           'refundRequest.status': 'approved',
-          refundReceiptUrl: 'url',
         },
       }
     )
@@ -132,7 +131,6 @@ describe('refund routes', () => {
         $set: {
           status: 'refunded',
           'refundRequest.status': 'approved',
-          refundReceiptUrl: 'url',
         },
       }
     )
@@ -175,7 +173,6 @@ describe('refund routes', () => {
         $set: {
           status: 'refunded',
           'refundRequest.status': 'approved',
-          refundReceiptUrl: 'url',
         },
       },
     )
