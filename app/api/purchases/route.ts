@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getDb } from '@/lib/mongo'
 import { ObjectId } from 'mongodb'
+import Stripe from 'stripe'
+
+let stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (stripe) return stripe
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) throw new Error('STRIPE_SECRET_KEY is not defined')
+  stripe = new Stripe(key, { apiVersion: '2022-11-15' })
+  return stripe
+}
 
 export async function GET() {
   const db = await getDb()
@@ -49,6 +59,7 @@ export async function GET() {
           price: '$product.price',
           currency: '$product.currency',
           productName: '$product.name',
+          subProducts: '$product.subProducts',
           invoiceId: 1,
           subscriptionId: 1,
           paymentIntentId: 1,
@@ -60,11 +71,50 @@ export async function GET() {
       { $sort: { createdAt: -1 } },
     ])
     .toArray()
-  const purchases = rawPurchases.map((p) => ({
-    ...p,
-    _id: p._id.toString(),
-    productId: p.productId.toString(),
-    createdAt: p.createdAt.toISOString(),
-  }))
+  const purchases = [] as any[]
+  for (const p of rawPurchases) {
+    let subProduct: string | undefined
+    let nextDueDate: string | undefined
+    let priceId: string | undefined
+    if (p.subscriptionId) {
+      try {
+        const sub = await getStripe().subscriptions.retrieve(p.subscriptionId, {
+          stripeAccount: p.sellerId,
+          expand: ['items'],
+        })
+        priceId = sub.items.data[0]?.price?.id
+        if (sub.current_period_end)
+          nextDueDate = new Date(sub.current_period_end * 1000).toISOString()
+      } catch (err) {
+        console.error(err)
+      }
+    } else if (p.invoiceId) {
+      try {
+        const inv = await getStripe().invoices.retrieve(p.invoiceId, {
+          stripeAccount: p.sellerId,
+          expand: ['lines'],
+        })
+        const price = inv.lines?.data?.[0]?.price
+        if (price)
+          priceId = typeof price === 'string' ? price : (price as any).id
+      } catch (err) {
+        console.error(err)
+      }
+    }
+    if (priceId && Array.isArray((p as any).subProducts)) {
+      const opt = (p as any).subProducts.find(
+        (s: any) => s.stripePriceId === priceId,
+      )
+      if (opt) subProduct = opt.name || opt.billing
+    }
+    purchases.push({
+      ...p,
+      _id: p._id.toString(),
+      productId: p.productId.toString(),
+      createdAt: p.createdAt.toISOString(),
+      subProduct,
+      nextDueDate,
+    })
+  }
   return NextResponse.json({ purchases })
 }

@@ -6,6 +6,15 @@ jest.mock('@/lib/mongo')
 
 const mockGetDb = getDb as jest.Mock
 const mockCookies = jest.fn()
+const mockRetrieveSub = jest.fn()
+const mockRetrieveInv = jest.fn()
+
+jest.mock('stripe', () => {
+  return jest.fn().mockImplementation(() => ({
+    subscriptions: { retrieve: mockRetrieveSub },
+    invoices: { retrieve: mockRetrieveInv },
+  }))
+})
 
 jest.mock('next/headers', () => ({
   cookies: () => mockCookies(),
@@ -14,6 +23,7 @@ jest.mock('next/headers', () => ({
 describe('GET /api/buyers', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    process.env.STRIPE_SECRET_KEY = 'sk_test'
   })
 
   it('returns empty array when unauthenticated', async () => {
@@ -57,5 +67,44 @@ describe('GET /api/buyers', () => {
     expect(json.buyers.length).toBe(1)
     expect(json.buyers[0].productName).toBe('Prod')
     expect(aggregate).toHaveBeenCalled()
+  })
+
+  it('includes sub product and next due date', async () => {
+    const session = { token: 't', userId: new ObjectId('507f191e810c19729de861ea') }
+    const purchase = {
+      _id: new ObjectId('507f191e810c19729de861eb'),
+      userId: new ObjectId('507f191e810c19729de861ec'),
+      productId: new ObjectId('507f191e810c19729de861ed'),
+      status: 'paid',
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+      subscriptionId: 'sub_1',
+      sellerId: 'acct_1',
+      buyerName: 'Buyer',
+      buyerEmail: 'b@example.com',
+      productName: 'Prod',
+      price: 10,
+      currency: 'usd',
+      subProducts: [{ name: 'Gold', stripePriceId: 'price_1' }],
+    }
+    const aggregate = jest.fn().mockReturnValue({ toArray: () => [purchase] })
+    mockRetrieveSub.mockResolvedValue({
+      current_period_end: 1700000000,
+      items: { data: [{ price: { id: 'price_1' } }] },
+    })
+    mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
+    mockGetDb.mockResolvedValue({
+      collection: (name: string) => {
+        if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
+        if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue({ _id: 'acct_1' }) }
+        if (name === 'purchases') return { aggregate }
+        return { findOne: jest.fn() }
+      },
+    })
+
+    const res = await GET()
+    const json = await res.json()
+    expect(res.status).toBe(200)
+    expect(json.buyers[0].subProduct).toBe('Gold')
+    expect(json.buyers[0].nextDueDate).toBe(new Date(1700000000 * 1000).toISOString())
   })
 })

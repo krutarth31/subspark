@@ -174,6 +174,14 @@ export default function PurchasesPage() {
                   {p.subscriptionId && (
                     <div className="col-span-1">Sub: {p.subscriptionId}</div>
                   )}
+                  {p.subProduct && (
+                    <div className="col-span-1">Option: {p.subProduct}</div>
+                  )}
+                  {p.nextDueDate && (
+                    <div className="col-span-1">
+                      Next Due: {new Date(p.nextDueDate).toLocaleDateString()}
+                    </div>
+                  )}
                   {p.refundRequest?.reason && (
                     <div className="col-span-2">
                       Reason: {p.refundRequest.reason}

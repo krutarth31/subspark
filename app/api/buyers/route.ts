@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { getDb } from '@/lib/mongo'
 import { ObjectId } from 'mongodb'
+import Stripe from 'stripe'
+
+let stripe: Stripe | null = null
+function getStripe(): Stripe {
+  if (stripe) return stripe
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) throw new Error('STRIPE_SECRET_KEY is not defined')
+  stripe = new Stripe(key, { apiVersion: '2022-11-15' })
+  return stripe
+}
 
 export async function GET() {
   try {
@@ -68,6 +78,7 @@ export async function GET() {
             price: '$product.price',
             currency: '$product.currency',
             productName: '$product.name',
+            subProducts: '$product.subProducts',
             buyerName: '$user.name',
             buyerEmail: '$user.email',
           },
@@ -75,23 +86,62 @@ export async function GET() {
         { $sort: { createdAt: -1 } },
       ])
       .toArray()
-    const formatted = purchases.map((p) => ({
-      _id: p._id.toString(),
-      productId: p.productId.toString(),
-      userId: p.userId.toString(),
-      status: p.status,
-      createdAt: p.createdAt.toISOString(),
-      invoiceId: p.invoiceId,
-      subscriptionId: p.subscriptionId,
-      paymentIntentId: p.paymentIntentId,
-      sellerId: p.sellerId,
-      price: p.price,
-      currency: p.currency,
-      productName: p.productName,
-      buyerName: p.buyerName,
-      buyerEmail: p.buyerEmail,
-      refundRequest: p.refundRequest,
-    }))
+    const formatted = [] as any[]
+    for (const p of purchases) {
+      let subProduct: string | undefined
+      let nextDueDate: string | undefined
+      let priceId: string | undefined
+      if (p.subscriptionId) {
+        try {
+          const sub = await getStripe().subscriptions.retrieve(p.subscriptionId, {
+            stripeAccount: p.sellerId,
+            expand: ['items'],
+          })
+          priceId = sub.items.data[0]?.price?.id
+          if (sub.current_period_end)
+            nextDueDate = new Date(sub.current_period_end * 1000).toISOString()
+        } catch (err) {
+          console.error(err)
+        }
+      } else if (p.invoiceId) {
+        try {
+          const inv = await getStripe().invoices.retrieve(p.invoiceId, {
+            stripeAccount: p.sellerId,
+            expand: ['lines'],
+          })
+          const price = inv.lines?.data?.[0]?.price
+          if (price)
+            priceId = typeof price === 'string' ? price : (price as any).id
+        } catch (err) {
+          console.error(err)
+        }
+      }
+      if (priceId && Array.isArray((p as any).subProducts)) {
+        const opt = (p as any).subProducts.find(
+          (s: any) => s.stripePriceId === priceId,
+        )
+        if (opt) subProduct = opt.name || opt.billing
+      }
+      formatted.push({
+        _id: p._id.toString(),
+        productId: p.productId.toString(),
+        userId: p.userId.toString(),
+        status: p.status,
+        createdAt: p.createdAt.toISOString(),
+        invoiceId: p.invoiceId,
+        subscriptionId: p.subscriptionId,
+        paymentIntentId: p.paymentIntentId,
+        sellerId: p.sellerId,
+        price: p.price,
+        currency: p.currency,
+        productName: p.productName,
+        buyerName: p.buyerName,
+        buyerEmail: p.buyerEmail,
+        refundRequest: p.refundRequest,
+        subProduct,
+        nextDueDate,
+      })
+    }
     return NextResponse.json({ buyers: formatted })
   } catch (err) {
     console.error(err)
