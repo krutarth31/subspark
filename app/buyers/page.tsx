@@ -26,6 +26,7 @@ export default function BuyersPage() {
   const [declineReason, setDeclineReason] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const prevStatuses = useRef<Record<string, string | undefined>>({});
+  const prevIds = useRef<Set<string>>(new Set());
   const { addNotification } = useNotifications();
 
   useEffect(() => {
@@ -34,6 +35,12 @@ export default function BuyersPage() {
       const data = await res.json().catch(() => ({}));
       const buyers = (data.buyers || []) as BuyerPurchase[];
       buyers.forEach((b) => {
+        if (prevIds.current.size > 0 && !prevIds.current.has(b._id)) {
+          addNotification(
+            `New purchase of ${b.productName} by ${b.buyerName || b.buyerEmail}`,
+          );
+        }
+        prevIds.current.add(b._id);
         const status = b.refundRequest?.status;
         if (
           prevStatuses.current[b._id] &&
