@@ -1,10 +1,10 @@
 import express from 'express';
 import http from 'http';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 import { getDb } from '../lib/mongo';
 import { ObjectId } from 'mongodb';
 
-function getCookie(req: express.Request, name: string) {
+function getCookie(req: { headers: http.IncomingHttpHeaders }, name: string) {
   const header = req.headers.cookie || '';
   for (const part of header.split(';')) {
     const [k, v] = part.trim().split('=');
@@ -16,19 +16,28 @@ function getCookie(req: express.Request, name: string) {
 const app = express();
 app.use(express.json());
 
-app.get('/api/buyers', async (req, res) => {
+app.get('/api/buyers', async (req: express.Request, res: express.Response) => {
   try {
     const db = await getDb();
     const token = getCookie(req, 'session');
-    if (!token) return res.json({ buyers: [] });
+    if (!token) {
+      res.json({ buyers: [] });
+      return;
+    }
     const session = await db
       .collection<{ token: string; userId: ObjectId }>('sessions')
       .findOne({ token });
-    if (!session) return res.json({ buyers: [] });
+    if (!session) {
+      res.json({ buyers: [] });
+      return;
+    }
     const seller = await db
       .collection<{ _id: string }>('sellers')
       .findOne({ userId: session.userId });
-    if (!seller) return res.json({ buyers: [] });
+    if (!seller) {
+      res.json({ buyers: [] });
+      return;
+    }
     const purchases = await db
       .collection<{
         _id: ObjectId;
@@ -116,7 +125,7 @@ app.get('/api/buyers', async (req, res) => {
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
 
-server.on('upgrade', (request, socket, head) => {
+server.on('upgrade', (request: http.IncomingMessage, socket, head) => {
   if (request.url?.startsWith('/api/buyers/ws')) {
     wss.handleUpgrade(request, socket, head, (ws) => {
       wss.emit('connection', ws, request);
@@ -126,8 +135,8 @@ server.on('upgrade', (request, socket, head) => {
   }
 });
 
-wss.on('connection', async (ws, req) => {
-  const token = getCookie(req as any, 'session');
+wss.on('connection', async (ws: WebSocket, req: http.IncomingMessage) => {
+  const token = getCookie(req, 'session');
   const db = await getDb();
   const session = token
     ? await db.collection<{ token: string; userId: ObjectId }>('sessions').findOne({ token })
@@ -139,6 +148,8 @@ wss.on('connection', async (ws, req) => {
     ws.close();
     return;
   }
+
+  const sellerId = seller._id;
 
   const prevIds = new Set<string>();
   const prevStatuses: Record<string, string | undefined> = {};
@@ -158,7 +169,7 @@ wss.on('connection', async (ws, req) => {
         refundRequest?: { status: string };
       }>('purchases')
       .aggregate([
-        { $match: { sellerId: seller._id } },
+        { $match: { sellerId } },
         {
           $lookup: {
             from: 'products',
