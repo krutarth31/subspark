@@ -33,9 +33,11 @@ export async function POST(
   if (!purchase.subscriptionId)
     return NextResponse.json({ error: 'No subscription' }, { status: 400 })
   try {
-    await getStripe().subscriptions.del(purchase.subscriptionId, {
-      stripeAccount: purchase.sellerId,
-    })
+    await getStripe().subscriptions.update(
+      purchase.subscriptionId,
+      { cancel_at_period_end: true },
+      { stripeAccount: purchase.sellerId },
+    )
     await db.collection('purchases').updateOne({ _id: purchase._id }, { $set: { status: 'canceled' } })
     return NextResponse.json({ ok: true })
   } catch (err) {
