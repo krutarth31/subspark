@@ -155,12 +155,14 @@ export function getColumns(
               >
                 Download Receipt
               </DropdownMenuItem>
-              {p.subscriptionId && p.status !== "canceled" && (
+              {p.subscriptionId &&
+                p.status !== "canceled" &&
+                p.status !== "refunded" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "cancel")}>
                   Cancel Subscription
                 </DropdownMenuItem>
               )}
-              {p.customerId && (
+              {p.customerId && p.status !== "refunded" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "payment")}>
                   Change Payment Method
                 </DropdownMenuItem>
