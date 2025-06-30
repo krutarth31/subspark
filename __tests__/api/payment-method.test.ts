@@ -125,4 +125,35 @@ describe('POST /api/purchases/[id]/payment-method', () => {
     )
     delete process.env.STRIPE_PORTAL_CONFIG_ID
   })
+
+  it('uses seller portal configuration', async () => {
+    const session = { token: 't', userId: new ObjectId('507f191e810c19729de86100') }
+    const purchase = {
+      _id: new ObjectId('507f191e810c19729de86101'),
+      userId: session.userId,
+      customerId: 'cus_1',
+      sellerId: 'acct_1',
+    }
+    const seller = { _id: 'acct_1', portalConfigId: 'pc_seller' }
+    mockPortalCreate.mockResolvedValue({ url: 'portal_url' })
+    mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
+    mockGetDb.mockResolvedValue({
+      collection: (name: string) => {
+        if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
+        if (name === 'purchases') return { findOne: jest.fn().mockResolvedValue(purchase) }
+        if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue(seller) }
+        return { findOne: jest.fn() }
+      },
+    })
+    const id = purchase._id.toString()
+    const req = new Request(`http://localhost/api/purchases/${id}/payment-method`, { method: 'POST' })
+    const res = await POST(req, { params: { id } })
+    const json = await res.json()
+    expect(res.status).toBe(200)
+    expect(json.url).toBe('portal_url')
+    expect(mockPortalCreate).toHaveBeenCalledWith(
+      { customer: 'cus_1', return_url: expect.any(String), configuration: 'pc_seller' },
+      { stripeAccount: 'acct_1' },
+    )
+  })
 })

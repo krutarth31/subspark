@@ -139,6 +139,7 @@ Buyers must sign up before checking out. Completed purchases are listed on the
 Sellers can also purchase products from other sellers. When logged in as a seller,
 the sidebar includes a Purchases link so you can access all buyer features.
 Use the **Change Payment Method** action on your purchases to manage saved cards
-through Stripe's billing portal.
-Set `STRIPE_PORTAL_CONFIG_ID` in `.env.local` with your billing portal configuration
-ID so the portal session can be created successfully.
+through Stripe's billing portal. Sellers get their own portal configuration as
+soon as their Stripe account is created during onboarding. The platform will fall
+back to `STRIPE_PORTAL_CONFIG_ID` from `.env.local` if a seller configuration
+isn't stored yet.

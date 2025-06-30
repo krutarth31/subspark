@@ -32,15 +32,20 @@ export async function POST(
   if (!purchase) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (!purchase.customerId)
     return NextResponse.json({ error: 'No customer' }, { status: 400 })
+  const seller = await db
+    .collection<{ _id: string; portalConfigId?: string }>('sellers')
+    .findOne({ _id: purchase.sellerId })
   try {
     const { origin } = new URL(request.url)
     const portal = await getStripe().billingPortal.sessions.create(
       {
         customer: purchase.customerId,
         return_url: `${origin}/purchases`,
-        ...(process.env.STRIPE_PORTAL_CONFIG_ID
-          ? { configuration: process.env.STRIPE_PORTAL_CONFIG_ID }
-          : {}),
+        ...(seller?.portalConfigId
+          ? { configuration: seller.portalConfigId }
+          : process.env.STRIPE_PORTAL_CONFIG_ID
+            ? { configuration: process.env.STRIPE_PORTAL_CONFIG_ID }
+            : {}),
       },
       { stripeAccount: purchase.sellerId }
     )
