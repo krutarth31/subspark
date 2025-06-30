@@ -98,7 +98,8 @@ export async function POST(request: Request) {
   if (
     event.type === 'customer.subscription.deleted' ||
     (event.type === 'customer.subscription.updated' &&
-      (event.data.object as Stripe.Subscription).status === 'canceled')
+      ((event.data.object as Stripe.Subscription).status === 'canceled' ||
+        (event.data.object as Stripe.Subscription).cancel_at_period_end))
   ) {
     const sub = event.data.object as Stripe.Subscription
     try {

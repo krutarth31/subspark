@@ -41,4 +41,29 @@ describe('POST /api/stripe/webhook', () => {
       { $set: { status: 'canceled' } },
     )
   })
+
+  it('updates purchase when cancel_at_period_end is set', async () => {
+    const updateOne = jest.fn()
+    mockConstruct.mockReturnValue({
+      type: 'customer.subscription.updated',
+      data: {
+        object: { id: 'sub_2', cancel_at_period_end: true, status: 'active' },
+      },
+    })
+    mockGetDb.mockResolvedValue({
+      collection: () => ({ updateOne }),
+    })
+
+    const req = new Request('http://localhost/api/stripe/webhook', {
+      method: 'POST',
+      headers: { 'stripe-signature': 'sig' },
+      body: 'payload',
+    })
+    const res = await POST(req)
+    expect(res.status).toBe(200)
+    expect(updateOne).toHaveBeenCalledWith(
+      { subscriptionId: 'sub_2' },
+      { $set: { status: 'canceled' } },
+    )
+  })
 })
