@@ -95,5 +95,24 @@ export async function POST(request: Request) {
     }
   }
 
+  if (
+    event.type === 'customer.subscription.deleted' ||
+    (event.type === 'customer.subscription.updated' &&
+      (event.data.object as Stripe.Subscription).status === 'canceled')
+  ) {
+    const sub = event.data.object as Stripe.Subscription
+    try {
+      const db = await getDb()
+      await db
+        .collection('purchases')
+        .updateOne(
+          { subscriptionId: sub.id },
+          { $set: { status: 'canceled' } },
+        )
+    } catch (err) {
+      console.error('DB update failed', err)
+    }
+  }
+
   return NextResponse.json({ received: true })
 }
