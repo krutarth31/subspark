@@ -23,12 +23,14 @@ export type BuyerPurchase = {
   buyerName: string;
   buyerEmail: string;
   productName: string;
+  subProduct?: string;
   price?: number;
   currency?: string;
   status: string;
   createdAt: string;
   invoiceId?: string;
   paymentIntentId?: string;
+  nextDueDate?: string;
   refundRequest?: {
     status: string;
     reason?: string;
@@ -49,6 +51,7 @@ export function getColumns(
         const p = row.original;
         const show =
           p.paymentIntentId ||
+          p.invoiceId ||
           p.refundRequest?.reason ||
           p.refundRequest?.sellerReason;
         if (!show) return null;
@@ -73,6 +76,7 @@ export function getColumns(
     { accessorKey: "buyerName", header: "Name" },
     { accessorKey: "buyerEmail", header: "Email" },
     { accessorKey: "productName", header: "Product" },
+    { accessorKey: "subProduct", header: "Sub-product" },
     {
       accessorKey: "price",
       header: () => <div className="text-right">Price</div>,
@@ -93,6 +97,14 @@ export function getColumns(
       header: "Date/Time",
       cell: ({ row }) =>
         new Date(row.getValue<string>("createdAt")).toLocaleString(),
+    },
+    {
+      accessorKey: "nextDueDate",
+      header: "Next Due",
+      cell: ({ row }) =>
+        row.original.nextDueDate
+          ? new Date(row.original.nextDueDate).toLocaleDateString()
+          : "-",
     },
     {
       accessorKey: "status",
@@ -133,13 +145,7 @@ export function getColumns(
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={() => onAction(p._id, "receipt")}
-                disabled={!p.paymentIntentId && !p.invoiceId}
-              >
-                Download Receipt
-              </DropdownMenuItem>
-              {p.paymentIntentId && p.status === "paid" && (
+              {(p.paymentIntentId || p.invoiceId) && p.status === "paid" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>
                   Refund Purchase
                 </DropdownMenuItem>

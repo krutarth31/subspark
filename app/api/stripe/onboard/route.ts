@@ -36,6 +36,23 @@ export async function POST(request: Request) {
         transfers: { requested: true },
       },
     })
+    let portalConfigId: string | undefined
+    try {
+      const portalConfig = await stripe.billingPortal.configurations.create(
+        {
+          business_profile: { headline: "Seller portal" },
+          features: {
+            invoice_history: { enabled: true },
+            payment_method_update: { enabled: true },
+            subscription_cancel: { enabled: true, mode: "immediately" },
+          },
+        },
+        { stripeAccount: account.id },
+      )
+      portalConfigId = portalConfig.id
+    } catch (err) {
+      console.error(err)
+    }
     const db = await getDb().catch(() => null)
     if (db) {
       let userId: ObjectId | null = null
@@ -59,12 +76,12 @@ export async function POST(request: Request) {
         // ignore cookie errors
       }
       await db
-        .collection<{ _id: string; active: boolean; userId?: ObjectId; name?: string; email?: string; accountId?: string }>(
+        .collection<{ _id: string; active: boolean; userId?: ObjectId; name?: string; email?: string; accountId?: string; portalConfigId?: string }>(
           "sellers"
         )
         .updateOne(
           { _id: account.id },
-          { $setOnInsert: { active: false }, $set: { userId, ...(userInfo ?? {}) } },
+          { $setOnInsert: { active: false, portalConfigId }, $set: { userId, ...(userInfo ?? {}) } },
           { upsert: true }
         )
     }

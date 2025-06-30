@@ -22,6 +22,7 @@ export type Purchase = {
   _id: string;
   productId: string;
   productName: string;
+  subProduct?: string;
   price?: number;
   currency?: string;
   status: string;
@@ -31,6 +32,7 @@ export type Purchase = {
   paymentIntentId?: string;
   customerId?: string;
   sellerId: string;
+  nextDueDate?: string;
   refundRequest?: {
     status: string;
     reason?: string;
@@ -51,6 +53,7 @@ export function getColumns(
         const p = row.original;
         const show =
           p.paymentIntentId ||
+          p.invoiceId ||
           p.subscriptionId ||
           p.refundRequest?.reason ||
           p.refundRequest?.sellerReason;
@@ -77,6 +80,7 @@ export function getColumns(
       accessorKey: "productName",
       header: "Product",
     },
+    { accessorKey: "subProduct", header: "Sub-product" },
     {
       accessorKey: "price",
       header: () => <div className="text-right">Price</div>,
@@ -97,6 +101,14 @@ export function getColumns(
       header: "Date/Time",
       cell: ({ row }) =>
         new Date(row.getValue<string>("createdAt")).toLocaleString(),
+    },
+    {
+      accessorKey: "nextDueDate",
+      header: "Next Due",
+      cell: ({ row }) =>
+        row.original.nextDueDate
+          ? new Date(row.original.nextDueDate).toLocaleDateString()
+          : "-",
     },
     {
       accessorKey: "status",
@@ -153,7 +165,7 @@ export function getColumns(
                   Change Payment Method
                 </DropdownMenuItem>
               )}
-              {p.paymentIntentId && !p.refundRequest && (
+              {(p.paymentIntentId || p.invoiceId) && !p.refundRequest && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "refund")}>
                   Request Refund
                 </DropdownMenuItem>
