@@ -49,8 +49,9 @@ describe('GET /api/purchases/[id]/discord', () => {
       subProducts: [{ stripePriceId: 'price_1', roleId: 'role' }],
     }
     mockRetrieveInv.mockResolvedValue({ lines: { data: [{ price: { id: 'price_1' } }] } })
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => [{ id: 'ch1' }] })
-    ;(global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => ({ code: 'abc' }) })
+    ;(global.fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ system_channel_id: 'ch1' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ code: 'abc' }) })
     mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
     mockGetDb.mockResolvedValue({
       collection: (name: string) => {
@@ -100,7 +101,7 @@ describe('GET /api/purchases/[id]/discord', () => {
     }
     mockRetrieveInv.mockResolvedValue({ lines: { data: [{ price: { id: 'price_2' } }] } })
     ;(global.fetch as jest.Mock)
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: 'ch1' }] })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ system_channel_id: 'ch1' }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ code: 'abc' }) })
       .mockResolvedValueOnce({ ok: true })
       .mockResolvedValueOnce({ ok: true })

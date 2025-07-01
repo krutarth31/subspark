@@ -82,31 +82,40 @@ export async function GET(
   if (!botToken) return NextResponse.redirect(new URL('/purchases', request.url))
   let inviteUrl: string | null = null
   try {
-    const channelsRes = await fetch(
-      `https://discord.com/api/guilds/${product.serverId}/channels`,
-      {
-        headers: { Authorization: `Bot ${botToken}` },
-      },
-    )
-    if (channelsRes.ok) {
-      const chans: any[] = await channelsRes.json()
-      const channelId = chans?.[0]?.id
-      if (channelId) {
-        const inviteRes = await fetch(
-          `https://discord.com/api/channels/${channelId}/invites`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bot ${botToken}`,
-            },
-            body: JSON.stringify({ max_uses: 1, unique: true }),
+    let channelId: string | undefined
+    const guildRes = await fetch(`https://discord.com/api/guilds/${product.serverId}`,
+      { headers: { Authorization: `Bot ${botToken}` } })
+    if (guildRes.ok) {
+      const guild: any = await guildRes.json()
+      channelId = guild.system_channel_id
+    }
+    if (!channelId) {
+      const channelsRes = await fetch(
+        `https://discord.com/api/guilds/${product.serverId}/channels`,
+        {
+          headers: { Authorization: `Bot ${botToken}` },
+        },
+      )
+      if (channelsRes.ok) {
+        const chans: any[] = await channelsRes.json()
+        channelId = chans.find((c) => c.type === 0)?.id || chans?.[0]?.id
+      }
+    }
+    if (channelId) {
+      const inviteRes = await fetch(
+        `https://discord.com/api/channels/${channelId}/invites`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bot ${botToken}`,
           },
-        )
-        if (inviteRes.ok) {
-          const invite = await inviteRes.json()
-          inviteUrl = `https://discord.gg/${invite.code}`
-        }
+          body: JSON.stringify({ max_uses: 1, unique: true }),
+        },
+      )
+      if (inviteRes.ok) {
+        const invite = await inviteRes.json()
+        inviteUrl = `https://discord.gg/${invite.code}`
       }
     }
     if (roleId || integration) {
