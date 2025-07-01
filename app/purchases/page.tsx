@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNotifications } from "@/hooks/use-notifications";
 import { getColumns, Purchase } from "./columns";
+import { formatDateUTC } from "@/lib/utils";
 
 export default function PurchasesPage() {
   const [items, setItems] = useState<Purchase[] | null>(null);
@@ -76,6 +77,10 @@ export default function PurchasesPage() {
         } else {
           toast.error(data.error || "Failed");
         }
+        break;
+      }
+      case "claim": {
+        window.location.href = `/api/purchases/${id}/discord`;
         break;
       }
       case "refund": {
@@ -157,7 +162,7 @@ export default function PurchasesPage() {
                   )}
                   {p.nextDueDate && (
                     <div className="col-span-1">
-                      Next Due: {new Date(p.nextDueDate).toLocaleDateString()}
+                      Next Due: {formatDateUTC(p.nextDueDate)}
                     </div>
                   )}
                   {p.refundRequest?.reason && (

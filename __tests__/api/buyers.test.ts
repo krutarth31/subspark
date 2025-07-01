@@ -144,6 +144,44 @@ describe('GET /api/buyers', () => {
     const res = await GET()
     const json = await res.json()
     expect(res.status).toBe(200)
+  expect(json.buyers[0].nextDueDate).toBeUndefined()
+  })
+
+  it('omits due date when refunded', async () => {
+    const session = { token: 't', userId: new ObjectId('507f191e810c19729de861f2') }
+    const purchase = {
+      _id: new ObjectId('507f191e810c19729de861f3'),
+      userId: new ObjectId('507f191e810c19729de861f4'),
+      productId: new ObjectId('507f191e810c19729de861f5'),
+      status: 'refunded',
+      createdAt: new Date('2024-01-01T00:00:00Z'),
+      subscriptionId: 'sub_3',
+      sellerId: 'acct_1',
+      buyerName: 'Buyer',
+      buyerEmail: 'b@example.com',
+      productName: 'Prod',
+      price: 10,
+      currency: 'usd',
+      subProducts: [{ name: 'Gold', stripePriceId: 'price_1' }],
+    }
+    const aggregate = jest.fn().mockReturnValue({ toArray: () => [purchase] })
+    mockRetrieveSub.mockResolvedValue({
+      current_period_end: 1700000000,
+      items: { data: [{ price: { id: 'price_1' } }] },
+    })
+    mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
+    mockGetDb.mockResolvedValue({
+      collection: (name: string) => {
+        if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
+        if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue({ _id: 'acct_1' }) }
+        if (name === 'purchases') return { aggregate }
+        return { findOne: jest.fn() }
+      },
+    })
+
+    const res = await GET()
+    const json = await res.json()
+    expect(res.status).toBe(200)
     expect(json.buyers[0].nextDueDate).toBeUndefined()
   })
 })

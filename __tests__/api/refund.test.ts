@@ -8,11 +8,13 @@ const mockGetDb = getDb as jest.Mock
 const mockCookies = jest.fn()
 const mockRefund = jest.fn()
 const mockRetrieveInvoice = jest.fn()
+const mockCancelSub = jest.fn()
 
 jest.mock('stripe', () => {
   return jest.fn().mockImplementation(() => ({
     refunds: { create: mockRefund },
     invoices: { retrieve: mockRetrieveInvoice },
+    subscriptions: { del: mockCancelSub },
   }))
 })
 
@@ -125,6 +127,45 @@ describe('refund routes', () => {
     const res = await PATCH(req, { params: { id: purchase._id.toString() } })
     expect(res.status).toBe(200)
     expect(mockRefund).toHaveBeenCalled()
+  expect(updateOne).toHaveBeenCalledWith(
+      { _id: purchase._id },
+      {
+        $set: {
+          status: 'refunded',
+          'refundRequest.status': 'approved',
+        },
+      }
+    )
+  })
+
+  it('cancels subscription when refunded', async () => {
+    const session = { token: 't', userId: new ObjectId('507f191e810c19729de860b2') }
+    const purchase = {
+      _id: new ObjectId('507f191e810c19729de860b3'),
+      userId: new ObjectId('507f191e810c19729de860b4'),
+      sellerId: 'acct_1',
+      paymentIntentId: 'pi_2',
+      subscriptionId: 'sub_ref',
+      status: 'paid',
+    }
+    const updateOne = jest.fn()
+    mockRefund.mockResolvedValue({ receipt_url: 'url' })
+    mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
+    mockGetDb.mockResolvedValue({
+      collection: (name: string) => {
+        if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
+        if (name === 'purchases')
+          return { findOne: jest.fn().mockResolvedValue(purchase), updateOne }
+        if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue({ _id: 'acct_1' }) }
+        return { findOne: jest.fn() }
+      },
+    })
+
+    const req = new Request('http://localhost', { method: 'PATCH', body: JSON.stringify({ action: 'refund' }) })
+    const res = await PATCH(req, { params: { id: purchase._id.toString() } })
+    expect(res.status).toBe(200)
+    expect(mockRefund).toHaveBeenCalled()
+    expect(mockCancelSub).toHaveBeenCalledWith('sub_ref', { stripeAccount: 'acct_1' })
     expect(updateOne).toHaveBeenCalledWith(
       { _id: purchase._id },
       {
