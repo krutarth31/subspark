@@ -12,6 +12,89 @@ function getStripe(): Stripe {
   return stripe
 }
 
+async function grantDiscordAccess(
+  purchaseId: string,
+  session: Stripe.Checkout.Session,
+  accountId?: string | null,
+) {
+  try {
+    const botToken = process.env.DISCORD_BOT_TOKEN
+    if (!botToken) return
+    const db = await getDb()
+    const purchase = await db
+      .collection<{ _id: ObjectId; productId: ObjectId }>('purchases')
+      .findOne({ _id: new ObjectId(purchaseId) })
+    if (!purchase) return
+    const product = await db
+      .collection<{
+        _id: ObjectId
+        userId: ObjectId
+        type: string
+        serverId?: string
+        roleId?: string
+        subProducts?: { stripePriceId?: string; roleId?: string }[]
+      }>('products')
+      .findOne({ _id: purchase.productId })
+    if (!product || product.type !== 'discord' || !product.serverId) return
+    const integration = await db
+      .collection<{ userId: ObjectId; guildId: string }>('discordIntegrations')
+      .findOne({ userId: product.userId })
+    if (!integration) return
+
+    let priceId: string | undefined
+    try {
+      const detail = await getStripe().checkout.sessions.retrieve(
+        session.id,
+        { expand: ['line_items'] },
+        accountId ? { stripeAccount: accountId } : undefined,
+      )
+      const price = (detail as any).line_items?.data?.[0]?.price
+      if (price) priceId = typeof price === 'string' ? price : price.id
+    } catch (err) {
+      console.error('Failed to fetch line items', err)
+    }
+
+    let roleId = product.roleId
+    if (priceId && Array.isArray(product.subProducts)) {
+      const opt = product.subProducts.find((s) => s.stripePriceId === priceId)
+      if (opt?.roleId) roleId = opt.roleId
+    }
+
+    try {
+      const resp = await fetch(
+        `https://discord.com/api/v10/guilds/${product.serverId}/invites`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bot ${botToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ max_uses: 1, unique: true }),
+        },
+      )
+      if (!resp.ok) {
+        console.error('Discord invite failed', await resp.text())
+        return
+      }
+      const data = (await resp.json()) as { code?: string }
+      const url = data.code ? `https://discord.gg/${data.code}` : undefined
+      await db.collection('purchases').updateOne(
+        { _id: purchase._id },
+        {
+          $set: {
+            discordInvite: url,
+            discordRoleId: roleId,
+          },
+        },
+      )
+    } catch (err) {
+      console.error('Discord invite error', err)
+    }
+  } catch (err) {
+    console.error('Discord access failed', err)
+  }
+}
+
 export async function POST(request: Request) {
   const sig = request.headers.get('stripe-signature')
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -79,6 +162,11 @@ export async function POST(request: Request) {
             { _id: new ObjectId(session.metadata.purchaseId) },
             { $set: update }
           )
+        await grantDiscordAccess(
+          session.metadata.purchaseId,
+          session,
+          event.account || accountId || null,
+        )
       } catch (err) {
         console.error('DB update failed', err)
       }
