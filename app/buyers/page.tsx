@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNotifications } from "@/hooks/use-notifications";
 import { getColumns, BuyerPurchase } from "./columns";
+import { formatDateUTC } from "@/lib/utils";
 
 export default function BuyersPage() {
   const [items, setItems] = useState<BuyerPurchase[] | null>(null);
@@ -137,7 +138,7 @@ export default function BuyersPage() {
                   )}
                   {p.nextDueDate && (
                     <div className="col-span-1">
-                      Next Due: {new Date(p.nextDueDate).toLocaleDateString()}
+                      Next Due: {formatDateUTC(p.nextDueDate)}
                     </div>
                   )}
                   {p.refundRequest?.reason && (

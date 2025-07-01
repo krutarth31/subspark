@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { formatDateUTC } from "@/lib/utils";
 
 export type Purchase = {
   _id: string;
@@ -33,6 +34,7 @@ export type Purchase = {
   customerId?: string;
   sellerId: string;
   nextDueDate?: string;
+  productType?: string;
   refundRequest?: {
     status: string;
     reason?: string;
@@ -107,7 +109,7 @@ export function getColumns(
       header: "Next Due",
       cell: ({ row }) =>
         row.original.nextDueDate
-          ? new Date(row.original.nextDueDate).toLocaleDateString()
+          ? formatDateUTC(row.original.nextDueDate)
           : "-",
     },
     {
@@ -117,7 +119,10 @@ export function getColumns(
         const p = row.original;
         let label = row.getValue<string>("status");
         let icon: React.ReactNode = null;
-        if (p.refundRequest?.status === "requested") {
+        if (p.status === "canceled") {
+          label = "Canceled";
+          icon = <IconCircleXFilled className="text-red-500" />;
+        } else if (p.refundRequest?.status === "requested") {
           label = "Refund requested";
           icon = <IconClock className="text-yellow-500" />;
         } else if (p.refundRequest?.status === "declined") {
@@ -158,6 +163,11 @@ export function getColumns(
               {p.customerId && p.status !== "refunded" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "payment")}>
                   Manage Subscription
+                </DropdownMenuItem>
+              )}
+              {p.productType === "discord" && (
+                <DropdownMenuItem onClick={() => onAction(p._id, "claim")}>
+                  Claim Access
                 </DropdownMenuItem>
               )}
               {(p.paymentIntentId || p.invoiceId) && !p.refundRequest && (

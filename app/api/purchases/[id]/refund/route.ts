@@ -115,25 +115,34 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
     }
     if (!intentId)
       return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
-    try {
-      const refund = await getStripe().refunds.create(
-        { payment_intent: intentId },
-        { stripeAccount: purchase.sellerId }
-      )
-      await db.collection('purchases').updateOne(
-        { _id: purchase._id },
-        {
-          $set: {
-            status: 'refunded',
-            'refundRequest.status': 'approved',
-          },
+      try {
+        const refund = await getStripe().refunds.create(
+          { payment_intent: intentId },
+          { stripeAccount: purchase.sellerId }
+        )
+        if (purchase.subscriptionId) {
+          try {
+            await getStripe().subscriptions.del(purchase.subscriptionId, {
+              stripeAccount: purchase.sellerId,
+            })
+          } catch (err) {
+            console.error(err)
+          }
         }
-      )
-      return NextResponse.json({ ok: true })
-    } catch (err) {
-      console.error(err)
-      return NextResponse.json({ error: 'Failed to refund' }, { status: 500 })
-    }
+        await db.collection('purchases').updateOne(
+          { _id: purchase._id },
+          {
+            $set: {
+              status: 'refunded',
+              'refundRequest.status': 'approved',
+            },
+          }
+        )
+        return NextResponse.json({ ok: true })
+      } catch (err) {
+        console.error(err)
+        return NextResponse.json({ error: 'Failed to refund' }, { status: 500 })
+      }
   } else if (action === 'refund') {
     let intentId: string | undefined
     try {
@@ -144,25 +153,34 @@ export async function PATCH(request: Request, ctx: { params: { id: string } } | 
     }
     if (!intentId)
       return NextResponse.json({ error: 'No payment intent' }, { status: 400 })
-    try {
-      const refund = await getStripe().refunds.create(
-        { payment_intent: intentId },
-        { stripeAccount: purchase.sellerId }
-      )
-      await db.collection('purchases').updateOne(
-        { _id: purchase._id },
-        {
-          $set: {
-            status: 'refunded',
-            'refundRequest.status': 'approved',
-          },
+      try {
+        const refund = await getStripe().refunds.create(
+          { payment_intent: intentId },
+          { stripeAccount: purchase.sellerId }
+        )
+        if (purchase.subscriptionId) {
+          try {
+            await getStripe().subscriptions.del(purchase.subscriptionId, {
+              stripeAccount: purchase.sellerId,
+            })
+          } catch (err) {
+            console.error(err)
+          }
         }
-      )
-      return NextResponse.json({ ok: true })
-    } catch (err) {
-      console.error(err)
-      return NextResponse.json({ error: 'Failed to refund' }, { status: 500 })
-    }
+        await db.collection('purchases').updateOne(
+          { _id: purchase._id },
+          {
+            $set: {
+              status: 'refunded',
+              'refundRequest.status': 'approved',
+            },
+          }
+        )
+        return NextResponse.json({ ok: true })
+      } catch (err) {
+        console.error(err)
+        return NextResponse.json({ error: 'Failed to refund' }, { status: 500 })
+      }
   } else if (action === 'decline') {
     const reason = typeof body.reason === 'string' ? body.reason : ''
     await db.collection('purchases').updateOne(
