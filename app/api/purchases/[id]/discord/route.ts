@@ -20,22 +20,22 @@ export async function GET(
   const { id } = await (ctx as { params: { id: string } | Promise<{ id: string }> }).params
   const cookieStore = await cookies()
   const token = cookieStore.get('session')?.value
-  if (!token) return NextResponse.redirect('/purchases')
+  if (!token) return NextResponse.redirect(new URL('/purchases', request.url))
   const db = await getDb()
   const session = await db
     .collection<{ token: string; userId: ObjectId }>('sessions')
     .findOne({ token })
-  if (!session) return NextResponse.redirect('/purchases')
+  if (!session) return NextResponse.redirect(new URL('/purchases', request.url))
   const purchase = await db
     .collection<{ _id: ObjectId; userId: ObjectId; productId: ObjectId; status: string; subscriptionId?: string; invoiceId?: string; sellerId: string }>('purchases')
     .findOne({ _id: new ObjectId(id), userId: session.userId })
   if (!purchase || purchase.status !== 'paid')
-    return NextResponse.redirect('/purchases')
+    return NextResponse.redirect(new URL('/purchases', request.url))
   const product = await db
     .collection<{ _id: ObjectId; type: string; serverId?: string; roleId?: string; subProducts?: { stripePriceId?: string; roleId?: string }[] }>('products')
     .findOne({ _id: purchase.productId })
   if (!product || product.type !== 'discord' || !product.serverId)
-    return NextResponse.redirect('/purchases')
+    return NextResponse.redirect(new URL('/purchases', request.url))
   let priceId: string | undefined
   if (purchase.subscriptionId) {
     try {
@@ -67,7 +67,7 @@ export async function GET(
     if (opt?.roleId) roleId = opt.roleId
   }
   const botToken = process.env.DISCORD_BOT_TOKEN
-  if (!botToken) return NextResponse.redirect('/purchases')
+  if (!botToken) return NextResponse.redirect(new URL('/purchases', request.url))
   let inviteUrl: string | null = null
   try {
     const channelsRes = await fetch(
@@ -114,5 +114,7 @@ export async function GET(
   } catch (err) {
     console.error('Discord invite failed', err)
   }
-  return NextResponse.redirect(inviteUrl || '/purchases')
+  return NextResponse.redirect(
+    inviteUrl ? inviteUrl : new URL('/purchases', request.url),
+  )
 }

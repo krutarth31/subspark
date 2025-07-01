@@ -34,6 +34,7 @@ export type Purchase = {
   customerId?: string;
   sellerId: string;
   nextDueDate?: string;
+  productType?: string;
   refundRequest?: {
     status: string;
     reason?: string;
@@ -162,6 +163,11 @@ export function getColumns(
               {p.customerId && p.status !== "refunded" && (
                 <DropdownMenuItem onClick={() => onAction(p._id, "payment")}>
                   Manage Subscription
+                </DropdownMenuItem>
+              )}
+              {p.productType === "discord" && (
+                <DropdownMenuItem onClick={() => onAction(p._id, "claim")}>
+                  Claim Access
                 </DropdownMenuItem>
               )}
               {(p.paymentIntentId || p.invoiceId) && !p.refundRequest && (

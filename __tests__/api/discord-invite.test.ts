@@ -61,7 +61,8 @@ describe('GET /api/purchases/[id]/discord', () => {
         return { findOne: jest.fn() }
       },
     })
-    const res = await GET({} as any, { params: { id: purchaseId.toString() } })
+    const req = new Request('http://localhost')
+    const res = await GET(req, { params: { id: purchaseId.toString() } })
     expect(res.status).toBe(307)
     expect(res.headers.get('location')).toBe('https://discord.gg/abc')
   })

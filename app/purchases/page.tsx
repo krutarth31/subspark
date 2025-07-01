@@ -79,6 +79,10 @@ export default function PurchasesPage() {
         }
         break;
       }
+      case "claim": {
+        window.location.href = `/api/purchases/${id}/discord`;
+        break;
+      }
       case "refund": {
         setRefundId(id);
         break;

@@ -59,6 +59,7 @@ export async function GET() {
           price: '$product.price',
           currency: '$product.currency',
           productName: '$product.name',
+          productType: '$product.type',
           subProducts: '$product.subProducts',
           invoiceId: 1,
           subscriptionId: 1,
@@ -121,6 +122,7 @@ export async function GET() {
       createdAt: p.createdAt.toISOString(),
       subProduct,
       nextDueDate,
+      productType: (p as any).productType,
     })
   }
   return NextResponse.json({ purchases })
