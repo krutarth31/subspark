@@ -126,4 +126,53 @@ describe('GET /api/purchases/[id]/discord', () => {
     )
     expect(res.headers.get('location')).toBe('https://discord.gg/abc')
   })
+
+  it('uses sub product role when available', async () => {
+    const purchaseId = new ObjectId('507f191e810c19729de86250')
+    const session = { token: 't', userId: new ObjectId('507f191e810c19729de86251') }
+    const purchase = {
+      _id: purchaseId,
+      userId: session.userId,
+      productId: new ObjectId('507f191e810c19729de86252'),
+      sellerId: 'acct_3',
+      status: 'paid',
+      invoiceId: 'in_3',
+    }
+    const product = {
+      _id: purchase.productId,
+      type: 'discord',
+      serverId: 'guild',
+      roleId: 'mainRole',
+      subProducts: [
+        { stripePriceId: 'price_sub', roleId: 'subRole' },
+      ],
+    }
+    mockRetrieveInv.mockResolvedValue({ lines: { data: [{ price: { id: 'price_sub' } }] } })
+    ;(global.fetch as jest.Mock)
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ system_channel_id: 'ch1' }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ code: 'abc' }) })
+      .mockResolvedValueOnce({ ok: true })
+    mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
+    mockGetDb.mockResolvedValue({
+      collection: (name: string) => {
+        if (name === 'sessions') return { findOne: jest.fn().mockResolvedValue(session) }
+        if (name === 'purchases') return { findOne: jest.fn().mockResolvedValue(purchase) }
+        if (name === 'products') return { findOne: jest.fn().mockResolvedValue(product) }
+        if (name === 'users')
+          return { findOne: jest.fn().mockResolvedValue({ _id: session.userId, discordId: 'user' }) }
+        if (name === 'sellers') return { findOne: jest.fn().mockResolvedValue(null) }
+        if (name === 'discordIntegrations') return { findOne: jest.fn().mockResolvedValue(null) }
+        return { findOne: jest.fn() }
+      },
+    })
+    const req = new Request('http://localhost')
+    const res = await GET(req, { params: { id: purchaseId.toString() } })
+    expect(res.status).toBe(307)
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      3,
+      'https://discord.com/api/guilds/guild/members/user/roles/subRole',
+      expect.objectContaining({ method: 'PUT' }),
+    )
+    expect(res.headers.get('location')).toBe('https://discord.gg/abc')
+  })
 })
