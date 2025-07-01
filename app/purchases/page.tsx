@@ -22,8 +22,6 @@ export default function PurchasesPage() {
   const [refundId, setRefundId] = useState<string | null>(null);
   const [reasonType, setReasonType] = useState("");
   const [reasonText, setReasonText] = useState("");
-  const [cancelId, setCancelId] = useState<string | null>(null);
-  const [cancelDueDate, setCancelDueDate] = useState<string | undefined>();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const prevStatuses = useRef<Record<string, string | undefined>>({});
   const { addNotification } = useNotifications();
@@ -66,12 +64,6 @@ export default function PurchasesPage() {
           if (newTab) newTab.close();
           toast.error(data.error || "Failed");
         }
-        break;
-      }
-      case "cancel": {
-        const p = items.find((p) => p._id === id);
-        setCancelId(id);
-        setCancelDueDate(p?.nextDueDate);
         break;
       }
       case "payment": {
@@ -133,33 +125,6 @@ export default function PurchasesPage() {
     );
   }
 
-  async function confirmCancel() {
-    if (!cancelId) return;
-    const id = cancelId;
-    setCancelId(null);
-    await toast.promise(
-      (async () => {
-        const res = await fetch(`/api/purchases/${id}/cancel`, {
-          method: "POST",
-        });
-        if (!res.ok) throw new Error("Failed");
-        setItems((prev) =>
-          prev
-            ? prev.map((p) =>
-                p._id === id
-                  ? { ...p, status: "canceled", nextDueDate: undefined }
-                  : p,
-              )
-            : prev,
-        );
-      })(),
-      {
-        loading: "Canceling...",
-        success: "Canceled",
-        error: "Failed to cancel",
-      },
-    );
-  }
 
   const help = <p>All products you have purchased will appear here.</p>;
 
@@ -256,27 +221,6 @@ export default function PurchasesPage() {
             </Button>
             <Button variant="outline" onClick={() => setRefundId(null)}>
               Cancel
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-      <Popover open={!!cancelId} onOpenChange={(o) => !o && setCancelId(null)}>
-        <PopoverContent className="sm:max-w-md w-80 fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div className="space-y-2 mb-4">
-            <h3 className="text-base font-semibold">Cancel Subscription</h3>
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to cancel? If you cancel your subscription
-              benefits will end on{' '}
-              {cancelDueDate
-                ? new Date(cancelDueDate).toLocaleDateString()
-                : 'the current period end'}
-              .
-            </p>
-          </div>
-          <div className="mt-4 flex gap-2 justify-end">
-            <Button onClick={confirmCancel}>Confirm</Button>
-            <Button variant="outline" onClick={() => setCancelId(null)}>
-              Back
             </Button>
           </div>
         </PopoverContent>
