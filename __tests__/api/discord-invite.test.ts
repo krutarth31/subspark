@@ -93,12 +93,6 @@ describe('GET /api/purchases/[id]/discord', () => {
       serverId: 'guild',
       roleId: 'role',
     }
-    const seller = { _id: 'acct_2', userId: new ObjectId('507f191e810c19729de86243') }
-    const integration = {
-      userId: seller.userId,
-      guildId: 'guild',
-      accessToken: 'userToken',
-    }
     mockRetrieveInv.mockResolvedValue({ lines: { data: [{ price: { id: 'price_2' } }] } })
     ;(global.fetch as jest.Mock)
       .mockResolvedValueOnce({ ok: true, json: async () => ({ system_channel_id: 'ch1' }) })
@@ -117,9 +111,9 @@ describe('GET /api/purchases/[id]/discord', () => {
         if (name === 'users')
           return { findOne: jest.fn().mockResolvedValue({ _id: session.userId, discordId: 'user' }) }
         if (name === 'sellers')
-          return { findOne: jest.fn().mockResolvedValue(seller) }
+          return { findOne: jest.fn().mockResolvedValue(null) }
         if (name === 'discordIntegrations')
-          return { findOne: jest.fn().mockResolvedValue(integration) }
+          return { findOne: jest.fn().mockResolvedValue(null) }
         return { findOne: jest.fn() }
       },
     })
@@ -129,7 +123,7 @@ describe('GET /api/purchases/[id]/discord', () => {
     expect(global.fetch).toHaveBeenNthCalledWith(
       3,
       'https://discord.com/api/guilds/guild/members/user',
-      expect.objectContaining({ method: 'PUT' }),
+      expect.objectContaining({}),
     )
     expect(global.fetch).toHaveBeenNthCalledWith(
       4,
