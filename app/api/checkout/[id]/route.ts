@@ -131,8 +131,12 @@ export async function POST(
       status: option.billing === 'free' ? 'paid' : 'pending',
       createdAt: new Date(),
     })
+    const successUrl =
+      product.type === 'discord'
+        ? `${origin}/api/purchases/${purchaseRes.insertedId}/discord`
+        : `${origin}/purchases?success=1`
     if (option.billing === 'free') {
-      return NextResponse.json({ url: `${origin}/purchases?success=1` })
+      return NextResponse.json({ url: successUrl })
     }
     const session = await getStripe().checkout.sessions.create(
       {
@@ -140,7 +144,7 @@ export async function POST(
         payment_method_types: ['card'],
         line_items: [{ price: option.stripePriceId!, quantity: 1 }],
         ...(stripeCouponId ? { discounts: [{ coupon: stripeCouponId }] } : {}),
-        success_url: `${origin}/purchases?success=1`,
+        success_url: successUrl,
         cancel_url: `${origin}/buy/${id}`,
         metadata: {
           purchaseId: purchaseRes.insertedId.toString(),
