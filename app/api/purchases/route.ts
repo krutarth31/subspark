@@ -84,12 +84,13 @@ export async function GET() {
           { stripeAccount: p.sellerId },
         )
         priceId = sub.items.data[0]?.price?.id
-        if (
-          p.status !== 'canceled' &&
-          sub.status !== 'canceled' &&
-          sub.current_period_end
-        )
-          nextDueDate = new Date(sub.current_period_end * 1000).toISOString()
+          if (
+            p.status !== 'canceled' &&
+            p.status !== 'refunded' &&
+            sub.status !== 'canceled' &&
+            sub.current_period_end
+          )
+            nextDueDate = new Date(sub.current_period_end * 1000).toISOString()
       } catch (err) {
         console.error(err)
       }
