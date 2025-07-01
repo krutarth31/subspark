@@ -66,6 +66,18 @@ export async function GET(
     const opt = product.subProducts.find((s) => s.stripePriceId === priceId)
     if (opt?.roleId) roleId = opt.roleId
   }
+  const seller = await db
+    .collection<{ _id: string; userId?: ObjectId }>('sellers')
+    .findOne({ _id: purchase.sellerId })
+  const integration = seller?.userId
+    ? await db
+        .collection<{
+          userId: ObjectId
+          guildId: string
+          accessToken?: string
+        }>('discordIntegrations')
+        .findOne({ userId: seller.userId })
+    : null
   const botToken = process.env.DISCORD_BOT_TOKEN
   if (!botToken) return NextResponse.redirect(new URL('/purchases', request.url))
   let inviteUrl: string | null = null
@@ -97,18 +109,33 @@ export async function GET(
         }
       }
     }
-    if (roleId) {
+    if (roleId || integration) {
       const user = await db
         .collection<{ _id: ObjectId; discordId?: string }>('users')
         .findOne({ _id: session.userId }, { projection: { discordId: 1 } })
       if (user?.discordId) {
-        await fetch(
-          `https://discord.com/api/guilds/${product.serverId}/members/${user.discordId}/roles/${roleId}`,
-          {
-            method: 'PUT',
-            headers: { Authorization: `Bot ${botToken}` },
-          },
-        ).catch(() => {})
+        if (integration?.accessToken) {
+          await fetch(
+            `https://discord.com/api/guilds/${product.serverId}/members/${user.discordId}`,
+            {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bot ${botToken}`,
+              },
+              body: JSON.stringify({ access_token: integration.accessToken }),
+            },
+          ).catch(() => {})
+        }
+        if (roleId) {
+          await fetch(
+            `https://discord.com/api/guilds/${product.serverId}/members/${user.discordId}/roles/${roleId}`,
+            {
+              method: 'PUT',
+              headers: { Authorization: `Bot ${botToken}` },
+            },
+          ).catch(() => {})
+        }
       }
     }
   } catch (err) {
