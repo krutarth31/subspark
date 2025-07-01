@@ -98,7 +98,6 @@ describe('GET /api/purchases/[id]/discord', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ system_channel_id: 'ch1' }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ code: 'abc' }) })
       .mockResolvedValueOnce({ ok: true })
-      .mockResolvedValueOnce({ ok: true })
     mockCookies.mockReturnValue({ get: () => ({ value: 't' }) })
     mockGetDb.mockResolvedValue({
       collection: (name: string) => {
@@ -122,11 +121,6 @@ describe('GET /api/purchases/[id]/discord', () => {
     expect(res.status).toBe(307)
     expect(global.fetch).toHaveBeenNthCalledWith(
       3,
-      'https://discord.com/api/guilds/guild/members/user',
-      expect.objectContaining({}),
-    )
-    expect(global.fetch).toHaveBeenNthCalledWith(
-      4,
       'https://discord.com/api/guilds/guild/members/user/roles/role',
       expect.objectContaining({ method: 'PUT' }),
     )

@@ -112,19 +112,13 @@ export async function GET(
         .findOne({ _id: session.userId }, { projection: { discordId: 1 } })
       if (user?.discordId) {
         try {
-          const memberRes = await fetch(
-            `https://discord.com/api/guilds/${product.serverId}/members/${user.discordId}`,
-            { headers: { Authorization: `Bot ${botToken}` } },
-          )
-          if (memberRes.ok) {
-            await fetch(
-              `https://discord.com/api/guilds/${product.serverId}/members/${user.discordId}/roles/${roleId}`,
-              {
-                method: 'PUT',
-                headers: { Authorization: `Bot ${botToken}` },
-              },
-            ).catch(() => {})
-          }
+          await fetch(
+            `https://discord.com/api/guilds/${product.serverId}/members/${user.discordId}/roles/${roleId}`,
+            {
+              method: 'PUT',
+              headers: { Authorization: `Bot ${botToken}` },
+            },
+          ).catch(() => {})
         } catch {
           // ignore role assignment errors
         }
